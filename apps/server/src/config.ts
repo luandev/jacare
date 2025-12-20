@@ -1,6 +1,7 @@
 import path from "path";
 
-export const PORT = Number(process.env.CROCDESK_PORT ?? 3333);
+const portValue = Number(process.env.CROCDESK_PORT ?? 3333);
+export const PORT = Number.isNaN(portValue) ? 3333 : portValue;
 export const CROCDESK_DATA_DIR =
   process.env.CROCDESK_DATA_DIR ?? path.resolve(process.cwd(), "data");
 export const CROCDB_BASE_URL =
