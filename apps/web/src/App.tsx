@@ -5,17 +5,24 @@ import SettingsPage from "./pages/SettingsPage";
 import GameDetailPage from "./pages/GameDetailPage";
 
 export default function App() {
+  const navLinkClass = ({ isActive }: { isActive: boolean }) =>
+    isActive ? "active" : undefined;
+
   return (
     <BrowserRouter>
       <div className="app-shell">
         <aside className="sidebar">
           <div className="logo">CrocDesk</div>
           <nav className="nav">
-            <NavLink to="/" end>
+            <NavLink to="/" end className={navLinkClass}>
               Browse
             </NavLink>
-            <NavLink to="/queue">Queue</NavLink>
-            <NavLink to="/settings">Settings</NavLink>
+            <NavLink to="/queue" className={navLinkClass}>
+              Queue
+            </NavLink>
+            <NavLink to="/settings" className={navLinkClass}>
+              Settings
+            </NavLink>
           </nav>
           <div className="status">MVP build</div>
         </aside>
