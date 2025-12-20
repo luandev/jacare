@@ -24,10 +24,12 @@ router.post("/download", async (req, res) => {
     res.status(400).json({ error: "slug and profileId are required" });
     return;
   }
+  const parsedLinkIndex =
+    typeof linkIndex === "number" ? linkIndex : undefined;
   const job = await enqueueDownloadAndInstall({
     slug,
     profileId,
-    linkIndex
+    linkIndex: parsedLinkIndex
   });
   res.json(job);
 });
