@@ -1,0 +1,19 @@
+{
+  "name": "@crocdesk/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "npm run build && cross-env CROCDESK_DEV_URL=http://localhost:5173 electron .",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "electron": "^29.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.19",
+    "cross-env": "^7.0.3",
+    "typescript": "^5.4.5"
+  }
+}
