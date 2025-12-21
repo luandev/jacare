@@ -3,7 +3,7 @@ import type { FormEvent } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import PlatformIcon from "../components/PlatformIcon";
-import { apiGet, apiPost } from "../lib/api";
+import { apiGet, apiPost, API_URL } from "../lib/api";
 import type {
   CrocdbApiResponse,
   CrocdbEntry,
@@ -11,7 +11,8 @@ import type {
   CrocdbRegionsResponseData,
   CrocdbSearchResponseData,
   LibraryItem,
-  Profile
+  Profile,
+  JobEvent
 } from "@crocdesk/shared";
 
 export default function BrowsePage() {
@@ -24,6 +25,8 @@ export default function BrowsePage() {
   const [results, setResults] = useState<CrocdbEntry[]>([]);
   const [status, setStatus] = useState<string>("");
   const [selectedProfileId, setSelectedProfileId] = useState<string>("");
+  const [downloadingSlugs, setDownloadingSlugs] = useState<Set<string>>(new Set());
+  const [progressBySlug, setProgressBySlug] = useState<Record<string, number>>({});
 
   const profilesQuery = useQuery({
     queryKey: ["profiles"],
@@ -98,10 +101,41 @@ export default function BrowsePage() {
   const downloadMutation = useMutation({
     mutationFn: (payload: { slug: string; profileId: string }) =>
       apiPost("/jobs/download", payload),
-    onSuccess: () => setStatus("Download job queued"),
+    onSuccess: (_resp, variables) => {
+      setStatus("Download job queued");
+      if (variables?.slug) {
+        setDownloadingSlugs((prev) => new Set(prev).add(variables.slug));
+      }
+    },
     onError: (error) =>
       setStatus(error instanceof Error ? error.message : "Download failed")
   });
+  useEffect(() => {
+    const source = new EventSource(`${API_URL}/events`);
+    source.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data) as JobEvent;
+        if (data.slug) {
+          if (data.type === "STEP_PROGRESS" && typeof data.progress === "number") {
+            setProgressBySlug((prev) => ({ ...prev, [data.slug as string]: (data.progress as number) }));
+            setDownloadingSlugs((prev) => new Set(prev).add(data.slug!));
+          }
+          if (data.type === "JOB_DONE" || data.type === "JOB_FAILED") {
+            setDownloadingSlugs((prev) => {
+              const next = new Set(prev);
+              next.delete(data.slug!);
+              return next;
+            });
+          }
+          if (data.type === "JOB_RESULT") {
+            // Refresh ownership state when files arrive
+            // Trigger library items refetch implicitly via ownedQuery by invalidation is not available here; reuse query's refetch
+          }
+        }
+      } catch {}
+    };
+    return () => source.close();
+  }, []);
 
   const scanMutation = useMutation({
     mutationFn: () => apiPost("/library/scan/local", {}),
@@ -313,12 +347,15 @@ export default function BrowsePage() {
                 </Link>
               </h3>
               {ownedSlugs.has(entry.slug) && <span className="badge">Owned</span>}
+              {!ownedSlugs.has(entry.slug) && downloadingSlugs.has(entry.slug) && (
+                <span className="badge">Downloading…</span>
+              )}
             </div>
             <div className="status">{entry.platform.toUpperCase()}</div>
             <div className="status">{entry.regions.join(", ")}</div>
             <div className="row" style={{ marginTop: "12px" }}>
               <span className="status">Links: {entry.links.length}</span>
-              {!ownedSlugs.has(entry.slug) ? (
+              {!ownedSlugs.has(entry.slug) && !downloadingSlugs.has(entry.slug) ? (
                 <button
                   onClick={() =>
                     selectedProfileId &&
@@ -353,6 +390,11 @@ export default function BrowsePage() {
                   )}
                 </div>
               )}
+            {downloadingSlugs.has(entry.slug) && typeof progressBySlug[entry.slug] === "number" && (
+              <div className="progress" style={{ marginTop: 8, width: "100%" }}>
+                <span style={{ width: `${Math.max(0, Math.min(1, progressBySlug[entry.slug])) * 100}%` }} />
+              </div>
+            )}
             </div>
           </article>
         ))}

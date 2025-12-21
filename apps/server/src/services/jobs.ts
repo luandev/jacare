@@ -65,6 +65,7 @@ function createJobRecord(
   publishEvent({
     jobId: job.id,
     type: "JOB_CREATED",
+    slug: type === "download_and_install" && typeof payload.slug === "string" ? (payload.slug as string) : undefined,
     ts: now
   });
 
@@ -159,6 +160,7 @@ async function runJob(job: JobRecord, handler: (report: JobReporter) => Promise<
     type: "STEP_STARTED",
     step: job.type,
     progress: 0,
+    slug: job.type === "download_and_install" && typeof job.payload.slug === "string" ? (job.payload.slug as string) : undefined,
     ts: Date.now()
   });
 
@@ -175,6 +177,7 @@ async function runJob(job: JobRecord, handler: (report: JobReporter) => Promise<
         step,
         progress,
         message,
+        slug: job.type === "download_and_install" && typeof job.payload.slug === "string" ? (job.payload.slug as string) : undefined,
         ts: Date.now()
       });
     }
@@ -191,6 +194,7 @@ async function runJob(job: JobRecord, handler: (report: JobReporter) => Promise<
       type: "STEP_DONE",
       step: job.type,
       progress: 1,
+      slug: job.type === "download_and_install" && typeof job.payload.slug === "string" ? (job.payload.slug as string) : undefined,
       ts: Date.now()
     });
 
@@ -198,6 +202,7 @@ async function runJob(job: JobRecord, handler: (report: JobReporter) => Promise<
     publishEvent({
       jobId: job.id,
       type: "JOB_DONE",
+      slug: job.type === "download_and_install" && typeof job.payload.slug === "string" ? (job.payload.slug as string) : undefined,
       ts: Date.now()
     });
   } catch (error) {
@@ -210,6 +215,7 @@ async function runJob(job: JobRecord, handler: (report: JobReporter) => Promise<
       jobId: job.id,
       type: "JOB_FAILED",
       message: error instanceof Error ? error.message : "Job failed",
+      slug: job.type === "download_and_install" && typeof job.payload.slug === "string" ? (job.payload.slug as string) : undefined,
       ts: Date.now()
     });
   }

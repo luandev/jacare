@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { apiGet, apiPost } from "../lib/api";
-import type { CrocdbApiResponse, CrocdbEntryResponseData, Profile, LibraryItem } from "@crocdesk/shared";
+import { apiGet, apiPost, API_URL } from "../lib/api";
+import type { CrocdbApiResponse, CrocdbEntryResponseData, Profile, LibraryItem, JobEvent } from "@crocdesk/shared";
 
 export default function GameDetailPage() {
   const { slug } = useParams();
@@ -42,6 +42,27 @@ export default function GameDetailPage() {
   const profileId = selectedProfileId;
   const isOwned = !!ownedQuery.data?.some((item) => item.gameSlug === entry?.slug);
   const ownedItems = (ownedQuery.data ?? []).filter((item) => item.gameSlug === entry?.slug);
+  const [isDownloading, setIsDownloading] = useState<boolean>(false);
+  const [progress, setProgress] = useState<number>(0);
+
+  useEffect(() => {
+    const source = new EventSource(`${API_URL}/events`);
+    source.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data) as JobEvent;
+        if (data.slug && data.slug === entry?.slug) {
+          if (data.type === "STEP_PROGRESS" && typeof data.progress === "number") {
+            setIsDownloading(true);
+            setProgress(data.progress);
+          }
+          if (data.type === "JOB_DONE" || data.type === "JOB_FAILED") {
+            setIsDownloading(false);
+          }
+        }
+      } catch {}
+    };
+    return () => source.close();
+  }, [entry?.slug]);
 
   if (!entry) {
     return (
@@ -98,7 +119,7 @@ export default function GameDetailPage() {
                   {link.host} - {link.format} - {link.size_str}
                 </div>
               </div>
-              {!isOwned ? (
+              {!isOwned && !isDownloading ? (
                 <button
                   onClick={() =>
                     profileId &&
@@ -110,7 +131,7 @@ export default function GameDetailPage() {
                 </button>
               ) : (
                 <div className="row" style={{ gap: 8, alignItems: "center" }}>
-                  <span className="status">Already in library</span>
+                  {isOwned ? <span className="status">Already in library</span> : <span className="status">Downloading…</span>}
                   {ownedItems[0]?.path && (
                     <a
                       className="link"
@@ -126,6 +147,11 @@ export default function GameDetailPage() {
                       Show in Folder
                     </a>
                   )}
+                </div>
+              )}
+              {isDownloading && (
+                <div className="progress" style={{ marginTop: 8, width: "100%" }}>
+                  <span style={{ width: `${Math.max(0, Math.min(1, progress)) * 100}%` }} />
                 </div>
               )}
             </div>
