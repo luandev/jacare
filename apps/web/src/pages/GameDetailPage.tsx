@@ -41,6 +41,7 @@ export default function GameDetailPage() {
   const entry = entryQuery.data?.data.entry;
   const profileId = selectedProfileId;
   const isOwned = !!ownedQuery.data?.some((item) => item.gameSlug === entry?.slug);
+  const ownedItems = (ownedQuery.data ?? []).filter((item) => item.gameSlug === entry?.slug);
 
   if (!entry) {
     return (
@@ -108,7 +109,24 @@ export default function GameDetailPage() {
                   Queue Download
                 </button>
               ) : (
-                <span className="status">Already in library</span>
+                <div className="row" style={{ gap: 8, alignItems: "center" }}>
+                  <span className="status">Already in library</span>
+                  {ownedItems[0]?.path && (
+                    <a
+                      className="link"
+                      href={toFileHref(ownedItems[0].path)}
+                      onClick={(e) => {
+                        const p = ownedItems[0].path;
+                        if (window.crocdesk?.revealInFolder) {
+                          e.preventDefault();
+                          window.crocdesk.revealInFolder(p);
+                        }
+                      }}
+                    >
+                      Show in Folder
+                    </a>
+                  )}
+                </div>
               )}
             </div>
           ))}
@@ -127,6 +145,14 @@ export default function GameDetailPage() {
       </section>
     </div>
   );
+}
+
+function toFileHref(p: string): string {
+  const normalized = p.replace(/\\/g, "/");
+  if (/^[A-Za-z]:\//.test(normalized)) {
+    return `file:///${encodeURI(normalized)}`;
+  }
+  return `file://${encodeURI(normalized)}`;
 }
 
 function MediaGrid({ coverUrl, screenshots }: { coverUrl?: string; screenshots: string[] }) {
