@@ -3,13 +3,21 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiGet, API_URL } from "../lib/api";
 import type { JobEvent, JobRecord } from "@crocdesk/shared";
 
+type JobPreview = {
+  slug: string;
+  title: string;
+  platform: string;
+  boxart_url?: string;
+};
+type JobWithPreview = JobRecord & { preview?: JobPreview };
+
 export default function QueuePage() {
   const queryClient = useQueryClient();
   const [lastEvent, setLastEvent] = useState<JobEvent | null>(null);
 
   const jobsQuery = useQuery({
     queryKey: ["jobs"],
-    queryFn: () => apiGet<JobRecord[]>("/jobs")
+    queryFn: () => apiGet<JobWithPreview[]>("/jobs")
   });
 
   useEffect(() => {
@@ -56,12 +64,26 @@ export default function QueuePage() {
       <section className="list">
         {(jobsQuery.data ?? []).map((job) => (
           <article className="card" key={job.id}>
+            {job.preview?.boxart_url && (
+              <img
+                src={job.preview.boxart_url}
+                alt={`${job.preview.title} cover art`}
+                className="thumb"
+                loading="lazy"
+                style={{ width: "100%", maxWidth: "140px", aspectRatio: "3 / 4", objectFit: "cover", borderRadius: "8px", float: "right", marginLeft: "12px" }}
+              />
+            )}
             <div className="row">
               <h3>{job.type.replace(/_/g, " ")}</h3>
               <span className="badge">{job.status}</span>
             </div>
             <div className="status">Job id: {job.id}</div>
             <div className="status">Updated: {new Date(job.updatedAt).toLocaleString()}</div>
+            {job.preview && (
+              <div className="status" style={{ marginTop: "8px" }}>
+                {job.preview.title} • {job.preview.platform.toUpperCase()} • {job.preview.slug}
+              </div>
+            )}
           </article>
         ))}
       </section>

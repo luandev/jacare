@@ -165,6 +165,15 @@ export default function BrowsePage() {
       <section className="grid cols-3">
         {results.map((entry) => (
           <article className="card" key={entry.slug}>
+            {entry.boxart_url && (
+              <img
+                src={entry.boxart_url}
+                alt={`${entry.title} cover art`}
+                className="thumb"
+                loading="lazy"
+                style={{ width: "100%", aspectRatio: "3 / 4", objectFit: "cover", borderRadius: "8px" }}
+              />
+            )}
             <div className="row">
               <h3>
                 <Link to={`/game/${entry.slug}`}>{entry.title}</Link>

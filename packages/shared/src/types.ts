@@ -16,6 +16,7 @@ export type CrocdbEntry = {
   title: string;
   platform: string;
   boxart_url?: string;
+  screenshots?: string[];
   regions: string[];
   links: CrocdbLink[];
 };
