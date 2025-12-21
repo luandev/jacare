@@ -1,4 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
+import { captureOnCI } from './utils';
 import { mockPlatforms, mockRegions, mockSearch, mockEntry } from './fixtures';
 
 function interceptCatalog(page: Page) {
@@ -23,6 +24,7 @@ test.describe('Detail modal interactions', () => {
   test('opens from thumbnail and closes via close button', async ({ page }) => {
     await page.locator('article.card').nth(0).locator('img.thumb').click();
     await expect(page.getByRole('button', { name: 'Close' })).toBeVisible();
+    await captureOnCI(page, 'detail-modal-open');
     await page.getByRole('button', { name: 'Close' }).click();
     await expect(page.getByRole('button', { name: 'Close' })).toHaveCount(0);
   });
@@ -47,6 +49,7 @@ test.describe('Detail modal interactions', () => {
     const modalCard = page.getByTestId('modal-card');
     await expect(modalCard).toBeVisible();
     await expect(modalCard.getByRole('heading', { name: 'A Link to the Past' })).toBeVisible();
+    await captureOnCI(page, 'detail-modal-media');
 
     const mediaThumbs = modalCard.locator('.media-grid img.thumb');
     await expect(mediaThumbs).toHaveCount(6);
