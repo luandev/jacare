@@ -1,6 +1,10 @@
 import path from "path";
 import { promises as fs } from "fs";
+import { Readable } from "stream";
+import type { ReadableStream as NodeReadableStream } from "stream/web";
 import type { LibraryItem, LibraryRoot, Manifest } from "@crocdesk/shared";
+import { writeManifest } from "./manifest";
+import { getEntry } from "./crocdb";
 
 const SCAN_EXTENSIONS = new Set([
   ".zip",
@@ -79,7 +83,7 @@ async function walk(
     }
 
     const stat = await fs.stat(fullPath);
-    const manifest = await readManifest(dir, manifestCache);
+    const manifest = await readManifest(dir, platform, manifestCache);
 
     items.push({
       id: 0,
@@ -107,6 +111,7 @@ function shouldIncludeFile(fileName: string): boolean {
 
 async function readManifest(
   dir: string,
+  platform: string | undefined,
   manifestCache: Map<string, Manifest | null>
 ): Promise<Manifest | null> {
   if (manifestCache.has(dir)) {
@@ -117,10 +122,98 @@ async function readManifest(
   try {
     const data = await fs.readFile(manifestPath, "utf-8");
     const parsed = JSON.parse(data) as Manifest;
+    // Attempt to backfill cover images for library display
+    await ensureCoverExists(dir, parsed).catch(() => {});
     manifestCache.set(dir, parsed);
     return parsed;
   } catch {
-    manifestCache.set(dir, null);
-    return null;
+    // Backfill: create a minimal manifest if eligible files exist
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+    const files: string[] = [];
+    for (const e of entries) {
+      if (e.isFile() && shouldIncludeFile(e.name)) {
+        files.push(path.join(dir, e.name));
+      }
+    }
+    if (files.length === 0) {
+      manifestCache.set(dir, null);
+      return null;
+    }
+
+    const artifacts = await Promise.all(
+      files.map(async (p) => {
+        const s = await fs.stat(p);
+        return { path: path.basename(p), size: s.size };
+      })
+    );
+    const baseName = path.basename(dir);
+    const manifest: Manifest = {
+      schema: 1,
+      crocdb: {
+        slug: slugify(baseName),
+        title: baseName,
+        platform: platform ?? "unknown",
+        regions: []
+      },
+      artifacts,
+      profileId: "local-scan",
+      createdAt: new Date().toISOString()
+    };
+    await writeManifest(dir, manifest);
+    // Cover backfill will likely be skipped without a Crocdb slug, but try anyway
+    await ensureCoverExists(dir, manifest).catch(() => {});
+    manifestCache.set(dir, manifest);
+    return manifest;
   }
+}
+
+async function ensureCoverExists(dir: string, manifest: Manifest): Promise<void> {
+  const coverCandidates = ["cover.jpg", "cover.png", "cover.webp", "boxart.jpg", "boxart.png"];
+  for (const name of coverCandidates) {
+    try {
+      await fs.access(path.join(dir, name));
+      return; // Cover already present
+    } catch {}
+  }
+
+  // Fetch boxart from Crocdb using slug
+  const slug = manifest?.crocdb?.slug;
+  if (!slug) return;
+  try {
+    const resp = await getEntry(slug);
+    const url = resp.data.entry.boxart_url;
+    if (!url) return;
+    const response = await fetch(url);
+    if (!response.ok || !response.body) return;
+    const contentType = response.headers.get("content-type") || "";
+    let ext = ".jpg";
+    if (contentType.includes("png")) ext = ".png";
+    else if (contentType.includes("jpeg")) ext = ".jpg";
+    else if (contentType.includes("webp")) ext = ".webp";
+    else {
+      const urlLower = url.toLowerCase();
+      if (urlLower.endsWith(".png")) ext = ".png";
+      else if (urlLower.endsWith(".webp")) ext = ".webp";
+    }
+    const outPath = path.join(dir, `cover${ext}`);
+    const tempPath = outPath + ".part";
+    const file = (await fs.open(tempPath, "w")).createWriteStream();
+    await new Promise<void>((resolve, reject) => {
+      const stream = Readable.fromWeb(response.body as unknown as NodeReadableStream);
+      stream.on("error", reject);
+      file.on("error", reject);
+      file.on("finish", resolve);
+      stream.pipe(file);
+    });
+    await fs.rename(tempPath, outPath);
+  } catch {
+    // ignore backfill errors
+  }
+}
+
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }

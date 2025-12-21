@@ -10,16 +10,40 @@ export type GameCardProps = {
 
 export default function GameCard({ manifest, artifactPath, onShowInFolder }: GameCardProps) {
   const { crocdb } = manifest;
+  const baseDir = dirname(artifactPath);
+  const coverCandidates = ["cover.jpg", "cover.png", "cover.webp", "boxart.jpg", "boxart.png"];
+  const version = manifest.createdAt ?? "";
+  const coverUrls = coverCandidates.map((name) => `/file?path=${encodeURIComponent(joinPath(baseDir, name))}&v=${encodeURIComponent(version)}`);
+  const [imgIndex, setImgIndex] = React.useState(0);
+  const [imgError, setImgError] = React.useState(false);
+  const currentCoverUrl = coverUrls[imgIndex];
   return (
     <article className="card" style={{ minWidth: 0 }}>
       <div className="thumb-wrapper">
-        <div className="thumb-placeholder">
-          <PlatformIcon
-            platform={crocdb.platform}
-            label={crocdb.title}
-            size={42}
+        {!imgError && currentCoverUrl ? (
+          <img
+            src={currentCoverUrl}
+            alt={`${crocdb.title} cover art`}
+            className="thumb"
+            loading="lazy"
+            style={{ width: "100%", aspectRatio: "3 / 4", objectFit: "cover", borderRadius: 8 }}
+            onError={() => {
+              if (imgIndex < coverUrls.length - 1) {
+                setImgIndex((i) => i + 1);
+              } else {
+                setImgError(true);
+              }
+            }}
           />
-        </div>
+        ) : (
+          <div className="thumb-placeholder">
+            <PlatformIcon
+              platform={crocdb.platform}
+              label={crocdb.title}
+              size={42}
+            />
+          </div>
+        )}
         <div className="platform-badge" title={crocdb.platform.toUpperCase()}>
           <PlatformIcon platform={crocdb.platform} size={24} />
         </div>
@@ -37,4 +61,14 @@ export default function GameCard({ manifest, artifactPath, onShowInFolder }: Gam
       </div>
     </article>
   );
+}
+
+function dirname(p: string): string {
+  const idx = Math.max(p.lastIndexOf("/"), p.lastIndexOf("\\"));
+  return idx >= 0 ? p.slice(0, idx) : ".";
+}
+
+function joinPath(a: string, b: string): string {
+  if (a.endsWith("/") || a.endsWith("\\")) return a + b;
+  return a + "/" + b;
 }

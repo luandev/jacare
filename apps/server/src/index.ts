@@ -37,13 +37,15 @@ async function start(): Promise<void> {
       return;
     }
     try {
-      const data = await import("fs").then((fs) => fs.promises.readFile(absPath, "utf-8"));
-      // If JSON, parse and return as JSON
+      const fs = await import("fs");
+      await fs.promises.access(absPath);
       if (absPath.endsWith(".json")) {
-        res.json(JSON.parse(data));
-      } else {
-        res.type("text/plain").send(data);
+        const json = await fs.promises.readFile(absPath, "utf-8");
+        res.json(JSON.parse(json));
+        return;
       }
+      // Stream binary/text files directly
+      res.sendFile(absPath);
     } catch (e) {
       res.status(404).json({ error: "File not found" });
     }

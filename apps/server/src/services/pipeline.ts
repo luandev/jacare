@@ -72,6 +72,9 @@ export async function runDownloadAndInstall(
       reportProgress(0.75, "Finalizing layout");
       const { outputDir, outputPaths } = await finalizeLayoutMany(entry, extractDir, profile);
 
+      // Save boxart locally for library thumbnails
+      await saveBoxart(entry, outputDir).catch(() => {});
+
       if (profile.postActions?.writeManifest ?? true) {
         const artifacts = await Promise.all(
           outputPaths.map(async (p) => {
@@ -104,6 +107,9 @@ export async function runDownloadAndInstall(
   reportProgress(0.8, "Finalizing layout");
   const outputPath = await finalizeLayout(entry, downloadPath, profile, settings);
 
+  // Save boxart locally for library thumbnails
+  await saveBoxart(entry, path.dirname(outputPath)).catch(() => {});
+
   if (profile.postActions?.writeManifest ?? true) {
     const stats = await fs.stat(outputPath);
     const manifest = buildManifest(entry, profile, outputPath, stats.size);
@@ -112,6 +118,36 @@ export async function runDownloadAndInstall(
 
   reportProgress(1, "Complete");
   return { entry, outputPath };
+}
+
+async function saveBoxart(entry: CrocdbEntry, destDir: string): Promise<void> {
+  const url = entry.boxart_url;
+  if (!url) return;
+  const resp = await fetch(url);
+  if (!resp.ok || !resp.body) return;
+  // Determine extension from content-type or URL
+  const contentType = resp.headers.get("content-type") || "";
+  let ext = ".jpg";
+  if (contentType.includes("png")) ext = ".png";
+  else if (contentType.includes("jpeg")) ext = ".jpg";
+  else if (contentType.includes("webp")) ext = ".webp";
+  else {
+    const urlLower = url.toLowerCase();
+    if (urlLower.endsWith(".png")) ext = ".png";
+    else if (urlLower.endsWith(".webp")) ext = ".webp";
+    else ext = ".jpg";
+  }
+  const outPath = path.join(destDir, `cover${ext}`);
+  await ensureDir(destDir);
+  const file = (await fs.open(outPath + ".part", "w")).createWriteStream();
+  await new Promise<void>((resolve, reject) => {
+    const stream = Readable.fromWeb(resp.body as unknown as NodeReadableStream);
+    stream.on("error", reject);
+    file.on("error", reject);
+    file.on("finish", resolve);
+    stream.pipe(file);
+  });
+  await moveFile(outPath + ".part", outPath);
 }
 
 function chooseLinkIndex(entry: CrocdbEntry): number {
