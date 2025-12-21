@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiGet, API_URL } from "../lib/api";
 import type { JobEvent, JobRecord } from "@crocdesk/shared";
+import PlatformIcon from "../components/PlatformIcon";
 
 type JobPreview = {
   slug: string;
@@ -64,14 +65,25 @@ export default function QueuePage() {
       <section className="list">
         {(jobsQuery.data ?? []).map((job) => (
           <article className="card" key={job.id}>
-            {job.preview?.boxart_url && (
-              <img
-                src={job.preview.boxart_url}
-                alt={`${job.preview.title} cover art`}
-                className="thumb"
-                loading="lazy"
-                style={{ width: "100%", maxWidth: "140px", aspectRatio: "3 / 4", objectFit: "cover", borderRadius: "8px", float: "right", marginLeft: "12px" }}
-              />
+            {job.preview && (
+              <div className="thumb-wrapper" style={{ float: "right", marginLeft: "12px", maxWidth: "140px" }}>
+                {job.preview.boxart_url ? (
+                  <img
+                    src={job.preview.boxart_url}
+                    alt={`${job.preview.title} cover art`}
+                    className="thumb"
+                    loading="lazy"
+                    style={{ width: "100%", aspectRatio: "3 / 4", objectFit: "cover", borderRadius: "8px" }}
+                  />
+                ) : (
+                  <div className="thumb-placeholder">
+                    <PlatformIcon platform={job.preview.platform} label={job.preview.platform.toUpperCase()} size={34} />
+                  </div>
+                )}
+                <div className="platform-badge" title={job.preview.platform.toUpperCase()}>
+                  <PlatformIcon platform={job.preview.platform} label={job.preview.platform.toUpperCase()} size={22} />
+                </div>
+              </div>
             )}
             <div className="row">
               <h3>{job.type.replace(/_/g, " ")}</h3>

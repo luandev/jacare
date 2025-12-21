@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "react-router-dom";
+import PlatformIcon from "../components/PlatformIcon";
 import { apiGet, apiPost } from "../lib/api";
 import type {
   CrocdbApiResponse,
@@ -166,21 +167,40 @@ export default function BrowsePage() {
       <section className="grid cols-3">
         {results.map((entry) => (
           <article className="card" key={entry.slug}>
-            {entry.boxart_url && (
+            <div className="thumb-wrapper">
               <Link
                 to={`/game/${entry.slug}`}
                 state={{ backgroundLocation: location }}
                 aria-label={`Open ${entry.title} details`}
               >
-                <img
-                  src={entry.boxart_url}
-                  alt={`${entry.title} cover art`}
-                  className="thumb"
-                  loading="lazy"
-                  style={{ width: "100%", aspectRatio: "3 / 4", objectFit: "cover", borderRadius: "8px" }}
-                />
+                {entry.boxart_url ? (
+                  <img
+                    src={entry.boxart_url}
+                    alt={`${entry.title} cover art`}
+                    className="thumb"
+                    loading="lazy"
+                    style={{ width: "100%", aspectRatio: "3 / 4", objectFit: "cover", borderRadius: "8px" }}
+                  />
+                ) : (
+                  <div className="thumb-placeholder">
+                    <PlatformIcon
+                      platform={entry.platform}
+                      brand={platformsQuery.data?.data.platforms?.[entry.platform]?.brand}
+                      label={platformsQuery.data?.data.platforms?.[entry.platform]?.name ?? entry.platform}
+                      size={42}
+                    />
+                  </div>
+                )}
               </Link>
-            )}
+              <div className="platform-badge" title={entry.platform.toUpperCase()}>
+                <PlatformIcon
+                  platform={entry.platform}
+                  brand={platformsQuery.data?.data.platforms?.[entry.platform]?.brand}
+                  label={platformsQuery.data?.data.platforms?.[entry.platform]?.name ?? entry.platform}
+                  size={24}
+                />
+              </div>
+            </div>
             <div className="row">
               <h3>
                 <Link to={`/game/${entry.slug}`} state={{ backgroundLocation: location }}>

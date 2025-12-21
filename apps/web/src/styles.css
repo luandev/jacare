@@ -105,6 +105,36 @@ h3 {
   box-shadow: var(--shadow);
 }
 
+.thumb-wrapper {
+  position: relative;
+}
+
+.platform-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 6px 16px rgba(27, 26, 22, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.thumb-placeholder {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: linear-gradient(135deg, #f5ede2 0%, #efe5d8 50%, #e9ddcf 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .grid {
   display: grid;
   gap: 18px;
