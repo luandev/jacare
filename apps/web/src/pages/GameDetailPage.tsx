@@ -47,14 +47,6 @@ export default function GameDetailPage() {
   return (
     <div className="grid" style={{ gap: "20px" }}>
       <section className="hero">
-        <button
-          className="secondary"
-          onClick={() => navigate(-1)}
-          aria-label="Go back"
-          style={{ marginBottom: "8px" }}
-        >
-          ← Back
-        </button>
         <h1>{entry.title}</h1>
         <p>
           {entry.platform.toUpperCase()} - {entry.regions.join(", ")}

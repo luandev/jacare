@@ -1,9 +1,10 @@
 import { BrowserRouter, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { useMemo, useEffect } from "react";
 import BrowsePage from "./pages/BrowsePage";
 import QueuePage from "./pages/QueuePage";
 import SettingsPage from "./pages/SettingsPage";
 import GameDetailPage from "./pages/GameDetailPage";
-import { useMemo } from "react";
+// useMemo imported above
 
 function AppRoutes() {
   const location = useLocation();
@@ -29,6 +30,15 @@ function AppRoutes() {
 
 function ModalOverlay({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        navigate(-1);
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [navigate]);
   return (
     <div
       onClick={() => navigate(-1)}
