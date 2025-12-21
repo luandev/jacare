@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { apiGet } from "../lib/api";
+import { apiGet, API_URL } from "../lib/api";
 import type { Manifest } from "@crocdesk/shared";
 
 export default function LibraryItemDetailPage() {
@@ -30,7 +30,7 @@ export default function LibraryItemDetailPage() {
 
   const coverCandidates = ["cover.jpg", "cover.png", "cover.webp", "boxart.jpg", "boxart.png"];
   const version = manifest?.createdAt ?? "";
-  const coverUrls = coverCandidates.map((name) => `/file?path=${encodeURIComponent(joinPath(dir, name))}&v=${encodeURIComponent(version)}`);
+  const coverUrls = coverCandidates.map((name) => `${API_URL}/file?path=${encodeURIComponent(joinPath(dir, name))}&v=${encodeURIComponent(version)}`);
   const coverUrl = coverUrls[0];
 
   async function handleReveal() {

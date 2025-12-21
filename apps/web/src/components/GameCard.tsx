@@ -1,6 +1,7 @@
 import React from "react";
 import PlatformIcon from "./PlatformIcon";
 import type { Manifest } from "@crocdesk/shared";
+import { API_URL } from "../lib/api";
 
 export type GameCardProps = {
   manifest: Manifest;
@@ -14,7 +15,7 @@ export default function GameCard({ manifest, artifactPath, onShowInFolder, actio
   const baseDir = dirname(artifactPath);
   const coverCandidates = ["cover.jpg", "cover.png", "cover.webp", "boxart.jpg", "boxart.png"];
   const version = manifest.createdAt ?? "";
-  const coverUrls = coverCandidates.map((name) => `/file?path=${encodeURIComponent(joinPath(baseDir, name))}&v=${encodeURIComponent(version)}`);
+  const coverUrls = coverCandidates.map((name) => `${API_URL}/file?path=${encodeURIComponent(joinPath(baseDir, name))}&v=${encodeURIComponent(version)}`);
   const [imgIndex, setImgIndex] = React.useState(0);
   const [imgError, setImgError] = React.useState(false);
   const currentCoverUrl = coverUrls[imgIndex];
