@@ -7,8 +7,14 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
   test: {
     environment: 'node',
+    environmentMatchGlobs: [
+      ['apps/web/**', 'jsdom']
+    ],
+    setupFiles: ['tests/vitest.setup.ts'],
     include: [
+      'apps/**/src/**/__tests__/**/*.{test,spec}.{ts,tsx}',
       'apps/**/src/**/*.{test,spec}.{ts,tsx}',
+      'packages/**/src/**/__tests__/**/*.{test,spec}.{ts,tsx}',
       'packages/**/src/**/*.{test,spec}.{ts,tsx}'
     ],
     coverage: {
