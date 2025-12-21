@@ -11,7 +11,8 @@ async function ensureDir(dir: string) {
 export async function captureOnCI(page: Page, name: string) {
   if (!process.env.SCREENSHOT_ARTIFACTS && !process.env.CI) return;
   await ensureDir(baseDir);
-  const sanitizedName = name.replace(/[^a-z0-9-_]+/gi, '_').toLowerCase();
+  const sanitizedName = name.replace(/[^a-z0-9-_]+/gi, '_').toLowerCase() || 'screenshot';
   const file = path.join(baseDir, `${sanitizedName}.png`);
   await page.screenshot({ path: file, fullPage: true });
+  return file;
 }

@@ -1,13 +1,22 @@
-import { describe, it, expect } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import { promises as fs } from 'fs';
 import os from 'os';
 import path from 'path';
 import { ensureDir, moveFile } from '../utils/fs';
 
+const tempDirs: string[] = [];
+
 async function createTempDir(prefix: string) {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), `${prefix}-`));
+  tempDirs.push(dir);
   return dir;
 }
+
+afterAll(async () => {
+  await Promise.all(
+    tempDirs.map((dir) => fs.rm(dir, { recursive: true, force: true }))
+  );
+});
 
 describe('fs utils', () => {
   it('ensureDir creates nested directory', async () => {

@@ -5,8 +5,9 @@ describe('shared defaults', () => {
   it('DEFAULT_SETTINGS has expected values', () => {
     expect(DEFAULT_SETTINGS.downloadDir).toBe('./downloads');
     expect(DEFAULT_SETTINGS.queue).toBeDefined();
-    expect(DEFAULT_SETTINGS.queue?.concurrency).toBe(2);
+    expect(DEFAULT_SETTINGS.queue).toEqual({ concurrency: 2 });
     expect(Array.isArray(DEFAULT_SETTINGS.libraryRoots)).toBe(true);
+    expect(DEFAULT_SETTINGS.libraryRoots).toHaveLength(0);
   });
 
   it('DEFAULT_PROFILE has expected values', () => {
