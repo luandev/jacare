@@ -1,4 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
+import { captureOnCI } from './utils';
 import { mockPlatforms, mockRegions, mockSearch, mockEntry } from './fixtures';
 
 function interceptCommon(page: Page) {
@@ -55,5 +56,7 @@ test.describe('Queue page with SSE and previews', () => {
     const firstThumb = page.locator('article.card').nth(0).locator('img.thumb');
     await expect(firstThumb).toBeVisible();
     await expect(page.locator('article.card').nth(0).locator('.platform-badge')).toBeVisible();
+
+    await captureOnCI(page, 'queue-preview');
   });
 });

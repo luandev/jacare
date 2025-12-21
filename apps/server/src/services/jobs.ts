@@ -1,5 +1,6 @@
 import PQueue from "p-queue";
 import crypto from "crypto";
+import { promises as fs } from "fs";
 import type { JobRecord } from "@crocdesk/shared";
 import { DEFAULT_PROFILE, DEFAULT_SETTINGS } from "@crocdesk/shared";
 import {
@@ -90,16 +91,29 @@ async function runScanJob(job: JobRecord): Promise<void> {
   });
 }
 
-async function runDownloadJob(
+export async function runDownloadJob(
   job: JobRecord,
   payload: DownloadJobPayload
 ): Promise<void> {
   await runJob(job, async (report) => {
     const settings = getSettings() ?? DEFAULT_SETTINGS;
     const profile = getProfile(payload.profileId) ?? DEFAULT_PROFILE;
-    await runDownloadAndInstall(payload, settings, profile, (progress, message) => {
+    const result = await runDownloadAndInstall(payload, settings, profile, (progress, message) => {
       report.step("download_and_install", progress, message);
     });
+
+    if (result.outputPath) {
+      const stats = await fs.stat(result.outputPath);
+      upsertLibraryItem({
+        path: result.outputPath,
+        size: stats.size,
+        mtime: stats.mtimeMs,
+        hash: null,
+        platform: result.entry.platform,
+        gameSlug: result.entry.slug,
+        source: "remote"
+      });
+    }
   });
 }
 
