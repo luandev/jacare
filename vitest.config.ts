@@ -8,8 +8,8 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: [
-      'apps/**/src/**/*.{test,spec}.ts',
-      'packages/**/src/**/*.{test,spec}.ts'
+      'apps/**/src/**/*.{test,spec}.{ts,tsx}',
+      'packages/**/src/**/*.{test,spec}.{ts,tsx}'
     ],
     coverage: {
       reporter: ['text', 'html'],
