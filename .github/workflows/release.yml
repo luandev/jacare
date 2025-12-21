@@ -1,0 +1,48 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build workspace artifacts
+        run: npm run build
+
+      - name: Package distributables
+        run: |
+          mkdir -p release
+          tar -czf release/crocdesk-server-dist.tar.gz -C apps/server dist
+          tar -czf release/crocdesk-web-dist.tar.gz -C apps/web dist
+          tar -czf release/crocdesk-desktop-dist.tar.gz -C apps/desktop dist
+          cp README.md release/README.md
+          cp CHANGELOG.md release/CHANGELOG.md
+
+      - name: Create GitHub release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: v${{ github.run_number }}
+          name: CrocDesk release ${{ github.run_number }}
+          bodyFile: CHANGELOG.md
+          artifacts: release/*
+          artifactContentType: application/gzip
+          allowUpdates: true
