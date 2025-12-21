@@ -53,6 +53,18 @@ export default function BrowsePage() {
     );
   }, [ownedQuery.data]);
 
+  const ownedItemsBySlug = useMemo(() => {
+    const map = new Map<string, LibraryItem[]>();
+    for (const item of ownedQuery.data ?? []) {
+      if (item.gameSlug) {
+        const list = map.get(item.gameSlug) ?? [];
+        list.push(item);
+        map.set(item.gameSlug, list);
+      }
+    }
+    return map;
+  }, [ownedQuery.data]);
+
   const searchMutation = useMutation({
     mutationFn: (payload: Record<string, unknown>) =>
       apiPost<CrocdbApiResponse<CrocdbSearchResponseData>>(
@@ -306,22 +318,53 @@ export default function BrowsePage() {
             <div className="status">{entry.regions.join(", ")}</div>
             <div className="row" style={{ marginTop: "12px" }}>
               <span className="status">Links: {entry.links.length}</span>
-              <button
-                onClick={() =>
-                  selectedProfileId &&
-                  downloadMutation.mutate({
-                    slug: entry.slug,
-                    profileId: selectedProfileId
-                  })
-                }
-                disabled={!selectedProfileId}
-              >
-                Queue Download
-              </button>
+              {!ownedSlugs.has(entry.slug) ? (
+                <button
+                  onClick={() =>
+                    selectedProfileId &&
+                    downloadMutation.mutate({
+                      slug: entry.slug,
+                      profileId: selectedProfileId
+                    })
+                  }
+                  disabled={!selectedProfileId}
+                >
+                  Queue Download
+                </button>
+              ) : (
+                <div className="row" style={{ gap: 8, alignItems: "center" }}>
+                  <Link className="link" to={`/game/${entry.slug}`} state={{ backgroundLocation: location }}>
+                    View
+                  </Link>
+                  {ownedItemsBySlug.get(entry.slug)?.[0]?.path && (
+                    <a
+                      className="link"
+                      href={toFileHref(ownedItemsBySlug.get(entry.slug)![0].path)}
+                      onClick={(e) => {
+                        const p = ownedItemsBySlug.get(entry.slug)![0].path;
+                        if (window.crocdesk?.revealInFolder) {
+                          e.preventDefault();
+                          window.crocdesk.revealInFolder(p);
+                        }
+                      }}
+                    >
+                      Show in Folder
+                    </a>
+                  )}
+                </div>
+              )}
             </div>
           </article>
         ))}
       </section>
     </div>
   );
+}
+
+function toFileHref(p: string): string {
+  const normalized = p.replace(/\\/g, "/");
+  if (/^[A-Za-z]:\//.test(normalized)) {
+    return `file:///${encodeURI(normalized)}`;
+  }
+  return `file://${encodeURI(normalized)}`;
 }

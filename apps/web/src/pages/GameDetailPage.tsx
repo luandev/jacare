@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiGet, apiPost } from "../lib/api";
-import type { CrocdbApiResponse, CrocdbEntryResponseData, Profile } from "@crocdesk/shared";
+import type { CrocdbApiResponse, CrocdbEntryResponseData, Profile, LibraryItem } from "@crocdesk/shared";
 
 export default function GameDetailPage() {
   const { slug } = useParams();
@@ -20,6 +20,11 @@ export default function GameDetailPage() {
     queryFn: () => apiGet<Profile[]>("/profiles")
   });
 
+  const ownedQuery = useQuery({
+    queryKey: ["library-items"],
+    queryFn: () => apiGet<LibraryItem[]>("/library/items")
+  });
+
   const [selectedProfileId, setSelectedProfileId] = useState<string>("");
 
   useEffect(() => {
@@ -35,6 +40,7 @@ export default function GameDetailPage() {
 
   const entry = entryQuery.data?.data.entry;
   const profileId = selectedProfileId;
+  const isOwned = !!ownedQuery.data?.some((item) => item.gameSlug === entry?.slug);
 
   if (!entry) {
     return (
@@ -91,15 +97,19 @@ export default function GameDetailPage() {
                   {link.host} - {link.format} - {link.size_str}
                 </div>
               </div>
-              <button
-                onClick={() =>
-                  profileId &&
-                  downloadMutation.mutate({ slug: entry.slug, profileId })
-                }
-                disabled={!profileId}
-              >
-                Queue Download
-              </button>
+              {!isOwned ? (
+                <button
+                  onClick={() =>
+                    profileId &&
+                    downloadMutation.mutate({ slug: entry.slug, profileId })
+                  }
+                  disabled={!profileId}
+                >
+                  Queue Download
+                </button>
+              ) : (
+                <span className="status">Already in library</span>
+              )}
             </div>
           ))}
         </div>
