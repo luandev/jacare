@@ -1,4 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
+import { captureOnCI } from './utils';
 import { mockPlatforms, mockRegions, mockSearch } from './fixtures';
 
 function interceptCatalog(page: Page) {
@@ -27,6 +28,8 @@ test.describe('Browse search and persistence', () => {
     // Card 2 may use a placeholder
     await expect(cards.nth(1).locator('.thumb-placeholder')).toBeVisible();
     await expect(cards.nth(1).locator('.platform-badge')).toBeVisible();
+
+    await captureOnCI(page, 'browse-results');
   });
 
   test('queue download button posts and status appears', async ({ page }) => {
@@ -37,6 +40,8 @@ test.describe('Browse search and persistence', () => {
     await page.route('**/jobs/download', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) }));
     await page.getByRole('button', { name: 'Queue Download' }).first().click();
     await expect(page.getByText('Download job queued', { exact: true })).toBeVisible();
+
+    await captureOnCI(page, 'browse-queued-download');
   });
 
   // test('state persists across navigation to Queue and back', async ({ page }) => {
