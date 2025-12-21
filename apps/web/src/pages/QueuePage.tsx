@@ -1,16 +1,9 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiGet, API_URL } from "../lib/api";
-import type { JobEvent, JobRecord } from "@crocdesk/shared";
+import type { JobEvent } from "@crocdesk/shared";
 import PlatformIcon from "../components/PlatformIcon";
-
-type JobPreview = {
-  slug: string;
-  title: string;
-  platform: string;
-  boxart_url?: string;
-};
-type JobWithPreview = JobRecord & { preview?: JobPreview };
+import type { JobWithPreview } from "../types";
 
 export default function QueuePage() {
   const queryClient = useQueryClient();
