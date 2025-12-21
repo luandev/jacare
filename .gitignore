@@ -6,7 +6,7 @@ coverage/
 *.sqlite
 *.sqlite3
 data/
-apps/server/donwloads
+apps/server/downloads
 apps/server/ROMS
 .crocdesk/
 test-results
