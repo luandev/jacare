@@ -4,7 +4,7 @@ import { Readable } from "stream";
 import type { ReadableStream as NodeReadableStream } from "stream/web";
 import type { LibraryItem, LibraryRoot, Manifest } from "@crocdesk/shared";
 import { writeManifest } from "./manifest";
-import { getEntry } from "./crocdb";
+import { getEntry, searchEntries } from "./crocdb";
 
 const SCAN_EXTENSIONS = new Set([
   ".zip",
@@ -140,20 +140,23 @@ async function readManifest(
       return null;
     }
 
+    // Try Crocdb lookup by folder name to enrich manifest
+    const baseName = path.basename(dir);
+    const match = await findCrocdbMatch(baseName, platform);
+
     const artifacts = await Promise.all(
       files.map(async (p) => {
         const s = await fs.stat(p);
         return { path: path.basename(p), size: s.size };
       })
     );
-    const baseName = path.basename(dir);
     const manifest: Manifest = {
       schema: 1,
       crocdb: {
-        slug: slugify(baseName),
-        title: baseName,
-        platform: platform ?? "unknown",
-        regions: []
+        slug: match?.slug ?? slugify(baseName),
+        title: match?.title ?? baseName,
+        platform: match?.platform ?? platform ?? "unknown",
+        regions: match?.regions ?? []
       },
       artifacts,
       profileId: "local-scan",
@@ -216,4 +219,33 @@ function slugify(value: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+}
+
+async function findCrocdbMatch(
+  folderName: string,
+  platform: string | undefined
+): Promise<{ slug: string; title: string; platform: string; regions: string[] } | null> {
+  try {
+    const resp = await searchEntries({
+      search_key: folderName,
+      platforms: platform ? [platform] : undefined,
+      max_results: 5,
+      page: 1
+    });
+    const results = resp.data.results ?? [];
+    if (results.length === 0) return null;
+    // Basic fuzzy: choose the first whose normalized title includes normalized folderName
+    const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "");
+    const target = norm(folderName);
+    const hit =
+      results.find((r) => norm(r.title).includes(target)) || results[0];
+    return {
+      slug: hit.slug,
+      title: hit.title,
+      platform: hit.platform,
+      regions: hit.regions ?? []
+    };
+  } catch {
+    return null;
+  }
 }

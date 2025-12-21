@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { apiGet } from "../lib/api";
+import { Link, useLocation } from "react-router-dom";
+import { apiGet, apiPost } from "../lib/api";
 import type { LibraryItem, Manifest } from "@crocdesk/shared";
 import GameCard from "../components/GameCard";
 
@@ -8,15 +9,15 @@ export default function LibraryPage() {
   const [manifests, setManifests] = useState<Record<string, Manifest | null>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<string>("");
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
+    const load = async () => {
       try {
         const data = await apiGet<LibraryItem[]>("/library/downloads/items");
         if (!cancelled) {
           setItems(data);
-          // For each item, try to load its manifest
           const manifestMap: Record<string, Manifest | null> = {};
           await Promise.all(
             data.map(async (item) => {
@@ -38,12 +39,22 @@ export default function LibraryPage() {
       } finally {
         if (!cancelled) setLoading(false);
       }
-    })();
+    };
+    load();
     return () => {
       cancelled = true;
     };
   }, []);
 
+  async function handleScan() {
+    setStatus("Scanning...");
+    try {
+      await apiPost("/library/scan/local", {});
+      setStatus("Scan job queued");
+    } catch (e) {
+      setStatus(e instanceof Error ? e.message : "Scan failed");
+    }
+  }
   if (loading) {
     return <div className="card">Loading library…</div>;
   }
@@ -53,30 +64,86 @@ export default function LibraryPage() {
   }
 
   if (items.length === 0) {
-    return <div className="card">No items found in downloads.</div>;
+    return (
+      <div className="grid" style={{ gap: 20 }}>
+        <section className="card">
+          <div className="row">
+            <h3>Library</h3>
+            <div className="row" style={{ gap: 8 }}>
+              <button className="secondary" type="button" onClick={handleScan}>Scan Local Library</button>
+              {status && <span className="status">{status}</span>}
+            </div>
+          </div>
+        </section>
+        <div className="card">No items found in downloads.</div>
+      </div>
+    );
   }
 
+  const location = useLocation();
   return (
-    <div className="grid cols-3">
-      {items.map((item) => {
-        const manifest = manifests[item.path];
-        if (!manifest) return null;
-        // Find artifact path relative to manifest
-        const artifact = manifest.artifacts[0];
-        const artifactPath = artifact ? joinPath(dirname(item.path), artifact.path) : item.path;
-        return (
-          <GameCard
-            key={item.path}
-            manifest={manifest}
-            artifactPath={artifactPath}
-            onShowInFolder={() => {
-              if (window.crocdesk?.revealInFolder) {
-                window.crocdesk.revealInFolder(item.path);
+    <div className="grid" style={{ gap: 20 }}>
+      <section className="hero">
+        <h1>Local Library</h1>
+        <p>Manage your locally downloaded games and their manifests.</p>
+      </section>
+      <section className="card">
+        <div className="row">
+          <div className="row" style={{ gap: 8 }}>
+              <button className="secondary" type="button" onClick={handleScan}>Scan Local Library</button>
+            {status && <span className="status">{status}</span>}
+          </div>
+        </div>
+      </section>
+      <div className="grid cols-3">
+        {items.map((item) => {
+          const manifest = manifests[item.path];
+          if (!manifest) return null;
+          const artifact = manifest.artifacts[0];
+          const artifactPath = artifact ? joinPath(dirname(item.path), artifact.path) : item.path;
+          return (
+            <GameCard
+              key={item.path}
+              manifest={manifest}
+              artifactPath={artifactPath}
+              onShowInFolder={() => {
+                if (window.crocdesk?.revealInFolder) {
+                  window.crocdesk.revealInFolder(item.path);
+                }
+              }}
+              actions={
+                <div className="row" style={{ gap: 8 }}>
+                  <Link
+                    className="link"
+                    to={`/library/item?dir=${encodeURIComponent(dirname(item.path))}`}
+                    state={{ backgroundLocation: location }}
+                  >
+                    Details
+                  </Link>
+                  <button
+                    className="secondary"
+                    onClick={async () => {
+                      const dir = dirname(item.path);
+                      if (!confirm(`Delete this game folder?\n${dir}`)) return;
+                      try {
+                        const resp = await fetch(`/library/item?dir=${encodeURIComponent(dir)}`, { method: "DELETE" });
+                        if (!resp.ok) throw new Error("Delete failed");
+                        // Refresh list
+                        const data = await apiGet<LibraryItem[]>("/library/downloads/items");
+                        setItems(data);
+                      } catch (e) {
+                        alert(e instanceof Error ? e.message : "Delete failed");
+                      }
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
               }
-            }}
-          />
-        );
-      })}
+            />
+          );
+        })}
+      </div>
     </div>
   );
 }

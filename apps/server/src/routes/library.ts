@@ -1,7 +1,7 @@
 import { Router } from "express";
 import path from "path";
 import { promises as fs } from "fs";
-import { listLibraryItems, getSettings } from "../db";
+import { listLibraryItems, getSettings, deleteLibraryItemsUnderDir } from "../db";
 import { enqueueScanLocal } from "../services/jobs";
 import { scanLocal } from "../services/scanner";
 
@@ -53,6 +53,33 @@ router.get("/downloads/items", async (_req, res) => {
 router.post("/scan/local", async (_req, res) => {
   const job = await enqueueScanLocal();
   res.json(job);
+});
+
+router.delete("/item", async (req, res) => {
+  const dirParam = req.query.dir?.toString();
+  if (!dirParam) {
+    res.status(400).json({ error: "dir is required" });
+    return;
+  }
+  const settings = getSettings();
+  const allowedRoots = [
+    ...(settings?.libraryRoots?.map((r) => path.resolve(r.path)) ?? []),
+    path.resolve(settings?.downloadDir || "./downloads"),
+    path.resolve(process.cwd(), "apps", "server", "donwloads")
+  ];
+  const absDir = path.resolve(dirParam);
+  if (!allowedRoots.some((root) => absDir.startsWith(root))) {
+    res.status(403).json({ error: "Access denied" });
+    return;
+  }
+  try {
+    // Remove directory recursively and delete DB entries under it
+    await fs.rm(absDir, { recursive: true, force: true });
+    deleteLibraryItemsUnderDir(absDir);
+    res.json({ ok: true });
+  } catch (error) {
+    res.status(500).json({ error: error instanceof Error ? error.message : "Failed to delete" });
+  }
 });
 
 export default router;

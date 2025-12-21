@@ -5,6 +5,7 @@ import LibraryPage from "./pages/LibraryPage";
 import QueuePage from "./pages/QueuePage";
 import SettingsPage from "./pages/SettingsPage";
 import GameDetailPage from "./pages/GameDetailPage";
+import LibraryItemDetailPage from "./pages/LibraryItemDetailPage";
 // useMemo imported above
 
 function AppRoutes() {
@@ -17,6 +18,7 @@ function AppRoutes() {
       <Routes location={baseLocation}>
         <Route path="/" element={<BrowsePage />} />
         <Route path="/library" element={<LibraryPage />} />
+        <Route path="/library/item" element={<LibraryItemDetailPage />} />
         <Route path="/queue" element={<QueuePage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/game/:slug" element={<GameDetailPage />} />
@@ -24,6 +26,7 @@ function AppRoutes() {
       {state?.backgroundLocation && (
         <Routes>
           <Route path="/game/:slug" element={<ModalOverlay><GameDetailPage /></ModalOverlay>} />
+          <Route path="/library/item" element={<ModalOverlay><LibraryItemDetailPage /></ModalOverlay>} />
         </Routes>
       )}
     </>

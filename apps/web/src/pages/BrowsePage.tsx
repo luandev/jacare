@@ -138,10 +138,6 @@ export default function BrowsePage() {
     return () => source.close();
   }, []);
 
-  const scanMutation = useMutation({
-    mutationFn: () => apiPost("/library/scan/local", {}),
-    onSuccess: () => setStatus("Scan job queued")
-  });
 
   useEffect(() => {
     // Restore previous state from sessionStorage
@@ -293,13 +289,6 @@ export default function BrowsePage() {
             </select>
           </div>
           <button type="submit">Search</button>
-          <button
-            className="secondary"
-            type="button"
-            onClick={() => scanMutation.mutate()}
-          >
-            Scan Local Library
-          </button>
         </form>
         {status && <div className="status">{status}</div>}
       </section>
