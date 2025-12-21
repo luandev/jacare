@@ -1,6 +1,7 @@
 import { BrowserRouter, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { useMemo, useEffect } from "react";
 import BrowsePage from "./pages/BrowsePage";
+import LibraryPage from "./pages/LibraryPage";
 import QueuePage from "./pages/QueuePage";
 import SettingsPage from "./pages/SettingsPage";
 import GameDetailPage from "./pages/GameDetailPage";
@@ -15,6 +16,7 @@ function AppRoutes() {
     <>
       <Routes location={baseLocation}>
         <Route path="/" element={<BrowsePage />} />
+        <Route path="/library" element={<LibraryPage />} />
         <Route path="/queue" element={<QueuePage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/game/:slug" element={<GameDetailPage />} />
@@ -85,6 +87,9 @@ export default function App() {
           <nav className="nav">
             <NavLink to="/" end className={navLinkClass}>
               Browse
+            </NavLink>
+            <NavLink to="/library" className={navLinkClass}>
+              Library
             </NavLink>
             <NavLink to="/queue" className={navLinkClass}>
               Queue
