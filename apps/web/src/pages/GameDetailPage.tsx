@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiGet, apiPost } from "../lib/api";
 import type { CrocdbApiResponse, CrocdbEntryResponseData, Profile } from "@crocdesk/shared";
 
 export default function GameDetailPage() {
   const { slug } = useParams();
+  const navigate = useNavigate();
 
   const entryQuery = useQuery({
     queryKey: ["entry", slug],
@@ -46,6 +47,14 @@ export default function GameDetailPage() {
   return (
     <div className="grid" style={{ gap: "20px" }}>
       <section className="hero">
+        <button
+          className="secondary"
+          onClick={() => navigate(-1)}
+          aria-label="Go back"
+          style={{ marginBottom: "8px" }}
+        >
+          ← Back
+        </button>
         <h1>{entry.title}</h1>
         <p>
           {entry.platform.toUpperCase()} - {entry.regions.join(", ")}

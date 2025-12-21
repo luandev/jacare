@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { apiGet, apiPost } from "../lib/api";
 import type {
   CrocdbApiResponse,
@@ -14,6 +14,7 @@ import type {
 } from "@crocdesk/shared";
 
 export default function BrowsePage() {
+  const location = useLocation();
   const [searchKey, setSearchKey] = useState("");
   const [platform, setPlatform] = useState("");
   const [region, setRegion] = useState("");
@@ -166,17 +167,25 @@ export default function BrowsePage() {
         {results.map((entry) => (
           <article className="card" key={entry.slug}>
             {entry.boxart_url && (
-              <img
-                src={entry.boxart_url}
-                alt={`${entry.title} cover art`}
-                className="thumb"
-                loading="lazy"
-                style={{ width: "100%", aspectRatio: "3 / 4", objectFit: "cover", borderRadius: "8px" }}
-              />
+              <Link
+                to={`/game/${entry.slug}`}
+                state={{ backgroundLocation: location }}
+                aria-label={`Open ${entry.title} details`}
+              >
+                <img
+                  src={entry.boxart_url}
+                  alt={`${entry.title} cover art`}
+                  className="thumb"
+                  loading="lazy"
+                  style={{ width: "100%", aspectRatio: "3 / 4", objectFit: "cover", borderRadius: "8px" }}
+                />
+              </Link>
             )}
             <div className="row">
               <h3>
-                <Link to={`/game/${entry.slug}`}>{entry.title}</Link>
+                <Link to={`/game/${entry.slug}`} state={{ backgroundLocation: location }}>
+                  {entry.title}
+                </Link>
               </h3>
               {ownedSlugs.has(entry.slug) && <span className="badge">Owned</span>}
             </div>
