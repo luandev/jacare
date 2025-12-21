@@ -41,6 +41,7 @@ function ModalOverlay({ children }: { children: React.ReactNode }) {
   }, [navigate]);
   return (
     <div
+      data-testid="modal-overlay"
       onClick={() => navigate(-1)}
       style={{
         position: "fixed",
@@ -54,6 +55,7 @@ function ModalOverlay({ children }: { children: React.ReactNode }) {
     >
       <div
         className="card"
+        data-testid="modal-card"
         onClick={(e) => e.stopPropagation()}
         style={{ width: "min(960px, 92vw)", maxHeight: "90vh", overflow: "auto", position: "relative" }}
       >

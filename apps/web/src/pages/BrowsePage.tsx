@@ -197,16 +197,17 @@ export default function BrowsePage() {
       <section className="card">
         <form className="controls" onSubmit={handleSearch}>
           <div>
-            <label>Search</label>
+            <label htmlFor="search-input">Search</label>
             <input
+              id="search-input"
               value={searchKey}
               onChange={(event) => setSearchKey(event.target.value)}
               placeholder="Croc, Zelda, Metroid"
             />
           </div>
           <div>
-            <label>Platform</label>
-            <select value={platform} onChange={(event) => setPlatform(event.target.value)}>
+            <label htmlFor="platform-select">Platform</label>
+            <select id="platform-select" value={platform} onChange={(event) => setPlatform(event.target.value)}>
               <option value="">All</option>
               {platformsQuery.data &&
                 Object.entries(platformsQuery.data.data.platforms).map(
@@ -219,8 +220,8 @@ export default function BrowsePage() {
             </select>
           </div>
           <div>
-            <label>Region</label>
-            <select value={region} onChange={(event) => setRegion(event.target.value)}>
+            <label htmlFor="region-select">Region</label>
+            <select id="region-select" value={region} onChange={(event) => setRegion(event.target.value)}>
               <option value="">All</option>
               {regionsQuery.data &&
                 Object.entries(regionsQuery.data.data.regions).map(([id, name]) => (
@@ -231,8 +232,9 @@ export default function BrowsePage() {
             </select>
           </div>
           <div>
-            <label>Profile</label>
+            <label htmlFor="profile-select">Profile</label>
             <select
+              id="profile-select"
               value={selectedProfileId}
               onChange={(event) => setSelectedProfileId(event.target.value)}
             >
