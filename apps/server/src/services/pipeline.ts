@@ -35,7 +35,12 @@ export async function runDownloadAndInstall(
     throw new Error("No download links available");
   }
 
-  const link = entry.links[payload.linkIndex ?? 0];
+  // Choose link with heuristics if not explicitly provided
+  const resolvedLinkIndex =
+    typeof payload.linkIndex === "number"
+      ? payload.linkIndex
+      : chooseLinkIndex(entry);
+  const link = entry.links[resolvedLinkIndex];
 
   if (!ENABLE_DOWNLOADS) {
     reportProgress(1, "Downloads disabled; skipping transfer");
@@ -107,6 +112,38 @@ export async function runDownloadAndInstall(
 
   reportProgress(1, "Complete");
   return { entry, outputPath };
+}
+
+function chooseLinkIndex(entry: CrocdbEntry): number {
+  const links = (entry.links ?? []).filter((l) => !!l?.url);
+  if (links.length === 0) {
+    throw new Error("No valid links with URLs available");
+  }
+
+  const formats = Array.from(
+    new Set(links.map((l) => (l.format || "").toLowerCase()))
+  );
+  // If multiple formats exist, require user selection via linkIndex
+  if (formats.length > 1) {
+    const details = formats.join(", ");
+    throw new Error(
+      `Multiple formats available (${details}). Please choose one (linkIndex).`
+    );
+  }
+
+  // Prefer Myrient host when available
+  const myrientIdx = links.findIndex(
+    (l) => (l.host || "").toLowerCase() === "myrient"
+  );
+  if (myrientIdx >= 0) {
+    // Map back to original entry.links index
+    const target = links[myrientIdx];
+    const originalIdx = entry.links.findIndex((l) => l.url === target.url);
+    return originalIdx >= 0 ? originalIdx : myrientIdx;
+  }
+
+  // Otherwise pick the first available link
+  return 0;
 }
 
 async function downloadFile(

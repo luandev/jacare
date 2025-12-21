@@ -34,7 +34,7 @@ export default function GameDetailPage() {
   }, [profilesQuery.data, selectedProfileId]);
 
   const downloadMutation = useMutation({
-    mutationFn: (payload: { slug: string; profileId: string }) =>
+    mutationFn: (payload: { slug: string; profileId: string; linkIndex?: number }) =>
       apiPost("/jobs/download", payload)
   });
 
@@ -111,7 +111,7 @@ export default function GameDetailPage() {
           </div>
         </div>
         <div className="list" style={{ marginTop: "12px" }}>
-          {entry.links.map((link) => (
+          {entry.links.map((link, idx) => (
             <div className="row" key={link.url}>
               <div>
                 <strong>{link.name}</strong>
@@ -123,7 +123,7 @@ export default function GameDetailPage() {
                 <button
                   onClick={() =>
                     profileId &&
-                    downloadMutation.mutate({ slug: entry.slug, profileId })
+                    downloadMutation.mutate({ slug: entry.slug, profileId, linkIndex: idx })
                   }
                   disabled={!profileId}
                 >

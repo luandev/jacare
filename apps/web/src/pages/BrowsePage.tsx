@@ -27,6 +27,7 @@ export default function BrowsePage() {
   const [selectedProfileId, setSelectedProfileId] = useState<string>("");
   const [downloadingSlugs, setDownloadingSlugs] = useState<Set<string>>(new Set());
   const [progressBySlug, setProgressBySlug] = useState<Record<string, number>>({});
+  const [selectedLinkIndexBySlug, setSelectedLinkIndexBySlug] = useState<Record<string, number>>({});
 
   const profilesQuery = useQuery({
     queryKey: ["profiles"],
@@ -99,7 +100,7 @@ export default function BrowsePage() {
   });
 
   const downloadMutation = useMutation({
-    mutationFn: (payload: { slug: string; profileId: string }) =>
+    mutationFn: (payload: { slug: string; profileId: string; linkIndex?: number }) =>
       apiPost("/jobs/download", payload),
     onSuccess: (_resp, variables) => {
       setStatus("Download job queued");
@@ -353,15 +354,17 @@ export default function BrowsePage() {
             </div>
             <div className="status">{entry.platform.toUpperCase()}</div>
             <div className="status">{entry.regions.join(", ")}</div>
-            <div className="row" style={{ marginTop: "12px" }}>
+            <div className="row" style={{ marginTop: "12px", flexWrap: "wrap" }}>
               <span className="status">Links: {entry.links.length}</span>
+              {renderFormatChooser(entry)}
               {!ownedSlugs.has(entry.slug) && !downloadingSlugs.has(entry.slug) ? (
                 <button
                   onClick={() =>
                     selectedProfileId &&
                     downloadMutation.mutate({
                       slug: entry.slug,
-                      profileId: selectedProfileId
+                      profileId: selectedProfileId,
+                      linkIndex: computeSelectedLinkIndex(entry)
                     })
                   }
                   disabled={!selectedProfileId}
@@ -402,6 +405,98 @@ export default function BrowsePage() {
     </div>
   );
 }
+
+function computeSelectedLinkIndex(entry: CrocdbEntry): number | undefined {
+  // Use user-picked index when present
+  const stored = (computeSelectedLinkIndex as any)._get(entry.slug);
+  if (typeof stored === "number") return stored;
+  // If only one format, let server heuristics decide (may prefer Myrient automatically)
+  const formats = Array.from(new Set(entry.links.map((l) => (l.format || "").toLowerCase())));
+  if (formats.length <= 1) return undefined;
+  // With multiple formats, compute a sensible default index using Myrient preference
+  const idx = chooseLinkIndexForEntry(entry, defaultPreferredFormat(entry));
+  return idx;
+}
+
+function renderFormatChooser(entry: CrocdbEntry): JSX.Element | null {
+  // Derive formats
+  const formats = Array.from(
+    new Set(entry.links.map((l) => (l.format || "").toLowerCase()))
+  );
+  if (formats.length <= 1) return null;
+
+  // Determine current selection for this slug
+  const getSelectedIndex = (computeSelectedLinkIndex as any)._get(entry.slug);
+  const selectedIdx: number | undefined = typeof getSelectedIndex === "number"
+    ? getSelectedIndex
+    : chooseLinkIndexForEntry(entry, defaultPreferredFormat(entry));
+  const selectedFormat = selectedIdx != null
+    ? (entry.links[selectedIdx].format || "").toLowerCase()
+    : defaultPreferredFormat(entry);
+
+  // Render a compact chooser
+  return (
+    <>
+      <span className="status" style={{ marginLeft: 8 }}>FORMAT</span>
+      <select
+        id={`fmt-${entry.slug}`}
+        value={selectedFormat}
+        onChange={(e) => {
+          const fmt = e.target.value.toLowerCase();
+          const idx = chooseLinkIndexForEntry(entry, fmt);
+          (computeSelectedLinkIndex as any)._set(entry.slug, idx);
+        }}
+        style={{ minWidth: 110 }}
+      >
+        {formats.map((fmt) => (
+          <option key={fmt} value={fmt}>
+            {fmt.toUpperCase()}
+          </option>
+        ))}
+      </select>
+    </>
+  );
+}
+
+function defaultPreferredFormat(entry: CrocdbEntry): string {
+  // Prefer a format that has Myrient host; otherwise the first format
+  const linksByFormat = new Map<string, typeof entry.links>();
+  for (const l of entry.links) {
+    const f = (l.format || "").toLowerCase();
+    linksByFormat.set(f, [...(linksByFormat.get(f) ?? []), l]);
+  }
+  for (const [fmt, links] of linksByFormat) {
+    if (links.some((l) => (l.host || "").toLowerCase() === "myrient")) {
+      return fmt;
+    }
+  }
+  return Array.from(linksByFormat.keys())[0] ?? "";
+}
+
+function chooseLinkIndexForEntry(entry: CrocdbEntry, preferredFormat?: string): number {
+  let candidates = entry.links;
+  if (preferredFormat) {
+    candidates = entry.links.filter(
+      (l) => (l.format || "").toLowerCase() === preferredFormat.toLowerCase()
+    );
+    if (candidates.length === 0) {
+      candidates = entry.links;
+    }
+  }
+  const myrientIdx = candidates.findIndex(
+    (l) => (l.host || "").toLowerCase() === "myrient"
+  );
+  const chosen = myrientIdx >= 0 ? candidates[myrientIdx] : candidates[0];
+  const originalIdx = entry.links.findIndex((l) => l.url === chosen.url);
+  return originalIdx >= 0 ? originalIdx : 0;
+}
+
+// Lightweight closure-based registry for selection state, avoiding prop drilling in this file
+(computeSelectedLinkIndex as any)._store = {} as Record<string, number>;
+(computeSelectedLinkIndex as any)._get = (slug: string) => (computeSelectedLinkIndex as any)._store[slug];
+(computeSelectedLinkIndex as any)._set = (slug: string, idx: number) => {
+  (computeSelectedLinkIndex as any)._store[slug] = idx;
+};
 
 function toFileHref(p: string): string {
   const normalized = p.replace(/\\/g, "/");
