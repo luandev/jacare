@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
+import PlatformIcon from "../components/PlatformIcon";
 import { apiGet, apiPost } from "../lib/api";
 import type {
   CrocdbApiResponse,
@@ -14,6 +15,9 @@ import type {
 } from "@crocdesk/shared";
 
 export default function BrowsePage() {
+  const location = useLocation();
+  const STORAGE_KEY = "crocdesk:browseState";
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchKey, setSearchKey] = useState("");
   const [platform, setPlatform] = useState("");
   const [region, setRegion] = useState("");
@@ -58,6 +62,21 @@ export default function BrowsePage() {
     onSuccess: (response) => {
       setResults(response.data.results ?? []);
       setStatus(`Found ${response.data.total_results} results`);
+      try {
+        const saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || "{}");
+        sessionStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({
+            ...saved,
+            searchKey,
+            platform,
+            region,
+            selectedProfileId,
+            status: `Found ${response.data.total_results} results`,
+            results: response.data.results ?? []
+          })
+        );
+      } catch {}
     },
     onError: (error) => {
       setStatus(error instanceof Error ? error.message : "Search failed");
@@ -78,13 +97,87 @@ export default function BrowsePage() {
   });
 
   useEffect(() => {
+    // Restore previous state from sessionStorage
+    try {
+      // Prefer URL query params if present
+      const q = searchParams.get("q") || undefined;
+      const pf = searchParams.get("pf") || undefined;
+      const rg = searchParams.get("rg") || undefined;
+      if (q) setSearchKey(q);
+      if (pf) setPlatform(pf);
+      if (rg) setRegion(rg);
+
+      const raw = sessionStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw) as {
+          searchKey?: string;
+          platform?: string;
+          region?: string;
+          selectedProfileId?: string;
+          results?: CrocdbEntry[];
+          status?: string;
+        };
+        if (!q && saved.searchKey) setSearchKey(saved.searchKey);
+        if (!pf && saved.platform) setPlatform(saved.platform);
+        if (!rg && saved.region) setRegion(saved.region);
+        if (saved.selectedProfileId) setSelectedProfileId(saved.selectedProfileId);
+        if (saved.results && !results.length) setResults(saved.results);
+        if (saved.status) setStatus(saved.status);
+      }
+    } catch {}
+
     if (!selectedProfileId && profilesQuery.data?.length) {
       setSelectedProfileId(profilesQuery.data[0].id);
     }
   }, [profilesQuery.data, selectedProfileId]);
 
+  // After initial hydration, enable persistence writes
+  const hydratedRef = useRef(false);
+  useEffect(() => {
+    hydratedRef.current = true;
+    // If URL has params but no results yet, auto-run search to refill grid
+    const q = searchParams.get("q") || undefined;
+    const pf = searchParams.get("pf") || undefined;
+    const rg = searchParams.get("rg") || undefined;
+    if ((q || pf || rg) && results.length === 0) {
+      searchMutation.mutate({
+        search_key: q ?? undefined,
+        platforms: pf ? [pf] : undefined,
+        regions: rg ? [rg] : undefined,
+        max_results: 60,
+        page: 1
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Persist lightweight state on changes
+  useEffect(() => {
+    if (!hydratedRef.current) return;
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || "{}");
+      sessionStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          ...saved,
+          searchKey,
+          platform,
+          region,
+          selectedProfileId,
+          status,
+          results
+        })
+      );
+    } catch {}
+  }, [searchKey, platform, region, selectedProfileId, status, results]);
+
   function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const nextParams: Record<string, string> = {};
+    if (searchKey) nextParams.q = searchKey;
+    if (platform) nextParams.pf = platform;
+    if (region) nextParams.rg = region;
+    setSearchParams(nextParams);
     searchMutation.mutate({
       search_key: searchKey || undefined,
       platforms: platform ? [platform] : undefined,
@@ -165,9 +258,45 @@ export default function BrowsePage() {
       <section className="grid cols-3">
         {results.map((entry) => (
           <article className="card" key={entry.slug}>
+            <div className="thumb-wrapper">
+              <Link
+                to={`/game/${entry.slug}`}
+                state={{ backgroundLocation: location }}
+                aria-label={`Open ${entry.title} details`}
+              >
+                {entry.boxart_url ? (
+                  <img
+                    src={entry.boxart_url}
+                    alt={`${entry.title} cover art`}
+                    className="thumb"
+                    loading="lazy"
+                    style={{ width: "100%", aspectRatio: "3 / 4", objectFit: "cover", borderRadius: "8px" }}
+                  />
+                ) : (
+                  <div className="thumb-placeholder">
+                    <PlatformIcon
+                      platform={entry.platform}
+                      brand={platformsQuery.data?.data.platforms?.[entry.platform]?.brand}
+                      label={platformsQuery.data?.data.platforms?.[entry.platform]?.name ?? entry.platform}
+                      size={42}
+                    />
+                  </div>
+                )}
+              </Link>
+              <div className="platform-badge" title={entry.platform.toUpperCase()}>
+                <PlatformIcon
+                  platform={entry.platform}
+                  brand={platformsQuery.data?.data.platforms?.[entry.platform]?.brand}
+                  label={platformsQuery.data?.data.platforms?.[entry.platform]?.name ?? entry.platform}
+                  size={24}
+                />
+              </div>
+            </div>
             <div className="row">
               <h3>
-                <Link to={`/game/${entry.slug}`}>{entry.title}</Link>
+                <Link to={`/game/${entry.slug}`} state={{ backgroundLocation: location }}>
+                  {entry.title}
+                </Link>
               </h3>
               {ownedSlugs.has(entry.slug) && <span className="badge">Owned</span>}
             </div>

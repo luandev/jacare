@@ -1,9 +1,76 @@
-import { BrowserRouter, NavLink, Route, Routes } from "react-router-dom";
+import { BrowserRouter, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { useMemo, useEffect } from "react";
 import BrowsePage from "./pages/BrowsePage";
 import LibraryPage from "./pages/LibraryPage";
 import QueuePage from "./pages/QueuePage";
 import SettingsPage from "./pages/SettingsPage";
 import GameDetailPage from "./pages/GameDetailPage";
+// useMemo imported above
+
+function AppRoutes() {
+  const location = useLocation();
+  const state = location.state as { backgroundLocation?: Location } | null;
+  const baseLocation = useMemo(() => state?.backgroundLocation || location, [state, location]);
+
+  return (
+    <>
+      <Routes location={baseLocation}>
+        <Route path="/" element={<BrowsePage />} />
+        <Route path="/queue" element={<QueuePage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/game/:slug" element={<GameDetailPage />} />
+      </Routes>
+      {state?.backgroundLocation && (
+        <Routes>
+          <Route path="/game/:slug" element={<ModalOverlay><GameDetailPage /></ModalOverlay>} />
+        </Routes>
+      )}
+    </>
+  );
+}
+
+function ModalOverlay({ children }: { children: React.ReactNode }) {
+  const navigate = useNavigate();
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        navigate(-1);
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [navigate]);
+  return (
+    <div
+      onClick={() => navigate(-1)}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.6)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 1000
+      }}
+    >
+      <div
+        className="card"
+        onClick={(e) => e.stopPropagation()}
+        style={{ width: "min(960px, 92vw)", maxHeight: "90vh", overflow: "auto", position: "relative" }}
+      >
+        <button
+          aria-label="Close"
+          onClick={() => navigate(-1)}
+          className="secondary"
+          style={{ position: "absolute", top: 8, right: 8 }}
+        >
+          ✕
+        </button>
+        {children}
+      </div>
+    </div>
+  );
+}
 
 export default function App() {
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -31,13 +98,7 @@ export default function App() {
           <div className="status">MVP build</div>
         </aside>
         <main className="main">
-          <Routes>
-            <Route path="/" element={<BrowsePage />} />
-            <Route path="/library" element={<LibraryPage />} />
-            <Route path="/queue" element={<QueuePage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/game/:slug" element={<GameDetailPage />} />
-          </Routes>
+          <AppRoutes />
         </main>
       </div>
     </BrowserRouter>

@@ -1,11 +1,45 @@
 import { Router } from "express";
 import { enqueueDownloadAndInstall, enqueueTransfer, getJobs, getJobSteps } from "../services/jobs";
 import { getJob } from "../db";
+import { getEntry } from "../services/crocdb";
 
 const router = Router();
 
-router.get("/", (_req, res) => {
-  res.json(getJobs());
+router.get("/", async (_req, res) => {
+  try {
+    const jobs = getJobs();
+    const enriched = await Promise.all(
+      jobs.map(async (job) => {
+        if (job.type === "download_and_install") {
+          const slug = typeof (job.payload as Record<string, unknown>)?.slug === "string"
+            ? ((job.payload as Record<string, unknown>).slug as string)
+            : undefined;
+          if (slug) {
+            try {
+              const entryResp = await getEntry(slug);
+              const entry = entryResp.data.entry;
+              return {
+                ...job,
+                preview: {
+                  slug: entry.slug,
+                  title: entry.title,
+                  platform: entry.platform,
+                  boxart_url: entry.boxart_url
+                }
+              };
+            } catch {
+              // If enrichment fails, return the job as-is.
+              return job;
+            }
+          }
+        }
+        return job;
+      })
+    );
+    res.json(enriched);
+  } catch (error) {
+    res.status(500).json({ error: error instanceof Error ? error.message : "Failed to list jobs" });
+  }
 });
 
 router.get("/:id", (req, res) => {

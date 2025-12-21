@@ -1,7 +1,7 @@
 import path from "path";
 import { promises as fs } from "fs";
 import { Readable } from "stream";
-import { ReadableStream as WebReadableStream } from "stream/web";
+import type { ReadableStream as NodeReadableStream } from "stream/web";
 import type { CrocdbEntry, Manifest, Profile, Settings } from "@crocdesk/shared";
 import { CROCDESK_STAGING_DIR, ENABLE_DOWNLOADS } from "../config";
 import { getEntry } from "./crocdb";
@@ -80,7 +80,7 @@ async function downloadFile(
   let downloaded = 0;
 
   await new Promise<void>((resolve, reject) => {
-    const stream = Readable.fromWeb(response.body as unknown as WebReadableStream<Uint8Array>);
+    const stream = Readable.fromWeb(response.body as unknown as NodeReadableStream);
     stream.on("data", (chunk: Buffer) => {
       downloaded += chunk.length;
       if (total > 0) {
