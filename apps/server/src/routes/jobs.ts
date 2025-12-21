@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { enqueueDownloadAndInstall, getJobs, getJobSteps } from "../services/jobs";
+import { enqueueDownloadAndInstall, enqueueTransfer, getJobs, getJobSteps } from "../services/jobs";
 import { getJob } from "../db";
 
 const router = Router();
@@ -30,6 +30,20 @@ router.post("/download", async (req, res) => {
     slug,
     profileId,
     linkIndex: parsedLinkIndex
+  });
+  res.json(job);
+});
+
+router.post("/transfer", async (req, res) => {
+  const { libraryItemId, deviceId, targetPath } = req.body ?? {};
+  if (!libraryItemId || !deviceId) {
+    res.status(400).json({ error: "libraryItemId and deviceId are required" });
+    return;
+  }
+  const job = await enqueueTransfer({
+    libraryItemId: Number(libraryItemId),
+    deviceId: deviceId.toString(),
+    targetPath: targetPath ? targetPath.toString() : undefined
   });
   res.json(job);
 });

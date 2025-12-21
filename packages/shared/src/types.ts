@@ -67,8 +67,10 @@ export type LibraryRoot = {
 export type Settings = {
   libraryRoots: LibraryRoot[];
   downloadDir: string;
+  stagingDir?: string;
   queue?: {
-    concurrency?: number;
+    maxConcurrentDownloads?: number;
+    maxConcurrentTransfers?: number;
   };
 };
 
@@ -117,16 +119,54 @@ export type LibraryItem = {
   platform?: string | null;
   gameSlug?: string | null;
   source: "local" | "remote";
+  deviceId?: string | null;
 };
 
-export type JobType = "scan_local" | "download_and_install";
-export type JobStatus = "queued" | "running" | "done" | "failed";
+export type DeviceType = "usb" | "smb";
+
+export type DeviceRecord = {
+  id: string;
+  type: DeviceType;
+  path: string;
+  name: string;
+  volumeSerial?: string | null;
+  volumeLabel?: string | null;
+  lastSeenAt?: number | null;
+  connected: boolean;
+  createdAt: number;
+  updatedAt: number;
+};
+
+export type DeviceItemRecord = {
+  id: number;
+  libraryItemId: number;
+  deviceId: string;
+  devicePath: string;
+  checksum?: string | null;
+  lastSeenAt?: number | null;
+  status: "present" | "missing";
+};
+
+export type JobType = "scan_local" | "download_and_install" | "transfer";
+export type JobStatus =
+  | "queued"
+  | "running"
+  | "waiting-device"
+  | "paused"
+  | "done"
+  | "failed";
 
 export type JobRecord = {
   id: string;
   type: JobType;
   status: JobStatus;
+  progress: number;
   payload: Record<string, unknown>;
+  sourceRef?: string | null;
+  targetRef?: string | null;
+  deviceId?: string | null;
+  attempts: number;
+  error?: string | null;
   createdAt: number;
   updatedAt: number;
 };
@@ -158,3 +198,11 @@ export type JobEvent = {
   message?: string;
   ts: number;
 };
+
+export type DeviceStatusEvent = {
+  type: "device.status";
+  device: DeviceRecord;
+  ts: number;
+};
+
+export type ServerEvent = JobEvent | DeviceStatusEvent;
