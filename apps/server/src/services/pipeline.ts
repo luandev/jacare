@@ -1,8 +1,9 @@
 import path from "path";
 import { promises as fs } from "fs";
 import { Readable } from "stream";
+import { ReadableStream as WebReadableStream } from "stream/web";
 import type { CrocdbEntry, Manifest, Profile, Settings } from "@crocdesk/shared";
-import { ENABLE_DOWNLOADS } from "../config";
+import { CROCDESK_STAGING_DIR, ENABLE_DOWNLOADS } from "../config";
 import { getEntry } from "./crocdb";
 import { writeManifest } from "./manifest";
 import { ensureDir, moveFile } from "../utils/fs";
@@ -39,9 +40,11 @@ export async function runDownloadAndInstall(
     return { entry };
   }
 
-  const downloadDir = path.resolve(settings.downloadDir || "./downloads");
-  await ensureDir(downloadDir);
-  const downloadPath = path.join(downloadDir, link.filename || `${entry.slug}.zip`);
+  const stagingDir = path.resolve(settings.stagingDir || CROCDESK_STAGING_DIR);
+  await ensureDir(stagingDir);
+  const jobDir = path.join(stagingDir, entry.slug);
+  await ensureDir(jobDir);
+  const downloadPath = path.join(jobDir, link.filename || `${entry.slug}.zip`);
 
   reportProgress(0.2, "Downloading asset");
   await downloadFile(link.url, downloadPath, reportProgress);
@@ -77,7 +80,7 @@ async function downloadFile(
   let downloaded = 0;
 
   await new Promise<void>((resolve, reject) => {
-    const stream = Readable.fromWeb(response.body as unknown as ReadableStream);
+    const stream = Readable.fromWeb(response.body as unknown as WebReadableStream<Uint8Array>);
     stream.on("data", (chunk: Buffer) => {
       downloaded += chunk.length;
       if (total > 0) {

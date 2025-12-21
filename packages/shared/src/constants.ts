@@ -4,7 +4,8 @@ export const DEFAULT_SETTINGS: Settings = {
   libraryRoots: [],
   downloadDir: "./downloads",
   queue: {
-    concurrency: 2
+    maxConcurrentDownloads: 2,
+    maxConcurrentTransfers: 1
   }
 };
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { apiGet, apiPut } from "../lib/api";
-import type { LibraryRoot, Profile, Settings } from "@crocdesk/shared";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiGet, apiPost, apiPut } from "../lib/api";
+import type { DeviceRecord, LibraryRoot, Profile, Settings } from "@crocdesk/shared";
 
 function createRoot(): LibraryRoot {
   return {
@@ -12,6 +12,7 @@ function createRoot(): LibraryRoot {
 }
 
 export default function SettingsPage() {
+  const queryClient = useQueryClient();
   const settingsQuery = useQuery({
     queryKey: ["settings"],
     queryFn: () => apiGet<Settings>("/settings")
@@ -20,9 +21,17 @@ export default function SettingsPage() {
     queryKey: ["profiles"],
     queryFn: () => apiGet<Profile[]>("/profiles")
   });
+  const devicesQuery = useQuery({
+    queryKey: ["devices"],
+    queryFn: () => apiGet<DeviceRecord[]>("/device/status"),
+    refetchInterval: 5000
+  });
 
   const [draft, setDraft] = useState<Settings | null>(null);
   const [status, setStatus] = useState<string>("");
+  const [deviceForm, setDeviceForm] = useState<{ name: string; path: string; type: "usb" | "smb" }>(
+    { name: "", path: "", type: "usb" }
+  );
 
   useEffect(() => {
     if (settingsQuery.data) {
@@ -33,6 +42,16 @@ export default function SettingsPage() {
   const saveMutation = useMutation({
     mutationFn: (nextSettings: Settings) => apiPut("/settings", nextSettings),
     onSuccess: () => setStatus("Settings saved")
+  });
+
+  const registerDeviceMutation = useMutation({
+    mutationFn: () => apiPost("/device/register", deviceForm),
+    onSuccess: () => {
+      setStatus("Device registered");
+      setDeviceForm({ name: "", path: "", type: "usb" });
+      queryClient.invalidateQueries({ queryKey: ["devices"] });
+    },
+    onError: (error) => setStatus(error instanceof Error ? error.message : "Failed to register")
   });
 
   function updateRoot(index: number, next: LibraryRoot) {
@@ -98,6 +117,14 @@ export default function SettingsPage() {
           }
           placeholder="./downloads"
         />
+        <label style={{ marginTop: "12px" }}>Staging Directory</label>
+        <input
+          value={draft?.stagingDir ?? ""}
+          onChange={(event) =>
+            draft && setDraft({ ...draft, stagingDir: event.target.value })
+          }
+          placeholder="./tmp"
+        />
         <div className="controls" style={{ marginTop: "12px" }}>
           <button
             type="button"
@@ -106,6 +133,101 @@ export default function SettingsPage() {
             Save Settings
           </button>
           {status && <span className="status">{status}</span>}
+        </div>
+      </section>
+
+      <section className="card">
+        <h3>Queue Limits</h3>
+        <div className="grid cols-2" style={{ gap: "12px" }}>
+          <div>
+            <label>Downloads</label>
+            <input
+              type="number"
+              min={1}
+              value={draft?.queue?.maxConcurrentDownloads ?? 2}
+              onChange={(event) =>
+                draft &&
+                setDraft({
+                  ...draft,
+                  queue: {
+                    ...draft.queue,
+                    maxConcurrentDownloads: Number(event.target.value)
+                  }
+                })
+              }
+            />
+          </div>
+          <div>
+            <label>Transfers</label>
+            <input
+              type="number"
+              min={1}
+              value={draft?.queue?.maxConcurrentTransfers ?? 1}
+              onChange={(event) =>
+                draft &&
+                setDraft({
+                  ...draft,
+                  queue: {
+                    ...draft.queue,
+                    maxConcurrentTransfers: Number(event.target.value)
+                  }
+                })
+              }
+            />
+          </div>
+        </div>
+      </section>
+
+      <section className="card">
+        <h3>Devices</h3>
+        <div className="grid cols-3" style={{ gap: "8px", marginTop: "8px" }}>
+          <div>
+            <label>Name</label>
+            <input
+              value={deviceForm.name}
+              onChange={(event) => setDeviceForm({ ...deviceForm, name: event.target.value })}
+              placeholder="SD Card"
+            />
+          </div>
+          <div>
+            <label>Path</label>
+            <input
+              value={deviceForm.path}
+              onChange={(event) => setDeviceForm({ ...deviceForm, path: event.target.value })}
+              placeholder="F:\\ or \\SERVER\\Share"
+            />
+          </div>
+          <div>
+            <label>Type</label>
+            <select
+              value={deviceForm.type}
+              onChange={(event) =>
+                setDeviceForm({ ...deviceForm, type: event.target.value as "usb" | "smb" })
+              }
+            >
+              <option value="usb">USB / Drive Letter</option>
+              <option value="smb">SMB Share</option>
+            </select>
+          </div>
+        </div>
+        <div className="controls" style={{ marginTop: "8px" }}>
+          <button type="button" onClick={() => registerDeviceMutation.mutate()}>
+            Register Device
+          </button>
+        </div>
+        <div className="list" style={{ marginTop: "12px" }}>
+          {(devicesQuery.data ?? []).map((device) => (
+            <div className="row" key={device.id}>
+              <div>
+                <strong>{device.name}</strong>
+                <div className="status">{device.path}</div>
+              </div>
+              <span className={device.connected ? "badge" : "status"}>
+                {device.connected ? "Connected" : "Disconnected"}
+              </span>
+            </div>
+          ))}
+          {(devicesQuery.data ?? []).length === 0 && <div className="status">No devices yet</div>}
         </div>
       </section>
 
