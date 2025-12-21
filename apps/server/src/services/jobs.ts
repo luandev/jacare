@@ -103,7 +103,22 @@ export async function runDownloadJob(
       report.step("download_and_install", progress, message);
     });
 
-    if (result.outputPath) {
+    const files: string[] = [];
+    if (result.outputPaths && result.outputPaths.length > 0) {
+      for (const p of result.outputPaths) {
+        const stats = await fs.stat(p);
+        upsertLibraryItem({
+          path: p,
+          size: stats.size,
+          mtime: stats.mtimeMs,
+          hash: null,
+          platform: result.entry.platform,
+          gameSlug: result.entry.slug,
+          source: "remote"
+        });
+        files.push(p);
+      }
+    } else if (result.outputPath) {
       const stats = await fs.stat(result.outputPath);
       upsertLibraryItem({
         path: result.outputPath,
@@ -114,14 +129,17 @@ export async function runDownloadJob(
         gameSlug: result.entry.slug,
         source: "remote"
       });
+      files.push(result.outputPath);
+    }
 
-      const item = getLibraryItemByPath(result.outputPath);
+    if (files.length > 0) {
+      const firstItem = getLibraryItemByPath(files[0]);
       publishEvent({
         jobId: job.id,
         type: "JOB_RESULT",
-        files: [result.outputPath],
+        files,
         slug: result.entry.slug,
-        libraryItemId: item?.id,
+        libraryItemId: firstItem?.id,
         ts: Date.now()
       });
     }

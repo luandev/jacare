@@ -7,6 +7,7 @@ import { ENABLE_DOWNLOADS } from "../config";
 import { getEntry } from "./crocdb";
 import { writeManifest } from "./manifest";
 import { ensureDir, moveFile } from "../utils/fs";
+import { Extract } from "unzipper";
 
 export type DownloadJobPayload = {
   slug: string;
@@ -17,6 +18,7 @@ export type DownloadJobPayload = {
 export type DownloadJobResult = {
   entry: CrocdbEntry;
   outputPath?: string;
+  outputPaths?: string[];
 };
 
 export async function runDownloadAndInstall(
@@ -46,6 +48,47 @@ export async function runDownloadAndInstall(
 
   reportProgress(0.2, "Downloading asset");
   await downloadFile(link.url, downloadPath, reportProgress);
+
+  // If the asset is a zip, attempt extraction; otherwise, move directly.
+  const isZip = (link.format?.toLowerCase() === "zip") || path.extname(downloadPath).toLowerCase() === ".zip";
+  if (isZip) {
+    try {
+      reportProgress(0.6, "Extracting archive");
+      const extractDir = path.join(downloadDir, `${entry.slug}-extract`);
+      await ensureDir(extractDir);
+      await extractZip(downloadPath, extractDir);
+
+      reportProgress(0.75, "Finalizing layout");
+      const { outputDir, outputPaths } = await finalizeLayoutMany(entry, extractDir, profile);
+
+      if (profile.postActions?.writeManifest ?? true) {
+        const artifacts = await Promise.all(
+          outputPaths.map(async (p) => {
+            const s = await fs.stat(p);
+            return { path: path.basename(p), size: s.size };
+          })
+        );
+        const manifest: Manifest = {
+          schema: 1,
+          crocdb: {
+            slug: entry.slug,
+            title: entry.title,
+            platform: entry.platform,
+            regions: entry.regions
+          },
+          artifacts,
+          profileId: profile.id,
+          createdAt: new Date().toISOString()
+        };
+        await writeManifest(outputDir, manifest);
+      }
+
+      reportProgress(1, "Complete");
+      return { entry, outputPaths };
+    } catch (e) {
+      // Fallback: if extraction fails, proceed with direct layout move
+    }
+  }
 
   reportProgress(0.8, "Finalizing layout");
   const outputPath = await finalizeLayout(entry, downloadPath, profile);
@@ -116,6 +159,31 @@ async function finalizeLayout(
   return outputPath;
 }
 
+async function finalizeLayoutMany(
+  entry: CrocdbEntry,
+  extractRoot: string,
+  profile: Profile
+): Promise<{ outputDir: string; outputPaths: string[] }> {
+  const platformProfile = profile.platforms[entry.platform];
+  const baseRoot = platformProfile?.root ?? extractRoot;
+  // Create a dedicated folder for the game under the platform root
+  const folderName = formatName(entry, platformProfile?.naming);
+  const outputDir = path.join(baseRoot, folderName);
+  await ensureDir(outputDir);
+
+  const files = await listFilesRecursive(extractRoot);
+  const outputPaths: string[] = [];
+  for (const file of files) {
+    const dest = path.join(outputDir, path.basename(file));
+    if (file !== dest) {
+      await ensureDir(path.dirname(dest));
+      await moveFile(file, dest);
+    }
+    outputPaths.push(dest);
+  }
+  return { outputDir, outputPaths };
+}
+
 function formatName(entry: CrocdbEntry, template?: string): string {
   const region = entry.regions?.[0] ?? "unknown";
   const base = template || "{Title} ({Region})";
@@ -153,4 +221,36 @@ function buildManifest(
     profileId: profile.id,
     createdAt: new Date().toISOString()
   };
+}
+
+async function extractZip(zipPath: string, destDir: string): Promise<void> {
+  await new Promise<void>((resolve, reject) => {
+    const stream = Extract({ path: destDir });
+    stream.on("close", () => resolve());
+    stream.on("error", reject);
+
+    // Pipe the zip file into extractor
+    fs.readFile(zipPath)
+      .then((buffer) => {
+        Readable.from(buffer).pipe(stream);
+      })
+      .catch(reject);
+  });
+}
+
+async function listFilesRecursive(rootDir: string): Promise<string[]> {
+  const out: string[] = [];
+  async function walk(dir: string) {
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+    for (const e of entries) {
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) {
+        await walk(full);
+      } else if (e.isFile()) {
+        out.push(full);
+      }
+    }
+  }
+  await walk(rootDir);
+  return out;
 }
