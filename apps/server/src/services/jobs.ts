@@ -12,7 +12,8 @@ import {
   listJobs,
   updateJobStatus,
   updateJobStep,
-  upsertLibraryItem
+  upsertLibraryItem,
+  getLibraryItemByPath
 } from "../db";
 import { publishEvent } from "../events";
 import { scanLocal } from "./scanner";
@@ -112,6 +113,16 @@ export async function runDownloadJob(
         platform: result.entry.platform,
         gameSlug: result.entry.slug,
         source: "remote"
+      });
+
+      const item = getLibraryItemByPath(result.outputPath);
+      publishEvent({
+        jobId: job.id,
+        type: "JOB_RESULT",
+        files: [result.outputPath],
+        slug: result.entry.slug,
+        libraryItemId: item?.id,
+        ts: Date.now()
       });
     }
   });

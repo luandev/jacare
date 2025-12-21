@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, ipcMain, shell } from "electron";
 import path from "path";
 
 function createWindow(): void {
@@ -8,7 +8,8 @@ function createWindow(): void {
     backgroundColor: "#f6f2ea",
     webPreferences: {
       nodeIntegration: false,
-      contextIsolation: true
+      contextIsolation: true,
+      preload: path.resolve(__dirname, "./preload.js")
     }
   });
 
@@ -23,6 +24,12 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  ipcMain.handle("reveal-in-folder", (_event, filePath: string) => {
+    if (typeof filePath === "string" && filePath.length > 0) {
+      shell.showItemInFolder(filePath);
+    }
+  });
+
   createWindow();
 
   app.on("activate", () => {

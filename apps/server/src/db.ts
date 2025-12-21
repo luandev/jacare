@@ -176,6 +176,15 @@ export function listLibraryItems(filters?: {
   return rows;
 }
 
+export function getLibraryItemByPath(filePath: string): LibraryItem | null {
+  const row = getDb()
+    .prepare(
+      "SELECT id, path, size, mtime, hash, platform, game_slug as gameSlug, source FROM library_items WHERE path = ?"
+    )
+    .get(filePath) as LibraryItem | undefined;
+  return row ?? null;
+}
+
 export function createJob(job: JobRecord): void {
   getDb()
     .prepare(

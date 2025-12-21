@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiGet, API_URL } from "../lib/api";
 import type { JobEvent, JobRecord } from "@crocdesk/shared";
@@ -15,6 +15,8 @@ type JobWithPreview = JobRecord & { preview?: JobPreview };
 export default function QueuePage() {
   const queryClient = useQueryClient();
   const [lastEvent, setLastEvent] = useState<JobEvent | null>(null);
+  const [progressByJob, setProgressByJob] = useState<Record<string, number>>({});
+  const [resultByJob, setResultByJob] = useState<Record<string, { files?: string[]; slug?: string; libraryItemId?: number }>>({});
 
   const jobsQuery = useQuery({
     queryKey: ["jobs"],
@@ -27,6 +29,19 @@ export default function QueuePage() {
       try {
         const data = JSON.parse(event.data) as JobEvent;
         setLastEvent(data);
+        if (data.type === "STEP_PROGRESS" && typeof data.progress === "number") {
+          setProgressByJob((prev) => ({ ...prev, [data.jobId]: data.progress ?? 0 }));
+        }
+        if (data.type === "JOB_DONE") {
+          // Reset progress when done; details may arrive via JOB_RESULT next
+          setProgressByJob((prev) => ({ ...prev, [data.jobId]: 1 }));
+        }
+        if (data.type === "JOB_RESULT") {
+          setResultByJob((prev) => ({
+            ...prev,
+            [data.jobId]: { files: data.files, slug: data.slug, libraryItemId: data.libraryItemId }
+          }));
+        }
         queryClient.invalidateQueries({ queryKey: ["jobs"] });
       } catch {
         // Ignore malformed SSE payloads.
@@ -63,7 +78,12 @@ export default function QueuePage() {
       </section>
 
       <section className="list">
-        {(jobsQuery.data ?? []).map((job) => (
+        {(jobsQuery.data ?? []).map((job) => {
+          const jobProgress = progressByJob[job.id];
+          const jobResult = resultByJob[job.id];
+          const slug = jobResult?.slug || job.preview?.slug || (job.payload?.slug as string | undefined);
+          const fileLinks = jobResult?.files ?? [];
+          return (
           <article className="card" key={job.id}>
             {job.preview && (
               <div className="thumb-wrapper" style={{ float: "right", marginLeft: "12px", maxWidth: "140px" }}>
@@ -96,9 +116,67 @@ export default function QueuePage() {
                 {job.preview.title} • {job.preview.platform.toUpperCase()} • {job.preview.slug}
               </div>
             )}
+            {job.status === "running" && typeof jobProgress === "number" && (
+              <div className="progress" style={{ marginTop: 8 }}>
+                <span style={{ width: `${Math.max(0, Math.min(1, jobProgress)) * 100}%` }} />
+              </div>
+            )}
+            {job.status === "done" && (slug || fileLinks.length > 0) && (
+              <div style={{ marginTop: 12 }}>
+                {slug && (
+                  <div className="row" style={{ alignItems: "center", gap: 8 }}>
+                    <a className="link" href={`/game/${slug}`}>View in Browse</a>
+                  </div>
+                )}
+                {fileLinks.length > 0 && (
+                  <div style={{ marginTop: 8 }}>
+                    <div className="status" style={{ marginBottom: 6 }}>Files</div>
+                    <ul style={{ margin: 0, paddingLeft: 16 }}>
+                      {fileLinks.map((p) => {
+                        const href = toFileHref(p);
+                        return (
+                          <li key={p}>
+                            <a
+                              className="link"
+                              href={href}
+                              title={p}
+                              onClick={(e) => {
+                                if (window.crocdesk?.revealInFolder) {
+                                  e.preventDefault();
+                                  window.crocdesk.revealInFolder(p);
+                                }
+                              }}
+                            >
+                              {shortenPath(p)}
+                            </a>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
           </article>
-        ))}
+          );
+        })}
       </section>
     </div>
   );
+}
+
+function toFileHref(p: string): string {
+  // Convert Windows paths to file:// URLs safely
+  const normalized = p.replace(/\\/g, "/");
+  if (/^[A-Za-z]:\//.test(normalized)) {
+    return `file:///${encodeURI(normalized)}`;
+  }
+  return `file://${encodeURI(normalized)}`;
+}
+
+function shortenPath(p: string): string {
+  // Show just the trailing segments for readability
+  const parts = p.split(/\\|\//);
+  if (parts.length <= 2) return p;
+  return `${parts.slice(0, -2).join("/")}/…/${parts.slice(-2).join("/")}`;
 }

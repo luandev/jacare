@@ -149,7 +149,9 @@ export type JobEventType =
   | "STEP_LOG"
   | "STEP_DONE"
   | "JOB_DONE"
-  | "JOB_FAILED";
+  | "JOB_FAILED"
+  // Emitted with additional payload when a job produces artifacts/results
+  | "JOB_RESULT";
 
 export type JobEvent = {
   jobId: string;
@@ -157,5 +159,9 @@ export type JobEvent = {
   step?: string;
   progress?: number;
   message?: string;
+  // Optional result and linkage details
+  files?: string[];
+  slug?: string;
+  libraryItemId?: number;
   ts: number;
 };
