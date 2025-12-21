@@ -10,10 +10,13 @@ import type {
   CrocdbPlatformsResponseData,
   CrocdbRegionsResponseData,
   CrocdbSearchResponseData,
+  CrocdbSortOption,
   LibraryItem,
   Profile,
   JobEvent
 } from "@crocdesk/shared";
+
+const SORT_OPTIONS: CrocdbSortOption[] = ["popularity", "title"];
 
 export default function BrowsePage() {
   const location = useLocation();
@@ -22,6 +25,7 @@ export default function BrowsePage() {
   const [searchKey, setSearchKey] = useState("");
   const [platform, setPlatform] = useState("");
   const [region, setRegion] = useState("");
+  const [sortBy, setSortBy] = useState<CrocdbSortOption>("popularity");
   const [results, setResults] = useState<CrocdbEntry[]>([]);
   const [status, setStatus] = useState<string>("");
   const [selectedProfileId, setSelectedProfileId] = useState<string>("");
@@ -87,6 +91,7 @@ export default function BrowsePage() {
             searchKey,
             platform,
             region,
+            sortBy,
             selectedProfileId,
             status: `Found ${response.data.total_results} results`,
             results: response.data.results ?? []
@@ -150,9 +155,13 @@ export default function BrowsePage() {
       const q = searchParams.get("q") || undefined;
       const pf = searchParams.get("pf") || undefined;
       const rg = searchParams.get("rg") || undefined;
+      const sort = searchParams.get("sort") || undefined;
       if (q) setSearchKey(q);
       if (pf) setPlatform(pf);
       if (rg) setRegion(rg);
+      if (sort && SORT_OPTIONS.includes(sort as CrocdbSortOption)) {
+        setSortBy(sort as CrocdbSortOption);
+      }
 
       const raw = sessionStorage.getItem(STORAGE_KEY);
       if (raw) {
@@ -160,6 +169,7 @@ export default function BrowsePage() {
           searchKey?: string;
           platform?: string;
           region?: string;
+          sortBy?: string;
           selectedProfileId?: string;
           results?: CrocdbEntry[];
           status?: string;
@@ -167,6 +177,9 @@ export default function BrowsePage() {
         if (!q && saved.searchKey) setSearchKey(saved.searchKey);
         if (!pf && saved.platform) setPlatform(saved.platform);
         if (!rg && saved.region) setRegion(saved.region);
+        if (!sort && saved.sortBy && SORT_OPTIONS.includes(saved.sortBy as CrocdbSortOption)) {
+          setSortBy(saved.sortBy as CrocdbSortOption);
+        }
         if (saved.selectedProfileId) setSelectedProfileId(saved.selectedProfileId);
         if (saved.results && !results.length) setResults(saved.results);
         if (saved.status) setStatus(saved.status);
@@ -186,11 +199,17 @@ export default function BrowsePage() {
     const q = searchParams.get("q") || undefined;
     const pf = searchParams.get("pf") || undefined;
     const rg = searchParams.get("rg") || undefined;
+    const sortParam = searchParams.get("sort");
+    const sort =
+      sortParam && SORT_OPTIONS.includes(sortParam as CrocdbSortOption)
+        ? (sortParam as CrocdbSortOption)
+        : sortBy;
     if ((q || pf || rg) && results.length === 0) {
       searchMutation.mutate({
         search_key: q ?? undefined,
         platforms: pf ? [pf] : undefined,
         regions: rg ? [rg] : undefined,
+        sort_by: sort,
         max_results: 60,
         page: 1
       });
@@ -210,13 +229,14 @@ export default function BrowsePage() {
           searchKey,
           platform,
           region,
+          sortBy,
           selectedProfileId,
           status,
           results
         })
       );
     } catch {}
-  }, [searchKey, platform, region, selectedProfileId, status, results]);
+  }, [searchKey, platform, region, sortBy, selectedProfileId, status, results]);
 
   function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -224,11 +244,13 @@ export default function BrowsePage() {
     if (searchKey) nextParams.q = searchKey;
     if (platform) nextParams.pf = platform;
     if (region) nextParams.rg = region;
+    if (sortBy) nextParams.sort = sortBy;
     setSearchParams(nextParams);
     searchMutation.mutate({
       search_key: searchKey || undefined,
       platforms: platform ? [platform] : undefined,
       regions: region ? [region] : undefined,
+      sort_by: sortBy,
       max_results: 60,
       page: 1
     });
@@ -276,6 +298,17 @@ export default function BrowsePage() {
                     {name}
                   </option>
                 ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="sort-select">Sort</label>
+            <select
+              id="sort-select"
+              value={sortBy}
+              onChange={(event) => setSortBy(event.target.value as CrocdbSortOption)}
+            >
+              <option value="popularity">Popularity</option>
+              <option value="title">Title (A-Z)</option>
             </select>
           </div>
           <div>

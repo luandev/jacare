@@ -21,6 +21,8 @@ export type CrocdbEntry = {
   links: CrocdbLink[];
 };
 
+export type CrocdbSortOption = "popularity" | "title";
+
 export type CrocdbSearchRequest = {
   search_key?: string;
   platforms?: string[];
@@ -28,6 +30,7 @@ export type CrocdbSearchRequest = {
   rom_id?: string;
   max_results?: number;
   page?: number;
+  sort_by?: CrocdbSortOption;
 };
 
 export type CrocdbSearchResponseData = {
