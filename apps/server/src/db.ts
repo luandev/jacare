@@ -185,6 +185,16 @@ export function getLibraryItemByPath(filePath: string): LibraryItem | null {
   return row ?? null;
 }
 
+export function deleteLibraryItemsUnderDir(dir: string): void {
+  const unixLike = dir.replace(/\\/g, "/");
+  const winLike = dir.replace(/\//g, "\\");
+  getDb()
+    .prepare(
+      "DELETE FROM library_items WHERE path LIKE ? OR path LIKE ?"
+    )
+    .run(`${unixLike}/%`, `${winLike}\%`);
+}
+
 export function createJob(job: JobRecord): void {
   getDb()
     .prepare(

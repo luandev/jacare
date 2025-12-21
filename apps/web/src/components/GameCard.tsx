@@ -6,9 +6,10 @@ export type GameCardProps = {
   manifest: Manifest;
   artifactPath: string;
   onShowInFolder?: () => void;
+  actions?: React.ReactNode;
 };
 
-export default function GameCard({ manifest, artifactPath, onShowInFolder }: GameCardProps) {
+export default function GameCard({ manifest, artifactPath, onShowInFolder, actions }: GameCardProps) {
   const { crocdb } = manifest;
   const baseDir = dirname(artifactPath);
   const coverCandidates = ["cover.jpg", "cover.png", "cover.webp", "boxart.jpg", "boxart.png"];
@@ -59,6 +60,11 @@ export default function GameCard({ manifest, artifactPath, onShowInFolder }: Gam
           Show in Folder
         </button>
       </div>
+      {actions && (
+        <div className="row" style={{ marginTop: 8 }}>
+          {actions}
+        </div>
+      )}
     </article>
   );
 }
