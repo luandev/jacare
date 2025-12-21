@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { apiGet } from "../lib/api";
-import type { LibraryItem } from "@crocdesk/shared";
+import type { LibraryItem, Manifest } from "@crocdesk/shared";
+import GameCard from "../components/GameCard";
 
 export default function LibraryPage() {
   const [items, setItems] = useState<LibraryItem[]>([]);
+  const [manifests, setManifests] = useState<Record<string, Manifest | null>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -14,6 +16,20 @@ export default function LibraryPage() {
         const data = await apiGet<LibraryItem[]>("/library/downloads/items");
         if (!cancelled) {
           setItems(data);
+          // For each item, try to load its manifest
+          const manifestMap: Record<string, Manifest | null> = {};
+          await Promise.all(
+            data.map(async (item) => {
+              const manifestPath = findManifestPath(item.path);
+              try {
+                const manifest = await apiGet<Manifest>(`/file?path=${encodeURIComponent(manifestPath)}`);
+                manifestMap[item.path] = manifest;
+              } catch {
+                manifestMap[item.path] = null;
+              }
+            })
+          );
+          setManifests(manifestMap);
         }
       } catch (e) {
         if (!cancelled) {
@@ -41,40 +57,41 @@ export default function LibraryPage() {
   }
 
   return (
-    <div className="card">
-      <h2 style={{ marginTop: 0 }}>Library</h2>
-      <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-        {items.map((item) => (
-          <li key={item.id} style={{ padding: "8px 0", borderBottom: "1px solid #eee" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-              <div style={{ maxWidth: "70%" }}>
-                <div style={{ fontWeight: 600 }}>{basename(item.path)}</div>
-                <div style={{ fontSize: 12, color: "#666" }}>{item.path}</div>
-              </div>
-              <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: 12 }}>{item.platform ?? "unknown"}</div>
-                <div style={{ fontSize: 12 }}>{formatSize(item.size)}</div>
-              </div>
-            </div>
-          </li>
-        ))}
-      </ul>
+    <div className="grid cols-3">
+      {items.map((item) => {
+        const manifest = manifests[item.path];
+        if (!manifest) return null;
+        // Find artifact path relative to manifest
+        const artifact = manifest.artifacts[0];
+        const artifactPath = artifact ? joinPath(dirname(item.path), artifact.path) : item.path;
+        return (
+          <GameCard
+            key={item.path}
+            manifest={manifest}
+            artifactPath={artifactPath}
+            onShowInFolder={() => {
+              if (window.crocdesk?.revealInFolder) {
+                window.crocdesk.revealInFolder(item.path);
+              }
+            }}
+          />
+        );
+      })}
     </div>
   );
 }
 
-function basename(p: string): string {
-  const idx = Math.max(p.lastIndexOf("/"), p.lastIndexOf("\\"));
-  return idx >= 0 ? p.slice(idx + 1) : p;
+function findManifestPath(filePath: string): string {
+  // Manifest is always in the same directory as the file, named .crocdesk.json
+  return joinPath(dirname(filePath), ".crocdesk.json");
 }
 
-function formatSize(bytes: number): string {
-  const units = ["B", "KB", "MB", "GB"]; 
-  let i = 0; 
-  let n = bytes; 
-  while (n >= 1024 && i < units.length - 1) { 
-    n /= 1024; 
-    i++; 
-  } 
-  return `${n.toFixed(1)} ${units[i]}`;
+function dirname(p: string): string {
+  const idx = Math.max(p.lastIndexOf("/"), p.lastIndexOf("\\"));
+  return idx >= 0 ? p.slice(0, idx) : ".";
+}
+
+function joinPath(a: string, b: string): string {
+  if (a.endsWith("/") || a.endsWith("\\")) return a + b;
+  return a + "/" + b;
 }

@@ -6,5 +6,8 @@ coverage/
 *.sqlite
 *.sqlite3
 data/
-downloads/
+apps/server/donwloads
+apps/server/ROMS
 .crocdesk/
+test-results
+playwright-report

@@ -24,7 +24,7 @@ router.get("/downloads/items", async (_req, res) => {
   const settings = getSettings();
   const downloadDir = path.resolve(settings?.downloadDir || "./downloads");
   try {
-    // Ensure the directory exists; if not, fall back to a sample path for dev
+    // Ensure the directory exists; if not, fall back to repository sample under apps/server/donwloads
     let dirToScan = downloadDir;
     try {
       const stat = await fs.stat(downloadDir);
@@ -32,8 +32,7 @@ router.get("/downloads/items", async (_req, res) => {
         throw new Error("Download path is not a directory");
       }
     } catch {
-      // Fallback to repository sample folder if present (apps/server/donwloads)
-      const repoSample = path.resolve(process.cwd(), "donwloads");
+      const repoSample = path.resolve(process.cwd(), "apps", "server", "donwloads");
       const sampleStat = await fs.stat(repoSample).catch(() => null);
       if (sampleStat && sampleStat.isDirectory()) {
         dirToScan = repoSample;
@@ -43,6 +42,7 @@ router.get("/downloads/items", async (_req, res) => {
       }
     }
 
+    // Scan the downloads root; scanner walks subfolders (console directories) recursively
     const items = await scanLocal([{ id: "downloads", path: dirToScan }]);
     res.json(items);
   } catch (error) {

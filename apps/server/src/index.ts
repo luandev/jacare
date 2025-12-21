@@ -1,4 +1,6 @@
 import express from "express";
+import path from "path";
+import { getSettings } from "./db";
 import cors from "cors";
 import { initDb } from "./db";
 import { PORT } from "./config";
@@ -15,6 +17,37 @@ async function start(): Promise<void> {
   const app = express();
   app.use(cors({ origin: true }));
   app.use(express.json({ limit: "2mb" }));
+
+  // Serve files by absolute path (for manifest loading in web UI)
+  app.get("/file", async (req, res) => {
+    const filePath = req.query.path;
+    if (typeof filePath !== "string" || !filePath) {
+      res.status(400).json({ error: "Missing or invalid path" });
+      return;
+    }
+    // Only allow files under the downloads or donwloads folder for safety
+    const settings = getSettings();
+    const allowedRoots = [
+      path.resolve(settings?.downloadDir || path.join(process.cwd(), "downloads")),
+      path.resolve(process.cwd(), "apps", "server", "donwloads")
+    ];
+    const absPath = path.resolve(filePath);
+    if (!allowedRoots.some((root) => absPath.startsWith(root))) {
+      res.status(403).json({ error: "Access denied" });
+      return;
+    }
+    try {
+      const data = await import("fs").then((fs) => fs.promises.readFile(absPath, "utf-8"));
+      // If JSON, parse and return as JSON
+      if (absPath.endsWith(".json")) {
+        res.json(JSON.parse(data));
+      } else {
+        res.type("text/plain").send(data);
+      }
+    } catch (e) {
+      res.status(404).json({ error: "File not found" });
+    }
+  });
 
   app.get("/health", (_req, res) => {
     res.json({ ok: true });

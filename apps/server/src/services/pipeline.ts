@@ -54,9 +54,15 @@ export async function runDownloadAndInstall(
   if (isZip) {
     try {
       reportProgress(0.6, "Extracting archive");
-      const extractDir = path.join(downloadDir, `${entry.slug}-extract`);
+      // Extract to /downloads/{console}/{game}
+      const platform = entry.platform || "unknown";
+      const gameName = formatName(entry, profile.platforms[platform]?.naming);
+      const extractDir = path.join(downloadDir, platform, gameName);
       await ensureDir(extractDir);
       await extractZip(downloadPath, extractDir);
+
+      // Remove zip after extraction
+      await fs.unlink(downloadPath);
 
       reportProgress(0.75, "Finalizing layout");
       const { outputDir, outputPaths } = await finalizeLayoutMany(entry, extractDir, profile);
@@ -91,7 +97,7 @@ export async function runDownloadAndInstall(
   }
 
   reportProgress(0.8, "Finalizing layout");
-  const outputPath = await finalizeLayout(entry, downloadPath, profile);
+  const outputPath = await finalizeLayout(entry, downloadPath, profile, settings);
 
   if (profile.postActions?.writeManifest ?? true) {
     const stats = await fs.stat(outputPath);
@@ -142,10 +148,12 @@ async function downloadFile(
 async function finalizeLayout(
   entry: CrocdbEntry,
   sourcePath: string,
-  profile: Profile
+  profile: Profile,
+  settings: Settings
 ): Promise<string> {
   const platformProfile = profile.platforms[entry.platform];
-  const targetRoot = platformProfile?.root ?? path.dirname(sourcePath);
+  // Use settings.downloadDir as source of truth; place files under console subfolder
+  const targetRoot = platformProfile?.root ?? path.join(path.resolve(settings.downloadDir || "./downloads"), entry.platform);
   await ensureDir(targetRoot);
 
   const ext = path.extname(sourcePath);
@@ -168,7 +176,9 @@ async function finalizeLayoutMany(
   const baseRoot = platformProfile?.root ?? extractRoot;
   // Create a dedicated folder for the game under the platform root
   const folderName = formatName(entry, platformProfile?.naming);
-  const outputDir = path.join(baseRoot, folderName);
+  // Avoid double-nesting if baseRoot already is the game folder
+  const baseEndsWithFolder = path.basename(baseRoot) === folderName;
+  const outputDir = baseEndsWithFolder ? baseRoot : path.join(baseRoot, folderName);
   await ensureDir(outputDir);
 
   const files = await listFilesRecursive(extractRoot);
