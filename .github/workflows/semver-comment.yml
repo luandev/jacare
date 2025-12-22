@@ -20,9 +20,20 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const prNumber = github.event_name === 'issue_comment'
-              ? github.event.issue.number
-              : github.event.pull_request.number;
+            let prNumber;
+            if (github.event_name === 'issue_comment') {
+              prNumber = github.event.issue?.number;
+            } else if (github.event_name === 'pull_request_target') {
+              prNumber = github.event.pull_request?.number;
+            } else {
+              core.setFailed(`Unexpected event type: ${github.event_name}`);
+              return;
+            }
+            
+            if (!prNumber) {
+              core.setFailed('Could not determine pull request number from event');
+              return;
+            }
 
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
