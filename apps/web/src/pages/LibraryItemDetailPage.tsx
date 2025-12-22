@@ -4,11 +4,14 @@ import { apiGet, API_URL } from "../lib/api";
 import type { Manifest } from "@crocdesk/shared";
 import { DetailLayout } from "../components/DetailLayout";
 import { MediaGrid } from "../components/MediaGrid";
+import { getPlatformLabel } from "../lib/platforms";
+import { useSettings } from "../hooks/useSettings";
 
 export default function LibraryItemDetailPage() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const settingsQuery = useSettings();
   const dir = params.get("dir") || "";
   const manifestPath = useMemo(() => (dir ? joinPath(dir, ".crocdesk.json") : ""), [dir]);
   const [manifest, setManifest] = useState<Manifest | null>(null);
@@ -60,7 +63,7 @@ export default function LibraryItemDetailPage() {
 
   const title = manifest?.crocdb?.title ?? dir;
   const subtitle = manifest?.crocdb
-    ? `${manifest.crocdb.platform.toUpperCase()}${
+    ? `${getPlatformLabel(manifest.crocdb.platform, { settings: settingsQuery.data })}${
         manifest.crocdb.regions?.length ? ` - ${manifest.crocdb.regions.join(", ")}` : ""
       }`
     : dir;

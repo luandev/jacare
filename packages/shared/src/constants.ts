@@ -5,5 +5,6 @@ export const DEFAULT_SETTINGS: Settings = {
   libraryDir: "./library",
   queue: {
     concurrency: 2
-  }
+  },
+  platformShortNames: {}
 };

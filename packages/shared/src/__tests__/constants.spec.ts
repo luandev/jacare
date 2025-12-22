@@ -6,5 +6,6 @@ describe('shared defaults', () => {
     expect(DEFAULT_SETTINGS.downloadDir).toBe('./downloads');
     expect(DEFAULT_SETTINGS.queue).toBeDefined();
     expect(DEFAULT_SETTINGS.queue).toEqual({ concurrency: 2 });
+    expect(DEFAULT_SETTINGS.platformShortNames).toEqual({});
   });
 });

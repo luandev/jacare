@@ -94,7 +94,13 @@ export function getSettings(): Settings | null {
   if (!row) {
     return null;
   }
-  return JSON.parse(row.data) as Settings;
+  const parsed = JSON.parse(row.data) as Settings;
+  return {
+    ...DEFAULT_SETTINGS,
+    ...parsed,
+    queue: { ...DEFAULT_SETTINGS.queue, ...parsed.queue },
+    platformShortNames: parsed.platformShortNames ?? DEFAULT_SETTINGS.platformShortNames
+  };
 }
 
 export function setSettings(settings: Settings): void {

@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiGet } from "../lib/api";
 import type { JobRecord } from "@crocdesk/shared";
@@ -7,6 +6,8 @@ import DownloadCard from "../components/DownloadCard";
 import DownloadProgress from "../components/DownloadProgress";
 import { useDownloadProgressStore, useSSEStore, useJobResultsStore } from "../store";
 import { useSSE } from "../store/hooks/useSSE";
+import { getPlatformLabel } from "../lib/platforms";
+import { useSettings } from "../hooks/useSettings";
 
 type JobPreview = {
   slug: string;
@@ -19,6 +20,8 @@ type JobWithPreview = JobRecord & { preview?: JobPreview };
 export default function QueuePage() {
   // Ensure SSE connection is active
   useSSE();
+
+  const settingsQuery = useSettings();
   
   // Get state from stores
   const lastEvent = useSSEStore((state) => state.lastEvent);
@@ -51,13 +54,16 @@ export default function QueuePage() {
           
           if (isDownloadJob && eventJob) {
             // Show compact download preview for download jobs
+            const platformLabel = eventJob.preview
+              ? getPlatformLabel(eventJob.preview.platform, { settings: settingsQuery.data })
+              : "";
             return (
               <>
                 {eventJob.preview && (
                   <div style={{ marginBottom: 8 }}>
                     <div style={{ fontWeight: 600, fontSize: 14 }}>{eventJob.preview.title}</div>
                     <div className="status" style={{ marginTop: 2 }}>
-                      {eventJob.preview.platform.toUpperCase()}
+                      {platformLabel}
                     </div>
                   </div>
                 )}
@@ -93,7 +99,10 @@ export default function QueuePage() {
           const jobResult = resultByJob[job.id];
           const slug = jobResult?.slug || job.preview?.slug || (job.payload?.slug as string | undefined);
           const fileLinks = jobResult?.files ?? [];
-          
+          const platformLabel = job.preview
+            ? getPlatformLabel(job.preview.platform, { settings: settingsQuery.data })
+            : "";
+
           // Use DownloadCard for download_and_install jobs
           if (job.type === "download_and_install") {
             return (
@@ -103,6 +112,7 @@ export default function QueuePage() {
                 speedHistory={speedDataByJobId[job.id] || []}
                 currentBytes={bytesByJobId[job.id]}
                 currentProgress={jobProgress}
+                settings={settingsQuery.data}
               />
             );
           }
@@ -121,11 +131,11 @@ export default function QueuePage() {
                     />
                   ) : (
                     <div className="thumb-placeholder">
-                      <PlatformIcon platform={job.preview.platform} label={job.preview.platform.toUpperCase()} size={34} />
+                      <PlatformIcon platform={job.preview.platform} label={platformLabel || job.preview.platform} size={34} />
                     </div>
                   )}
-                  <div className="platform-badge" title={job.preview.platform.toUpperCase()}>
-                    <PlatformIcon platform={job.preview.platform} label={job.preview.platform.toUpperCase()} size={22} />
+                  <div className="platform-badge" title={platformLabel || job.preview.platform.toUpperCase()}>
+                    <PlatformIcon platform={job.preview.platform} label={platformLabel || job.preview.platform} size={22} />
                   </div>
                 </div>
               )}
@@ -137,7 +147,7 @@ export default function QueuePage() {
               <div className="status">Updated: {new Date(job.updatedAt).toLocaleString()}</div>
               {job.preview && (
                 <div className="status" style={{ marginTop: "8px" }}>
-                  {job.preview.title} • {job.preview.platform.toUpperCase()} • {job.preview.slug}
+                  {job.preview.title} • {platformLabel} • {job.preview.slug}
                 </div>
               )}
               {job.status === "running" && typeof jobProgress === "number" && (

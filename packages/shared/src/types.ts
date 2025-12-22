@@ -73,6 +73,11 @@ export type Settings = {
   queue?: {
     concurrency?: number;
   };
+  /**
+   * Optional override for platform display names (e.g. "N64", "GBA").
+   * Keys are platform ids from Crocdb (e.g. "n64", "gba").
+   */
+  platformShortNames?: Record<string, string>;
 };
 
 export type ManifestArtifact = {

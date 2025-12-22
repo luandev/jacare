@@ -1,16 +1,19 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiGet, apiPut } from "../lib/api";
-import type { Settings } from "@crocdesk/shared";
+import type { CrocdbApiResponse, CrocdbPlatformsResponseData, Settings } from "@crocdesk/shared";
 import { useUIStore } from "../store";
 import { useTheme } from "../components/ThemeProvider";
 import { Card, Input, Button } from "../components/ui";
 import { spacing } from "../lib/design-tokens";
+import { useSettings } from "../hooks/useSettings";
 
 export default function SettingsPage() {
-  const settingsQuery = useQuery({
-    queryKey: ["settings"],
-    queryFn: () => apiGet<Settings>("/settings")
+  const settingsQuery = useSettings();
+
+  const platformsQuery = useQuery({
+    queryKey: ["platforms"],
+    queryFn: () => apiGet<CrocdbApiResponse<CrocdbPlatformsResponseData>>("/crocdb/platforms")
   });
 
   const [draft, setDraft] = useState<Settings | null>(null);
@@ -36,6 +39,19 @@ export default function SettingsPage() {
     // Mark that user has explicitly set a theme preference
     localStorage.setItem("jacare:theme-explicit", "true");
     // ThemeProvider will pick up the change automatically
+  };
+
+  const updatePlatformShortName = (platform: string, value: string) => {
+    setDraft((prev) => {
+      if (!prev) return prev;
+      const next = { ...(prev.platformShortNames ?? {}) };
+      if (value.trim()) {
+        next[platform] = value;
+      } else {
+        delete next[platform];
+      }
+      return { ...prev, platformShortNames: next };
+    });
   };
 
   return (
@@ -73,6 +89,39 @@ export default function SettingsPage() {
             />
             <span>Dark</span>
           </label>
+        </div>
+      </Card>
+
+      <Card>
+        <h3>Platform Short Names</h3>
+        <p className="status" style={{ marginBottom: spacing.sm, fontSize: "12px" }}>
+          Override how platform labels appear across the app (badges, queue, detail views). Leave a field blank to fall back to
+          the Crocdb name.
+        </p>
+        <div style={{ display: "flex", flexDirection: "column", gap: spacing.sm }}>
+          {platformsQuery.isPending && <span className="status">Loading platforms…</span>}
+          {platformsQuery.isError && <span className="status">Failed to load platforms</span>}
+          {platformsQuery.data && (
+            <div style={{ display: "grid", gap: spacing.sm }}>
+              {Object.entries(platformsQuery.data.data.platforms).map(([id, data]) => {
+                const value = draft?.platformShortNames?.[id] ?? "";
+                return (
+                  <div key={id} style={{ display: "flex", gap: spacing.sm, alignItems: "center" }}>
+                    <div style={{ flex: "0 0 180px" }}>
+                      <div style={{ fontWeight: 600 }}>{data.name}</div>
+                      <div className="status">{id.toUpperCase()}</div>
+                    </div>
+                    <Input
+                      value={value}
+                      onChange={(event) => updatePlatformShortName(id, event.target.value)}
+                      placeholder={data.name}
+                      aria-label={`Short name for ${data.name}`}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </Card>
 

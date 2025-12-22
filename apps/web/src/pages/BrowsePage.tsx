@@ -9,6 +9,7 @@ import { useDownloadProgressStore, useUIStore } from "../store";
 import { useSSE } from "../store/hooks/useSSE";
 import { Input, Select, Button } from "../components/ui";
 import { spacing } from "../lib/design-tokens";
+import { useSettings } from "../hooks/useSettings";
 import type {
   CrocdbApiResponse,
   CrocdbEntry,
@@ -44,6 +45,8 @@ export default function BrowsePage() {
   
   const defaultPlatform = platform || stickyPlatform;
   const defaultRegion = region || stickyRegion;
+
+  const settingsQuery = useSettings();
   
   // Get download progress from store
   const downloadingSlugs = useDownloadProgressStore((state) => state.downloadingSlugs);
@@ -252,6 +255,7 @@ export default function BrowsePage() {
               downloadSpeedHistory={speedDataBySlug[entry.slug] || []}
               downloadBytes={bytesBySlug[entry.slug]}
               platformsData={platformsQuery.data?.data}
+              settings={settingsQuery.data}
               location={location}
               onDownload={() => {
                 const format = getPreferredFormat(entry);

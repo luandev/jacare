@@ -5,6 +5,7 @@ import type { JobRecord } from "@crocdesk/shared";
 import DownloadCard from "../components/DownloadCard";
 import { useDownloadProgressStore } from "../store";
 import { useSSE } from "../store/hooks/useSSE";
+import { useSettings } from "../hooks/useSettings";
 
 type JobPreview = {
   slug: string;
@@ -17,6 +18,8 @@ type JobWithPreview = JobRecord & { preview?: JobPreview };
 export default function DownloadsPage() {
   // Ensure SSE connection is active
   useSSE();
+
+  const settingsQuery = useSettings();
   
   // Get progress data from store
   const progressByJobId = useDownloadProgressStore((state) => state.progressByJobId);
@@ -74,6 +77,7 @@ export default function DownloadsPage() {
             speedHistory={speedDataByJobId[job.id] || []}
             currentBytes={bytesByJobId[job.id]}
             currentProgress={progressByJobId[job.id]}
+            settings={settingsQuery.data}
           />
         ))}
       </section>

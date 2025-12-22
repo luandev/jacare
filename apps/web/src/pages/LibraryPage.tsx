@@ -7,6 +7,7 @@ import PaginationBar from "../components/PaginationBar";
 import { DownloadingGhostCard } from "../components/DownloadingGhostCard";
 import { useDownloadProgressStore } from "../store";
 import { useSSE } from "../store/hooks/useSSE";
+import { useSettings } from "../hooks/useSettings";
 
 export default function LibraryPage() {
   const [items, setItems] = useState<LibraryItem[]>([]);
@@ -18,6 +19,8 @@ export default function LibraryPage() {
   
   // Ensure SSE connection is active
   useSSE();
+
+  const settingsQuery = useSettings();
   
   // Get downloading slugs from store
   const downloadingSlugs = useDownloadProgressStore((state) => state.downloadingSlugs);
@@ -136,6 +139,7 @@ export default function LibraryPage() {
               key={item.path}
               manifest={manifest}
               artifactPath={artifactPath}
+              settings={settingsQuery.data}
               location={location}
               onShowInFolder={() => {
                 if (window.crocdesk?.revealInFolder) {

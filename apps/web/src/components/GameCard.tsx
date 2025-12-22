@@ -2,12 +2,13 @@ import React from "react";
 import { Link, type Location } from "react-router-dom";
 import PlatformIcon from "./PlatformIcon";
 import DownloadProgress from "./DownloadProgress";
-import type { Manifest, CrocdbEntry, CrocdbPlatformsResponseData } from "@crocdesk/shared";
+import type { Manifest, CrocdbEntry, CrocdbPlatformsResponseData, Settings } from "@crocdesk/shared";
 import { API_URL } from "../lib/api";
 import type { SpeedDataPoint } from "../hooks/useDownloadProgress";
 import { useDownloadProgressStore } from "../store";
 import { Card, Button, Badge } from "./ui";
 import { spacing } from "../lib/design-tokens";
+import { getPlatformLabel } from "../lib/platforms";
 
 export type GameCardProps = {
   // Data source - either entry (BrowsePage) or manifest (LibraryPage)
@@ -26,11 +27,12 @@ export type GameCardProps = {
   onDownload?: () => void;
   onShowInFolder?: () => void;
   actions?: React.ReactNode;
-  
+
   // Additional data
   platformsData?: CrocdbPlatformsResponseData;
+  settings?: Settings;
   location?: Location;
-  
+
   // Styling
   style?: React.CSSProperties;
 };
@@ -48,6 +50,7 @@ export default function GameCard({
   onShowInFolder,
   actions,
   platformsData,
+  settings,
   location,
   style
 }: GameCardProps) {
@@ -90,9 +93,9 @@ export default function GameCard({
     );
     coverUrl = coverUrls[imgIndex];
   }
-  
-  const platformName = platformsData?.platforms?.[platform]?.name ?? platform;
+
   const platformBrand = platformsData?.platforms?.[platform]?.brand;
+  const platformLabel = getPlatformLabel(platform, { settings, platformsData });
   
   const handleImageError = () => {
     if (coverUrls.length > 0 && imgIndex < coverUrls.length - 1) {
@@ -157,11 +160,11 @@ export default function GameCard({
             )}
           </>
         )}
-        <div className="platform-badge" title={platform.toUpperCase()}>
+        <div className="platform-badge" title={platformLabel}>
           <PlatformIcon
             platform={platform}
             brand={platformBrand}
-            label={platformName}
+            label={platformLabel}
             size={24}
           />
         </div>
@@ -179,7 +182,7 @@ export default function GameCard({
         {isOwned && <Badge variant="success">Owned</Badge>}
         {!isOwned && actualIsDownloading && <Badge variant="warning">Downloading…</Badge>}
       </div>
-      <div className="status">{platform.toUpperCase()}</div>
+      <div className="status">{platformLabel}</div>
       {regions.length > 0 && <div className="status">{regions.join(", ")}</div>}
       
       {/* Library-specific: artifact path */}

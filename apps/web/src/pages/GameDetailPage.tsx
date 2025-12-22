@@ -7,10 +7,14 @@ import { MediaGrid } from "../components/MediaGrid";
 import { useDownloadProgressStore } from "../store";
 import { useSSE } from "../store/hooks/useSSE";
 import { spacing, radius } from "../lib/design-tokens";
+import { getPlatformLabel } from "../lib/platforms";
+import { useSettings } from "../hooks/useSettings";
 
 export default function GameDetailPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
+
+  const settingsQuery = useSettings();
 
   const entryQuery = useQuery({
     queryKey: ["entry", slug],
@@ -42,6 +46,10 @@ export default function GameDetailPage() {
   const isDownloading = entry?.slug ? downloadingSlugs.has(entry.slug) : false;
   const progress = entry?.slug ? (progressBySlug[entry.slug] ?? 0) : 0;
 
+  const platformLabel = entry
+    ? getPlatformLabel(entry.platform, { settings: settingsQuery.data })
+    : "";
+
   if (!entry) {
     return (
       <section className="card">
@@ -53,7 +61,7 @@ export default function GameDetailPage() {
   return (
     <DetailLayout
       title={entry.title}
-      subtitle={`${entry.platform.toUpperCase()} - ${entry.regions.join(", ")}`}
+      subtitle={`${platformLabel} - ${entry.regions.join(", ")}`}
       heroMedia={
         entry.boxart_url ? (
           <img

@@ -1,7 +1,7 @@
 import { useMemo, useCallback, memo } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiPost } from "../lib/api";
-import type { JobRecord } from "@crocdesk/shared";
+import type { JobRecord, Settings } from "@crocdesk/shared";
 import SpeedChart from "./SpeedChart";
 import { useDownloadProgress } from "../hooks/useDownloadProgress";
 import DownloadProgress from "./DownloadProgress";
@@ -9,6 +9,7 @@ import type { SpeedDataPoint } from "../hooks/useDownloadProgress";
 import { useDownloadProgressStore } from "../store";
 import { Card, Button, Badge } from "./ui";
 import { spacing } from "../lib/design-tokens";
+import { getPlatformLabel } from "../lib/platforms";
 
 type JobPreview = {
   slug: string;
@@ -25,9 +26,10 @@ export type DownloadCardProps = {
   speedHistory: SpeedDataPoint[];
   currentBytes?: { downloaded: number; total: number };
   currentProgress?: number;
+  settings?: Settings;
 };
 
-function DownloadCard({ job, speedHistory: propSpeedHistory, currentBytes: propCurrentBytes, currentProgress: propCurrentProgress }: DownloadCardProps) {
+function DownloadCard({ job, speedHistory: propSpeedHistory, currentBytes: propCurrentBytes, currentProgress: propCurrentProgress, settings }: DownloadCardProps) {
   const queryClient = useQueryClient();
   
   // Get progress data from store if not provided via props
@@ -98,6 +100,7 @@ function DownloadCard({ job, speedHistory: propSpeedHistory, currentBytes: propC
   }, [resumeMutation]);
 
   const preview = job.preview;
+  const platformLabel = preview ? getPlatformLabel(preview.platform, { settings }) : "";
 
   return (
     <Card>
@@ -119,7 +122,7 @@ function DownloadCard({ job, speedHistory: propSpeedHistory, currentBytes: propC
               <h3 style={{ margin: 0, fontSize: 16 }}>{preview?.title || job.id}</h3>
               {preview?.platform && (
                 <div className="status" style={{ marginTop: spacing.xs }}>
-                  {preview.platform.toUpperCase()}
+                  {platformLabel}
                 </div>
               )}
             </div>
