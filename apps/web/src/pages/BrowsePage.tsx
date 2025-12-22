@@ -3,12 +3,13 @@ import type { FormEvent } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useLocation, useSearchParams } from "react-router-dom";
 import GameCard from "../components/GameCard";
+import PlatformIcon from "../components/PlatformIcon";
 import PaginationBar from "../components/PaginationBar";
 import { apiGet, apiPost } from "../lib/api";
 import { useDownloadProgressStore, useUIStore } from "../store";
 import { useSSE } from "../store/hooks/useSSE";
-import { Input, Select, Button } from "../components/ui";
-import { spacing } from "../lib/design-tokens";
+import { Badge, Button, Card, Input, Select } from "../components/ui";
+import { radius, spacing } from "../lib/design-tokens";
 import type {
   CrocdbApiResponse,
   CrocdbEntry,
@@ -54,6 +55,7 @@ export default function BrowsePage() {
   const [results, setResults] = useState<CrocdbEntry[]>([]);
   const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1, totalResults: 0 });
   const [status, setStatus] = useState<string>("");
+  const [platformSearch, setPlatformSearch] = useState("");
 
   const platformsQuery = useQuery({
     queryKey: ["platforms"],
@@ -89,6 +91,25 @@ export default function BrowsePage() {
     }
     return map;
   }, [ownedQuery.data]);
+
+  const platformsList = useMemo(() => {
+    const platforms = platformsQuery.data?.data.platforms ?? {};
+    return Object.entries(platforms).map(([id, data]) => ({ id, ...data }));
+  }, [platformsQuery.data]);
+
+  const filteredPlatforms = useMemo(() => {
+    const term = platformSearch.trim().toLowerCase();
+    return platformsList
+      .filter((pf) => {
+        if (!term) return true;
+        return (
+          pf.id.toLowerCase().includes(term) ||
+          pf.name.toLowerCase().includes(term) ||
+          (pf.brand || "").toLowerCase().includes(term)
+        );
+      })
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [platformSearch, platformsList]);
 
   const searchMutation = useMutation({
     mutationFn: (payload: Record<string, unknown>) =>
@@ -184,12 +205,117 @@ export default function BrowsePage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  function handlePlatformShortcut(id: string) {
+    const nextParams = new URLSearchParams(searchParams);
+    const isSame = nextParams.get("pf") === id;
+    if (isSame) {
+      nextParams.delete("pf");
+      setStickyPlatform("");
+    } else {
+      nextParams.set("pf", id);
+      setStickyPlatform(id);
+    }
+    nextParams.set("page", "1");
+    setSearchParams(nextParams);
+  }
+
   return (
     <div className="grid" style={{ gap: "20px" }}>
       <section className="hero">
         <h1>Browse Crocdb</h1>
         <p>Search the Crocdb catalog, queue downloads, and track local ownership.</p>
       </section>
+
+      {platformsList.length > 0 && (
+        <Card>
+          <div
+            style={{
+              display: "flex",
+              gap: spacing.lg,
+              alignItems: "flex-start",
+              justifyContent: "space-between",
+              flexWrap: "wrap"
+            }}
+          >
+            <div style={{ display: "flex", flexDirection: "column", gap: spacing.xs }}>
+              <h2 style={{ margin: 0 }}>Platforms</h2>
+              <p className="status" style={{ margin: 0, maxWidth: 620 }}>
+                Pick a platform to filter results. Each tile shows the short folder name we use for your library path along with the
+                platform badge.
+              </p>
+            </div>
+            <div style={{ minWidth: 240, maxWidth: 320, width: "100%" }}>
+              <label htmlFor="platform-search">Search platforms</label>
+              <Input
+                id="platform-search"
+                placeholder="Search platforms (PS, N64, Sega)"
+                value={platformSearch}
+                onChange={(event) => setPlatformSearch(event.target.value)}
+              />
+            </div>
+          </div>
+
+          <div
+            className="grid"
+            style={{ marginTop: spacing.lg, gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))" }}
+          >
+            {filteredPlatforms.length === 0 && (
+              <div className="status" style={{ padding: spacing.lg }}>
+                No platforms match your search.
+              </div>
+            )}
+            {filteredPlatforms.map((pf) => {
+              const isSelected = platform === pf.id;
+              const shortCode = pf.id.toUpperCase();
+              return (
+                <button
+                  key={pf.id}
+                  type="button"
+                  aria-pressed={isSelected}
+                  onClick={() => handlePlatformShortcut(pf.id)}
+                  style={{
+                    display: "flex",
+                    gap: spacing.md,
+                    alignItems: "center",
+                    border: `1px solid ${isSelected ? "var(--accent)" : "var(--border)"}`,
+                    background: isSelected ? "var(--nav-pill)" : "var(--card)",
+                    color: "inherit",
+                    padding: spacing.lg,
+                    borderRadius: radius.lg,
+                    textAlign: "left",
+                    cursor: "pointer",
+                    boxShadow: isSelected ? "0 6px 18px rgba(0,0,0,0.08)" : "none"
+                  }}
+                >
+                  <PlatformIcon platform={pf.id} brand={pf.brand} label={pf.name} size={36} />
+                  <div style={{ display: "flex", flexDirection: "column", gap: spacing.xs, flex: 1 }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: spacing.sm,
+                        flexWrap: "wrap"
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: spacing.sm }}>
+                        <strong>{pf.name}</strong>
+                        <Badge>{shortCode}</Badge>
+                      </div>
+                      {pf.brand && (
+                        <span className="status" style={{ marginLeft: "auto" }}>
+                          {pf.brand}
+                        </span>
+                      )}
+                    </div>
+                    <span className="status">Library folder: {pf.id}</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </Card>
+      )}
 
       <section className="card">
         <form className="controls" onSubmit={handleSearch} style={{ display: "flex", gap: spacing.md, flexWrap: "wrap", alignItems: "flex-end" }}>

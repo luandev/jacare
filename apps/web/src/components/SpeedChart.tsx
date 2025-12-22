@@ -58,7 +58,7 @@ export default function SpeedChart({ speeds, maxBars = 20 }: SpeedChartProps) {
               minWidth: 4,
               height: `${Math.max(height, 4)}%`,
               backgroundColor: "var(--accent)",
-              borderRadius: `${radius.xs} ${radius.xs} 0 0`,
+              borderRadius: `${radius.sm} ${radius.sm} 0 0`,
               transition: `height ${transitions.normal}`
             }}
             title={`${speed.toFixed(2)} MB/s`}
