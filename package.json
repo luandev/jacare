@@ -14,6 +14,7 @@
     "dev:e2e": "concurrently -k \"cross-env CROCDESK_DATA_DIR=.e2e-data npm run dev:server\" \"npm run dev:web\"",
     "build": "npm run build -w @crocdesk/shared && npm run build -w @crocdesk/server && npm run build -w @crocdesk/web && npm run build -w @crocdesk/desktop",
     "typecheck": "npm run typecheck -w @crocdesk/shared && npm run typecheck -w @crocdesk/server && npm run typecheck -w @crocdesk/web && npm run typecheck -w @crocdesk/desktop",
+    "lint": "eslint . --ext .ts,.tsx",
     "test:unit": "vitest --run",
     "test:e2e": "playwright test",
     "test": "npm run test:unit && npm run test:e2e",
@@ -21,13 +22,19 @@
     "e2e:headed": "playwright test --headed"
   },
   "devDependencies": {
+    "@playwright/test": "^1.48.2",
+    "@testing-library/jest-dom": "^6.4.2",
+    "@testing-library/react": "^14.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.50.1",
+    "@typescript-eslint/parser": "^8.50.1",
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
+    "eslint": "^8.57.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "jsdom": "^24.0.0",
     "typescript": "^5.4.5",
-    "@playwright/test": "^1.48.2",
-    "vitest": "^1.6.0",
-    "@testing-library/react": "^14.0.0",
-    "@testing-library/jest-dom": "^6.4.2",
-    "jsdom": "^24.0.0"
+    "vitest": "^1.6.0"
   }
 }
