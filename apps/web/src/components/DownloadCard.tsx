@@ -3,6 +3,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiPost } from "../lib/api";
 import type { JobRecord } from "@crocdesk/shared";
 import SpeedChart from "./SpeedChart";
+import { useDownloadProgress } from "../hooks/useDownloadProgress";
+import DownloadProgress from "./DownloadProgress";
 
 type JobPreview = {
   slug: string;
@@ -12,10 +14,7 @@ type JobPreview = {
 };
 type JobWithPreview = JobRecord & { preview?: JobPreview };
 
-type SpeedDataPoint = {
-  bytes: number;
-  timestamp: number;
-};
+import type { SpeedDataPoint } from "../hooks/useDownloadProgress";
 
 const MB_TO_BYTES = 1048576;
 
@@ -31,23 +30,8 @@ function DownloadCard({ job, speedHistory, currentBytes: propCurrentBytes, curre
   const currentBytes = propCurrentBytes || null;
   const currentProgress = propCurrentProgress ?? 0;
 
-  // Calculate current speed (MB/s) from recent history
-  const currentSpeed = useMemo(() => {
-    if (speedHistory.length < 2) return 0;
-    
-    const recent = speedHistory.slice(-5); // Use last 5 samples for speed calculation
-    if (recent.length < 2) return 0;
-    
-    const first = recent[0];
-    const last = recent[recent.length - 1];
-    const timeDelta = (last.timestamp - first.timestamp) / 1000; // seconds
-    const bytesDelta = last.bytes - first.bytes;
-    
-    if (timeDelta <= 0) return 0;
-    
-    const bytesPerSecond = bytesDelta / timeDelta;
-    return bytesPerSecond / MB_TO_BYTES; // Convert to MB/s
-  }, [speedHistory]);
+  // Use shared hook for calculations
+  const { currentSpeed, eta } = useDownloadProgress(speedHistory, currentBytes, currentProgress);
 
   // Calculate speeds array for chart (MB/s over time)
   const speeds = useMemo(() => {
@@ -67,26 +51,6 @@ function DownloadCard({ job, speedHistory, currentBytes: propCurrentBytes, curre
     return speeds;
   }, [speedHistory]);
 
-  // Calculate ETA
-  const eta = useMemo(() => {
-    if (!currentBytes || currentSpeed <= 0) return null;
-    
-    const remainingBytes = currentBytes.total - currentBytes.downloaded;
-    const secondsRemaining = remainingBytes / (currentSpeed * MB_TO_BYTES);
-    
-    if (secondsRemaining < 0 || !isFinite(secondsRemaining)) return null;
-    
-    if (secondsRemaining < 60) {
-      return `${Math.round(secondsRemaining)}s`;
-    } else if (secondsRemaining < 3600) {
-      return `${Math.round(secondsRemaining / 60)}m`;
-    } else {
-      const hours = Math.floor(secondsRemaining / 3600);
-      const minutes = Math.round((secondsRemaining % 3600) / 60);
-      return `${hours}h ${minutes}m`;
-    }
-  }, [currentBytes, currentSpeed]);
-
 
   const cancelMutation = useMutation({
     mutationFn: () => apiPost(`/jobs/${job.id}/cancel`, {}),
@@ -102,9 +66,6 @@ function DownloadCard({ job, speedHistory, currentBytes: propCurrentBytes, curre
   }, [job, cancelMutation]);
 
   const preview = job.preview;
-  const progressPercent = currentBytes
-    ? (currentBytes.downloaded / currentBytes.total) * 100
-    : currentProgress * 100;
 
   return (
     <article className="card">
@@ -133,32 +94,11 @@ function DownloadCard({ job, speedHistory, currentBytes: propCurrentBytes, curre
             <span className="badge">{job.status}</span>
           </div>
 
-          <div className="progress" style={{ marginBottom: 8, width: "100%" }}>
-            <span style={{ width: `${Math.max(0, Math.min(100, progressPercent))}%` }} />
-          </div>
-
-          <div className="row" style={{ gap: 16, marginBottom: 8, flexWrap: "wrap" }}>
-            {currentSpeed > 0 && (
-              <div>
-                <span className="status" style={{ fontSize: 11 }}>Speed:</span>
-                <strong style={{ marginLeft: 4 }}>{currentSpeed.toFixed(2)} MB/s</strong>
-              </div>
-            )}
-            {currentBytes && (
-              <div>
-                <span className="status" style={{ fontSize: 11 }}>Progress:</span>
-                <strong style={{ marginLeft: 4 }}>
-                  {(currentBytes.downloaded / MB_TO_BYTES).toFixed(2)} MB / {(currentBytes.total / MB_TO_BYTES).toFixed(2)} MB
-                </strong>
-              </div>
-            )}
-            {eta && (
-              <div>
-                <span className="status" style={{ fontSize: 11 }}>ETA:</span>
-                <strong style={{ marginLeft: 4 }}>{eta}</strong>
-              </div>
-            )}
-          </div>
+          <DownloadProgress
+            speedHistory={speedHistory}
+            currentBytes={currentBytes}
+            currentProgress={currentProgress}
+          />
 
           <SpeedChart speeds={speeds} />
 

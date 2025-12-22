@@ -78,10 +78,11 @@ export async function runDownloadAndInstall(
     try {
       if (abortSignal?.aborted) throw new Error("Cancelled by user");
       progressReporter(0.6, "Extracting archive");
-      // Extract to /downloads/{console}/{game}
+      // Extract to libraryDir/{console}/{game}
+      const libraryDir = path.resolve(settings.libraryDir || "./library");
       const platform = entry.platform || "unknown";
       const gameName = formatName(entry);
-      const extractDir = path.join(downloadDir, platform, gameName);
+      const extractDir = path.join(libraryDir, platform, gameName);
       await ensureDir(extractDir);
       await extractZip(downloadPath, extractDir);
 
@@ -457,8 +458,8 @@ async function finalizeLayout(
   sourcePath: string,
   settings: Settings
 ): Promise<string> {
-  // Use settings.downloadDir as source of truth; place files under console subfolder
-  const targetRoot = path.join(path.resolve(settings.downloadDir || "./downloads"), entry.platform);
+  // Use settings.libraryDir as source of truth; place files under console subfolder
+  const targetRoot = path.join(path.resolve(settings.libraryDir || "./library"), entry.platform);
   await ensureDir(targetRoot);
 
   const ext = path.extname(sourcePath);
@@ -477,9 +478,9 @@ async function finalizeLayoutMany(
   extractRoot: string,
   settings: Settings
 ): Promise<{ outputDir: string; outputPaths: string[] }> {
-  const downloadRoot = path.resolve(settings.downloadDir || "./downloads");
+  const libraryRoot = path.resolve(settings.libraryDir || "./library");
   const platform = entry.platform || "unknown";
-  const baseRoot = path.join(downloadRoot, platform);
+  const baseRoot = path.join(libraryRoot, platform);
   // Create a dedicated folder for the game under the platform root
   const folderName = formatName(entry);
   // Avoid double-nesting if baseRoot already is the game folder

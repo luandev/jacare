@@ -4,6 +4,7 @@ import { apiGet, API_URL } from "../lib/api";
 import type { JobEvent, JobRecord } from "@crocdesk/shared";
 import PlatformIcon from "../components/PlatformIcon";
 import DownloadCard from "../components/DownloadCard";
+import DownloadProgress from "../components/DownloadProgress";
 
 type JobPreview = {
   slug: string;
@@ -93,18 +94,47 @@ export default function QueuePage() {
           <h3>Latest event</h3>
           <span className="status">{lastEvent?.type ?? "No events yet"}</span>
         </div>
-        {lastEvent && (
-          <>
-            <div className="status">
-              {lastEvent.jobId} {lastEvent.step ? `- ${lastEvent.step}` : ""}
-            </div>
-            {typeof lastEvent.progress === "number" && (
-              <div className="progress" style={{ marginTop: "8px" }}>
-                <span style={{ width: `${lastEvent.progress * 100}%` }} />
+        {lastEvent && (() => {
+          // Find the job for this event
+          const eventJob = (jobsQuery.data ?? []).find(j => j.id === lastEvent.jobId);
+          const isDownloadJob = eventJob?.type === "download_and_install";
+          
+          if (isDownloadJob && eventJob) {
+            // Show compact download preview for download jobs
+            return (
+              <>
+                {eventJob.preview && (
+                  <div style={{ marginBottom: 8 }}>
+                    <div style={{ fontWeight: 600, fontSize: 14 }}>{eventJob.preview.title}</div>
+                    <div className="status" style={{ marginTop: 2 }}>
+                      {eventJob.preview.platform.toUpperCase()}
+                    </div>
+                  </div>
+                )}
+                <DownloadProgress
+                  speedHistory={speedDataByJob[lastEvent.jobId] || []}
+                  currentBytes={bytesByJob[lastEvent.jobId]}
+                  currentProgress={progressByJob[lastEvent.jobId]}
+                  compact={true}
+                />
+              </>
+            );
+          }
+          
+          // Default display for non-download jobs
+          return (
+            <>
+              <div className="status">
+                {lastEvent.jobId} {lastEvent.step ? `- ${lastEvent.step}` : ""}
               </div>
-            )}
-          </>
-        )}
+              {typeof lastEvent.progress === "number" && (
+                <div className="progress" style={{ marginTop: "8px" }}>
+                  <span style={{ width: `${lastEvent.progress * 100}%` }} />
+                </div>
+              )}
+            </>
+          );
+        })()}
       </section>
 
       <section className="list">

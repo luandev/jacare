@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test';
 
 const settings = {
-  downloadDir: 'C:/Games',
+  downloadDir: 'C:/Games/Downloads',
+  libraryDir: 'C:/Games/Library',
 };
 
 test.describe('Settings page', () => {
@@ -15,5 +16,7 @@ test.describe('Settings page', () => {
     await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Download Directory' })).toBeVisible();
     await expect(page.getByPlaceholder('./downloads')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Library Directory' })).toBeVisible();
+    await expect(page.getByPlaceholder('./library')).toBeVisible();
   });
 });

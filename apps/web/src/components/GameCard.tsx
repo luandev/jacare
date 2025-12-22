@@ -1,8 +1,10 @@
 import React from "react";
 import { Link, type Location } from "react-router-dom";
 import PlatformIcon from "./PlatformIcon";
+import DownloadProgress from "./DownloadProgress";
 import type { Manifest, CrocdbEntry, CrocdbPlatformsResponseData } from "@crocdesk/shared";
 import { API_URL } from "../lib/api";
+import type { SpeedDataPoint } from "../hooks/useDownloadProgress";
 
 export type GameCardProps = {
   // Data source - either entry (BrowsePage) or manifest (LibraryPage)
@@ -14,6 +16,8 @@ export type GameCardProps = {
   isOwned?: boolean;
   isDownloading?: boolean;
   downloadProgress?: number;
+  downloadSpeedHistory?: SpeedDataPoint[];
+  downloadBytes?: { downloaded: number; total: number } | null;
   
   // Handlers
   onDownload?: () => void;
@@ -35,6 +39,8 @@ export default function GameCard({
   isOwned = false,
   isDownloading = false,
   downloadProgress,
+  downloadSpeedHistory = [],
+  downloadBytes = null,
   onDownload,
   onShowInFolder,
   actions,
@@ -210,9 +216,14 @@ export default function GameCard({
       </div>
       
       {/* Download progress */}
-      {isDownloading && typeof downloadProgress === "number" && (
-        <div className="progress" style={{ marginTop: 8, width: "100%" }}>
-          <span style={{ width: `${Math.max(0, Math.min(1, downloadProgress)) * 100}%` }} />
+      {isDownloading && (
+        <div style={{ marginTop: 8 }}>
+          <DownloadProgress
+            speedHistory={downloadSpeedHistory}
+            currentBytes={downloadBytes}
+            currentProgress={downloadProgress}
+            compact={true}
+          />
         </div>
       )}
     </article>

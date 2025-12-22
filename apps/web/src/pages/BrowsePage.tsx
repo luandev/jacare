@@ -32,6 +32,8 @@ export default function BrowsePage() {
   const [status, setStatus] = useState<string>("");
   const [downloadingSlugs, setDownloadingSlugs] = useState<Set<string>>(new Set());
   const [progressBySlug, setProgressBySlug] = useState<Record<string, number>>({});
+  const [speedDataBySlug, setSpeedDataBySlug] = useState<Record<string, { bytes: number; timestamp: number }[]>>({});
+  const [bytesBySlug, setBytesBySlug] = useState<Record<string, { downloaded: number; total: number }>>({});
   const [gridColumns, setGridColumns] = useState(3);
 
   const platformsQuery = useQuery({
@@ -122,14 +124,39 @@ export default function BrowsePage() {
       try {
         const data = JSON.parse(event.data) as JobEvent;
         if (data.slug) {
-          if (data.type === "STEP_PROGRESS" && typeof data.progress === "number") {
-            setProgressBySlug((prev) => ({ ...prev, [data.slug as string]: (data.progress as number) }));
-            setDownloadingSlugs((prev) => new Set(prev).add(data.slug!));
+          if (data.type === "STEP_PROGRESS") {
+            if (typeof data.progress === "number") {
+              setProgressBySlug((prev) => ({ ...prev, [data.slug as string]: (data.progress as number) }));
+              setDownloadingSlugs((prev) => new Set(prev).add(data.slug!));
+            }
+            // Track byte-level progress for speed calculation
+            if (data.bytesDownloaded !== undefined && data.totalBytes !== undefined) {
+              setBytesBySlug((prev) => ({
+                ...prev,
+                [data.slug as string]: { downloaded: data.bytesDownloaded!, total: data.totalBytes! }
+              }));
+              setSpeedDataBySlug((prev) => {
+                const history = prev[data.slug as string] || [];
+                const newHistory = [...history, { bytes: data.bytesDownloaded!, timestamp: data.ts }].slice(-30); // Keep last 30 samples
+                return { ...prev, [data.slug as string]: newHistory };
+              });
+            }
           }
           if (data.type === "JOB_DONE" || data.type === "JOB_FAILED") {
             setDownloadingSlugs((prev) => {
               const next = new Set(prev);
               next.delete(data.slug!);
+              return next;
+            });
+            // Clean up speed data
+            setSpeedDataBySlug((prev) => {
+              const next = { ...prev };
+              delete next[data.slug!];
+              return next;
+            });
+            setBytesBySlug((prev) => {
+              const next = { ...prev };
+              delete next[data.slug!];
               return next;
             });
           }
@@ -227,6 +254,8 @@ export default function BrowsePage() {
               isOwned={isOwned}
               isDownloading={isDownloading}
               downloadProgress={progress}
+              downloadSpeedHistory={speedDataBySlug[entry.slug] || []}
+              downloadBytes={bytesBySlug[entry.slug]}
               platformsData={platformsQuery.data?.data}
               location={location}
               onDownload={() => {

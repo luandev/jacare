@@ -19,17 +19,17 @@ router.get("/games", (req, res) => {
   res.json(items);
 });
 
-// List items found in the configured download directory by scanning it as a root
+// List items found in the configured library directory by scanning it as a root
 router.get("/downloads/items", async (_req, res) => {
   const settings = getSettings();
-  const downloadDir = path.resolve(settings?.downloadDir || "./downloads");
+  const libraryDir = path.resolve(settings?.libraryDir || "./library");
   try {
     // Ensure the directory exists; if not, fall back to repository sample under apps/server/donwloads
-    let dirToScan = downloadDir;
+    let dirToScan = libraryDir;
     try {
-      const stat = await fs.stat(downloadDir);
+      const stat = await fs.stat(libraryDir);
       if (!stat.isDirectory()) {
-        throw new Error("Download path is not a directory");
+        throw new Error("Library path is not a directory");
       }
     } catch {
       const repoSample = path.resolve(process.cwd(), "apps", "server", "donwloads");
@@ -42,8 +42,8 @@ router.get("/downloads/items", async (_req, res) => {
       }
     }
 
-    // Scan the downloads root; scanner walks subfolders (console directories) recursively
-    const items = await scanLocal([{ id: "downloads", path: dirToScan }]);
+    // Scan the library root; scanner walks subfolders (console directories) recursively
+    const items = await scanLocal([{ id: "library", path: dirToScan }]);
     res.json(items);
   } catch (error) {
     res.status(500).json({ error: error instanceof Error ? error.message : "Failed to list downloads" });
@@ -63,7 +63,7 @@ router.delete("/item", async (req, res) => {
   }
   const settings = getSettings();
   const allowedRoots = [
-    path.resolve(settings?.downloadDir || "./downloads"),
+    path.resolve(settings?.libraryDir || "./library"),
     path.resolve(process.cwd(), "apps", "server", "donwloads")
   ];
   const absDir = path.resolve(dirParam);

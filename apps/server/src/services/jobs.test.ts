@@ -33,8 +33,9 @@ const createJob = (): JobRecord => ({
   updatedAt: Date.now()
 });
 
-const settingsFor = (downloadDir: string): Settings => ({
+const settingsFor = (downloadDir: string, libraryDir?: string): Settings => ({
   downloadDir,
+  libraryDir: libraryDir || downloadDir.replace("downloads", "library"),
   queue: {}
 });
 

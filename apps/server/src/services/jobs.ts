@@ -163,10 +163,10 @@ async function runScanJob(job: JobRecord): Promise<void> {
   logger.info("Starting scan job", { jobId: job.id });
   await runJob(job, async (report) => {
     const settings = getSettings() ?? DEFAULT_SETTINGS;
-    const downloadDir = settings.downloadDir || "./downloads";
-    report.step("scan_local", 0.1, `Scanning download root ${downloadDir}`);
-    logger.debug("Scanning directory", { jobId: job.id, downloadDir });
-    const items = await scanLocal([{ id: "downloads", path: downloadDir }]);
+    const libraryDir = settings.libraryDir || "./library";
+    report.step("scan_local", 0.1, `Scanning library root ${libraryDir}`);
+    logger.debug("Scanning directory", { jobId: job.id, libraryDir });
+    const items = await scanLocal([{ id: "library", path: libraryDir }]);
     logger.info("Scan found items", { jobId: job.id, count: items.length });
     for (const item of items) {
       upsertLibraryItem({

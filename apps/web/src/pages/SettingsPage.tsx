@@ -27,17 +27,34 @@ export default function SettingsPage() {
     <div className="grid" style={{ gap: "20px" }}>
       <section className="hero">
         <h1>Settings</h1>
-        <p>Manage your CrocDesk download directory and queue behavior.</p>
+        <p>Manage your CrocDesk directories and queue behavior.</p>
       </section>
 
       <section className="card">
         <h3>Download Directory</h3>
+        <p className="status" style={{ marginBottom: "8px", fontSize: "12px" }}>
+          Temporary directory for zip file downloads. Files are deleted after extraction.
+        </p>
         <input
           value={draft?.downloadDir ?? ""}
           onChange={(event) =>
             draft && setDraft({ ...draft, downloadDir: event.target.value })
           }
           placeholder="./downloads"
+        />
+      </section>
+
+      <section className="card">
+        <h3>Library Directory</h3>
+        <p className="status" style={{ marginBottom: "8px", fontSize: "12px" }}>
+          Root directory where extracted game files are stored. All scanning and library operations work from this root.
+        </p>
+        <input
+          value={draft?.libraryDir ?? ""}
+          onChange={(event) =>
+            draft && setDraft({ ...draft, libraryDir: event.target.value })
+          }
+          placeholder="./library"
         />
         <div className="controls" style={{ marginTop: "12px" }}>
           <button

@@ -61,10 +61,15 @@ export type CrocdbApiResponse<T> = {
 
 export type Settings = {
   /**
-   * Root directory where CrocDesk downloads and manages games.
-   * All scanning and library operations work from this single root.
+   * Directory where temporary zip files are downloaded.
+   * Zip files are deleted after extraction.
    */
   downloadDir: string;
+  /**
+   * Root directory where extracted game files are stored.
+   * All scanning and library operations work from this root.
+   */
+  libraryDir: string;
   queue?: {
     concurrency?: number;
   };

@@ -19,14 +19,36 @@ export default function SpeedChart({ speeds, maxBars = 20 }: SpeedChartProps) {
 
   if (displaySpeeds.length === 0) {
     return (
-      <div className="speed-chart" style={{ height: 40, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div 
+        className="speed-chart" 
+        style={{ 
+          height: 40, 
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "center",
+          backgroundColor: "var(--progress-bg)",
+          borderRadius: "6px",
+          padding: "8px"
+        }}
+      >
         <span className="status" style={{ fontSize: 11 }}>No data</span>
       </div>
     );
   }
 
   return (
-    <div className="speed-chart" style={{ height: 40, display: "flex", alignItems: "flex-end", gap: 2 }}>
+    <div 
+      className="speed-chart" 
+      style={{ 
+        height: 40,
+        backgroundColor: "var(--progress-bg)",
+        borderRadius: "6px",
+        padding: "8px",
+        display: "flex",
+        alignItems: "flex-end",
+        gap: 3
+      }}
+    >
       {displaySpeeds.map((speed, idx) => {
         const height = (speed / maxSpeed) * 100;
         return (
@@ -34,10 +56,10 @@ export default function SpeedChart({ speeds, maxBars = 20 }: SpeedChartProps) {
             key={idx}
             style={{
               flex: 1,
-              minWidth: 3,
-              height: `${Math.max(height, 2)}%`,
+              minWidth: 4,
+              height: `${Math.max(height, 4)}%`,
               backgroundColor: "var(--accent)",
-              borderRadius: "2px 2px 0 0",
+              borderRadius: "3px 3px 0 0",
               transition: "height 0.2s ease"
             }}
             title={`${speed.toFixed(2)} MB/s`}

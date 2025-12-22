@@ -42,10 +42,10 @@ async function start(): Promise<void> {
       res.status(400).json({ error: "Missing or invalid path" });
       return;
     }
-    // Only allow files under the downloads or donwloads folder for safety
+    // Only allow files under the library directory for safety (part files in downloadDir are not served)
     const settings = getSettings();
     const allowedRoots = [
-      path.resolve(settings?.downloadDir || path.join(process.cwd(), "downloads")),
+      path.resolve(settings?.libraryDir || path.join(process.cwd(), "library")),
       path.resolve(process.cwd(), "apps", "server", "donwloads")
     ];
     const absPath = path.resolve(filePath);
