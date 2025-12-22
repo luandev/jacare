@@ -1,0 +1,91 @@
+version: "3.9"
+
+services:
+  crocdesk:
+    image: ghcr.io/your-org/crocdesk:latest
+    restart: unless-stopped
+    ports:
+      - "3333:3333" # CrocDesk server/API
+      - "5173:5173" # Web UI (when served separately)
+    environment:
+      CROCDESK_DATA_DIR: /data
+      VITE_API_URL: http://localhost:3333
+      CROCDESK_ENABLE_DOWNLOADS: "false"
+    volumes:
+      # Windows default: bind your data and library folders into the container.
+      - type: bind
+        source: C:/Users/<you>/crocdesk/data
+        target: /data
+      - type: bind
+        source: C:/Users/<you>/crocdesk/library
+        target: /library
+      # macOS example paths:
+      # - type: bind
+      #   source: /Users/<you>/crocdesk/data
+      #   target: /data
+      # - type: bind
+      #   source: /Users/<you>/crocdesk/library
+      #   target: /library
+      # Linux example paths:
+      # - type: bind
+      #   source: /home/<you>/crocdesk/data
+      #   target: /data
+      # - type: bind
+      #   source: /home/<you>/crocdesk/library
+      #   target: /library
+    # Uncomment this block to build from the local repository instead of pulling an image.
+    # build:
+    #   context: ..
+    #   dockerfile: apps/server/Dockerfile
+
+  # Emulator examples (disabled by default). These services expect ROMs under /library
+  # and can be linked via Jacare's launcher settings. Uncomment the services you need
+  # and map any additional ports required by your setup.
+
+  # retroarch:
+  #   image: ghcr.io/libretro/retroarch:latest
+  #   restart: unless-stopped
+  #   volumes:
+  #     - type: bind
+  #       source: C:/Users/<you>/crocdesk/library
+  #       target: /library
+  #     # macOS/Linux examples:
+  #     # - type: bind
+  #     #   source: /Users/<you>/crocdesk/library
+  #     #   target: /library
+  #     # - type: bind
+  #     #   source: /home/<you>/crocdesk/library
+  #     #   target: /library
+  #   command: ["retroarch"]
+
+  # dolphin:
+  #   image: ghcr.io/dolphin-emu/dolphin:latest
+  #   restart: unless-stopped
+  #   volumes:
+  #     - type: bind
+  #       source: C:/Users/<you>/crocdesk/library
+  #       target: /library
+  #   # macOS/Linux examples:
+  #   # - type: bind
+  #   #   source: /Users/<you>/crocdesk/library
+  #   #   target: /library
+  #   # - type: bind
+  #   #   source: /home/<you>/crocdesk/library
+  #   #   target: /library
+  #   command: ["dolphin-emu", "--batch"]
+
+  # pcsx2:
+  #   image: ghcr.io/pcsx2/pcsx2:latest
+  #   restart: unless-stopped
+  #   volumes:
+  #     - type: bind
+  #       source: C:/Users/<you>/crocdesk/library
+  #       target: /library
+  #   # macOS/Linux examples:
+  #   # - type: bind
+  #   #   source: /Users/<you>/crocdesk/library
+  #   #   target: /library
+  #   # - type: bind
+  #   #   source: /home/<you>/crocdesk/library
+  #   #   target: /library
+  #   command: ["pcsx2", "--portable"]

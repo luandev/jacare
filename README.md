@@ -1,5 +1,8 @@
 # 🐊 Jacare
 
+[![CI](https://github.com/your-org/crocdesk/actions/workflows/ci.yml/badge.svg)](https://github.com/your-org/crocdesk/actions/workflows/ci.yml)
+[![Release](https://github.com/your-org/crocdesk/actions/workflows/release.yml/badge.svg)](https://github.com/your-org/crocdesk/actions/workflows/release.yml)
+
 Jacare (Portuguese for "caiman") is a Brazilian-flavored, croc-tough desktop ROM library manager. It combines an Electron shell, an Express API, and a Vite-powered React UI so you can organize, scrape, and launch games from a single experience—wrapping the hosted [Crocdb](https://crocdb.net) service for search and metadata while running local jobs to keep your library synchronized. 🇧🇷
 
 > Want details? Pick your path:
@@ -18,6 +21,8 @@ Jacare (Portuguese for "caiman") is a Brazilian-flavored, croc-tough desktop ROM
 - `apps/web` – React UI (Vite) served by the server or opened directly in dev.
 - `apps/desktop` – Electron main process wrapping the server and web UI for a native experience.
 - `packages/shared` – Shared types, defaults, and the manifest schema used across workspaces.
+
+See [`docker/README.md`](docker/README.md) for a Docker Compose template with platform-specific mount examples.
 
 ## Getting started 🚀
 1. **Install dependencies** 📦
@@ -41,6 +46,14 @@ Jacare (Portuguese for "caiman") is a Brazilian-flavored, croc-tough desktop ROM
    ```
 
 > Tip: The desktop app expects the web dev server at `http://localhost:5173` by default. Override with `CROCDESK_DEV_URL` if you change the Vite port.
+
+## Screenshots 📸
+
+Here’s a quick look at Jacare in action:
+
+![Browse Page](docs/Screenshot.png)
+
+![Library & Details](docs/Screenshot2.png)
 
 ## Configuration & data ⚙️
 - **Default port:** `CROCDESK_PORT=3333`.

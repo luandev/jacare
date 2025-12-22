@@ -6,19 +6,26 @@ import PlatformIcon from '../PlatformIcon';
 afterEach(() => cleanup());
 
 describe('PlatformIcon', () => {
-  it('renders initials and accessible label', () => {
+  it('uses platform naming to pick a brand-specific icon', () => {
     render(<PlatformIcon platform="snes" size={24} />);
-    const icon = screen.getByLabelText(/Super Nintendo|snes/i);
+    const icon = screen.getByLabelText(/nintendo|snes/i);
     expect(icon).toBeInTheDocument();
-    // Initials-only icon should render some text content (e.g., SNES)
-    expect(icon.textContent).toMatch(/sn|snes|sn/i);
+    expect(icon).toHaveAttribute('data-brand', 'nintendo');
   });
 
-  it('renders with brand-inspired color class/style', () => {
-    render(<PlatformIcon platform="nes" size={24} />);
-    const icon = screen.getByLabelText(/Nintendo|nes/i);
+  it('renders stylized vector paths for known brands', () => {
+    const { container } = render(<PlatformIcon platform="psx" brand="PlayStation" size={28} />);
+    const icon = screen.getByLabelText(/playstation|psx/i);
     expect(icon).toBeInTheDocument();
-    // Basic presence is enough; color is applied via style or class
-    expect(icon).toHaveAttribute('aria-label');
+    expect(icon).toHaveAttribute('data-brand', 'sony');
+    expect(container.querySelectorAll('path').length).toBeGreaterThan(0);
+    expect(container.querySelector('text')).toBeNull();
+  });
+
+  it('falls back to initials for unknown brands', () => {
+    render(<PlatformIcon platform="retro future" label="Retro Console" size={24} />);
+    const icon = screen.getByLabelText(/retro console/i);
+    expect(icon).toHaveAttribute('data-brand', 'generic');
+    expect(icon.textContent).toMatch(/RC/);
   });
 });

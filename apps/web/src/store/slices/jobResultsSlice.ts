@@ -29,3 +29,7 @@ export const useJobResultsStore = create<JobResultsStore>((set) => ({
   
   clearAll: () => set(initialState)
 }));
+
+
+
+

@@ -93,6 +93,7 @@ export default function BrowsePage() {
     return map;
   }, [ownedQuery.data]);
 
+
   const searchMutation = useMutation({
     mutationFn: (payload: Record<string, unknown>) =>
       apiPost<CrocdbApiResponse<CrocdbSearchResponseData>>(
@@ -186,6 +187,7 @@ export default function BrowsePage() {
     setSearchParams(nextParams);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
+
 
   return (
     <div className="grid" style={{ gap: "20px" }}>

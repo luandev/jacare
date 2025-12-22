@@ -28,6 +28,7 @@ const queue = new PQueue({ concurrency: 2 });
 const activeJobTasks = new Map<string, { abortController: AbortController; task: Promise<void> }>();
 
 // Track paused jobs - map jobId to pause controller
+// This is in-memory only - on startup, we load paused jobs from DB and resume them
 const pausedJobs = new Set<string>();
 
 export function getJobs(): JobRecord[] {
@@ -229,6 +230,14 @@ export async function resumeAllJobs(): Promise<number> {
   const jobs = listJobs();
   let resumedCount = 0;
   
+  // First, populate pausedJobs Set from database (in case server was restarted)
+  for (const job of jobs) {
+    if (job.status === "paused") {
+      pausedJobs.add(job.id);
+    }
+  }
+  
+  // Then resume all paused download jobs
   for (const job of jobs) {
     if (job.status === "paused" && job.type === "download_and_install") {
       if (await resumeJob(job.id)) {
