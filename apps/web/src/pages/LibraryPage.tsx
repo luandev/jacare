@@ -1,9 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { apiGet, apiPost } from "../lib/api";
 import type { LibraryItem, Manifest } from "@crocdesk/shared";
 import GameCard from "../components/GameCard";
 import PaginationBar from "../components/PaginationBar";
+import { DownloadingGhostCard } from "../components/DownloadingGhostCard";
+import { useDownloadProgressStore } from "../store";
+import { useSSE } from "../store/hooks/useSSE";
 
 export default function LibraryPage() {
   const [items, setItems] = useState<LibraryItem[]>([]);
@@ -12,6 +15,23 @@ export default function LibraryPage() {
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string>("");
   const [gridColumns, setGridColumns] = useState(3);
+  
+  // Ensure SSE connection is active
+  useSSE();
+  
+  // Get downloading slugs from store
+  const downloadingSlugs = useDownloadProgressStore((state) => state.downloadingSlugs);
+  
+  // Filter out downloading slugs that are already in the library
+  const downloadingSlugsArray = useMemo(() => {
+    const slugs = Array.from(downloadingSlugs);
+    // Filter out slugs that are already in the library
+    const ownedSlugs = new Set(items.map(item => {
+      const manifest = manifests[item.path];
+      return manifest?.crocdb?.slug;
+    }).filter(Boolean));
+    return slugs.filter(slug => !ownedSlugs.has(slug));
+  }, [downloadingSlugs, items, manifests]);
 
   useEffect(() => {
     let cancelled = false;
@@ -57,6 +77,9 @@ export default function LibraryPage() {
       setStatus(e instanceof Error ? e.message : "Scan failed");
     }
   }
+  
+  const location = useLocation();
+  
   if (loading) {
     return <div className="card">Loading library…</div>;
   }
@@ -64,8 +87,8 @@ export default function LibraryPage() {
   if (error) {
     return <div className="card">Error: {error}</div>;
   }
-
-  if (items.length === 0) {
+  
+  if (items.length === 0 && downloadingSlugsArray.length === 0) {
     return (
       <div className="grid" style={{ gap: 20 }}>
         <section className="card">
@@ -77,12 +100,11 @@ export default function LibraryPage() {
             </div>
           </div>
         </section>
-        <div className="card">No items found in downloads.</div>
+        <div className="card">No items found in library.</div>
       </div>
     );
   }
 
-  const location = useLocation();
   return (
     <div className="grid" style={{ gap: 20 }}>
       <section className="hero">
@@ -98,6 +120,12 @@ export default function LibraryPage() {
         </div>
       </section>
       <div className={`grid cols-${gridColumns}`} style={{ gridTemplateColumns: `repeat(auto-fit, minmax(${Math.max(140, 320 - (gridColumns - 3) * 40)}px, 1fr))` }}>
+        {/* Ghost cards for downloading items */}
+        {downloadingSlugsArray.map((slug) => (
+          <DownloadingGhostCard key={`ghost-${slug}`} slug={slug} location={location} />
+        ))}
+        
+        {/* Actual library items */}
         {items.map((item) => {
           const manifest = manifests[item.path];
           if (!manifest) return null;

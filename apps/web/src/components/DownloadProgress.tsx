@@ -1,5 +1,7 @@
 import { useMemo } from "react";
 import { useDownloadProgress, type SpeedDataPoint } from "../hooks/useDownloadProgress";
+import { spacing, radius } from "../lib/design-tokens";
+import { Button } from "./ui";
 
 const MB_TO_BYTES = 1048576;
 
@@ -30,44 +32,44 @@ export default function DownloadProgress({
 
   return (
     <div style={{ width: "100%" }}>
-      <div className="progress" style={{ marginBottom: compact ? 6 : 8, width: "100%" }}>
+      <div className="progress" style={{ marginBottom: compact ? spacing.xs : spacing.sm, width: "100%" }}>
         <span style={{ width: `${progressValue}%` }} />
       </div>
 
-      <div className="row" style={{ gap: compact ? 12 : 16, marginBottom: compact ? 4 : 8, flexWrap: "wrap" }}>
+      <div className="row" style={{ gap: compact ? spacing.md : spacing.lg, marginBottom: compact ? spacing.xs : spacing.sm, flexWrap: "wrap" }}>
         {currentSpeed > 0 && (
           <div>
-            <span className="status" style={{ fontSize: compact ? 10 : 11 }}>Speed:</span>
-            <strong style={{ marginLeft: 4, fontSize: compact ? 11 : 12 }}>
+            <span className="status" style={{ fontSize: compact ? "10px" : "11px" }}>Speed:</span>
+            <strong style={{ marginLeft: spacing.xs, fontSize: compact ? "11px" : "12px" }}>
               {currentSpeed.toFixed(2)} MB/s
             </strong>
           </div>
         )}
         {currentBytes && (
           <div>
-            <span className="status" style={{ fontSize: compact ? 10 : 11 }}>Progress:</span>
-            <strong style={{ marginLeft: 4, fontSize: compact ? 11 : 12 }}>
+            <span className="status" style={{ fontSize: compact ? "10px" : "11px" }}>Progress:</span>
+            <strong style={{ marginLeft: spacing.xs, fontSize: compact ? "11px" : "12px" }}>
               {(currentBytes.downloaded / MB_TO_BYTES).toFixed(2)} MB / {(currentBytes.total / MB_TO_BYTES).toFixed(2)} MB
             </strong>
           </div>
         )}
         {eta && (
           <div>
-            <span className="status" style={{ fontSize: compact ? 10 : 11 }}>ETA:</span>
-            <strong style={{ marginLeft: 4, fontSize: compact ? 11 : 12 }}>{eta}</strong>
+            <span className="status" style={{ fontSize: compact ? "10px" : "11px" }}>ETA:</span>
+            <strong style={{ marginLeft: spacing.xs, fontSize: compact ? "11px" : "12px" }}>{eta}</strong>
           </div>
         )}
       </div>
 
       {showCancel && onCancel && (
-        <div className="row" style={{ marginTop: compact ? 6 : 8, justifyContent: "flex-end" }}>
-          <button
+        <div className="row" style={{ marginTop: compact ? spacing.xs : spacing.sm, justifyContent: "flex-end" }}>
+          <Button
+            variant="secondary"
+            size={compact ? "sm" : "md"}
             onClick={onCancel}
-            className="secondary"
-            style={{ fontSize: compact ? 11 : 12, padding: compact ? "4px 8px" : "6px 12px" }}
           >
             Cancel
-          </button>
+          </Button>
         </div>
       )}
     </div>

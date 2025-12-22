@@ -7,6 +7,8 @@ import PaginationBar from "../components/PaginationBar";
 import { apiGet, apiPost } from "../lib/api";
 import { useDownloadProgressStore, useUIStore } from "../store";
 import { useSSE } from "../store/hooks/useSSE";
+import { Input, Select, Button } from "../components/ui";
+import { spacing } from "../lib/design-tokens";
 import type {
   CrocdbApiResponse,
   CrocdbEntry,
@@ -190,19 +192,19 @@ export default function BrowsePage() {
       </section>
 
       <section className="card">
-        <form className="controls" onSubmit={handleSearch}>
-          <div>
+        <form className="controls" onSubmit={handleSearch} style={{ display: "flex", gap: spacing.md, flexWrap: "wrap", alignItems: "flex-end" }}>
+          <div style={{ flex: 1, minWidth: 200, display: "flex", flexDirection: "column", gap: spacing.xs }}>
             <label htmlFor="search-input">Search</label>
-            <input
+            <Input
               id="search-input"
               name="search"
               defaultValue={searchKey}
               placeholder="Croc, Zelda, Metroid"
             />
           </div>
-          <div>
+          <div style={{ display: "flex", flexDirection: "column", gap: spacing.xs }}>
             <label htmlFor="platform-select">Platform</label>
-            <select id="platform-select" name="platform" defaultValue={defaultPlatform}>
+            <Select id="platform-select" name="platform" defaultValue={defaultPlatform}>
               <option value="">All</option>
               {platformsQuery.data &&
                 Object.entries(platformsQuery.data.data.platforms).map(
@@ -212,11 +214,11 @@ export default function BrowsePage() {
                     </option>
                   )
                 )}
-            </select>
+            </Select>
           </div>
-          <div>
+          <div style={{ display: "flex", flexDirection: "column", gap: spacing.xs }}>
             <label htmlFor="region-select">Region</label>
-            <select id="region-select" name="region" defaultValue={defaultRegion}>
+            <Select id="region-select" name="region" defaultValue={defaultRegion}>
               <option value="">All</option>
               {regionsQuery.data &&
                 Object.entries(regionsQuery.data.data.regions).map(([id, name]) => (
@@ -224,9 +226,12 @@ export default function BrowsePage() {
                     {name}
                   </option>
                 ))}
-            </select>
+            </Select>
           </div>
-          <button type="submit">Search</button>
+          <div style={{ display: "flex", flexDirection: "column", gap: spacing.xs }}>
+            <label htmlFor="search-button" style={{ visibility: "hidden" }}>Search</label>
+            <Button id="search-button" type="submit">Search</Button>
+          </div>
         </form>
         {status && <div className="status">{status}</div>}
       </section>

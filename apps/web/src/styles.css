@@ -1,36 +1,10 @@
 @import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap");
 
+/* CSS variables are now defined in theme.ts and applied via ThemeProvider */
+/* Default values are set here as fallback, but ThemeProvider will override them */
 :root {
   color-scheme: light;
   font-family: "IBM Plex Sans", system-ui, sans-serif;
-  /* Core surfaces & text */
-  --bg: #f6f2ea;
-  --bg-alt: #efe7da;
-  --ink: #1b1a16;
-  --muted: #6c665f;
-  /* Accents */
-  --accent: #e68a2e;
-  --accent-strong: #cc6c1f;
-  /* Surfaces */
-  --card: #fffaf2;
-  --border: #e0d6c6;
-  --shadow-color: 0 12px 32px rgba(27, 26, 22, 0.12);
-  /* Shell */
-  --sidebar-bg: #201c16;
-  --sidebar-ink: #f8f3ec;
-  --nav-pill: rgba(255, 255, 255, 0.06);
-  /* Badges & pills */
-  --badge-bg: #f1e2d1;
-  --badge-ink: #5c3b1c;
-  /* Buttons */
-  --button-secondary-bg: #f3e3cf;
-  --button-secondary-border: #e2c8a3;
-  --button-secondary-ink: #1b1a16;
-  /* Progress */
-  --progress-bg: #ece4d9;
-  /* Fixed cover sizes */
-  --cover-w: 200px;
-  --cover-h: 266px; /* 3:4 aspect ratio */
 }
 
 * {
@@ -39,7 +13,7 @@
 
 body {
   margin: 0;
-  background: radial-gradient(circle at top, #ffffff 0%, var(--bg) 55%, var(--bg-alt) 100%);
+  background: radial-gradient(circle at top, var(--card) 0%, var(--bg) 55%, var(--bg-alt) 100%);
   color: var(--ink);
   min-height: 100vh;
 }
@@ -47,6 +21,17 @@ body {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+a.link {
+  color: var(--link-color);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+a.link:hover {
+  color: var(--link-hover);
+  text-decoration: underline;
 }
 
 h1,
@@ -95,8 +80,8 @@ h3 {
 }
 
 .nav a.active {
-  background: var(--accent);
-  color: #1b1a16;
+  background: var(--nav-pill-active);
+  color: var(--sidebar-bg);
   font-weight: 600;
 }
 
@@ -137,8 +122,8 @@ h3 {
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 6px 16px rgba(27, 26, 22, 0.18);
+  background: var(--card);
+  box-shadow: var(--shadow-md);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -150,7 +135,7 @@ h3 {
   height: var(--cover-h);
   border-radius: 8px;
   border: 1px solid var(--border);
-  background: linear-gradient(135deg, #f5ede2 0%, #efe5d8 50%, #e9ddcf 100%);
+  background: linear-gradient(135deg, var(--bg) 0%, var(--bg-alt) 50%, var(--card) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -203,6 +188,8 @@ label {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--muted);
+  display: block;
+  margin-bottom: 4px;
 }
 
 input,
@@ -218,17 +205,17 @@ textarea {
 
 button {
   cursor: pointer;
-  background: var(--accent);
-  border-color: var(--accent-strong);
-  color: #1b1a16;
+  background: var(--button-primary-bg);
+  border-color: var(--button-primary-border);
+  color: var(--button-primary-ink);
   font-weight: 600;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 
 button.secondary {
-  background: #f3e3cf;
-  border-color: #e2c8a3;
-  color: #1b1a16;
+  background: var(--button-secondary-bg);
+  border-color: var(--button-secondary-border);
+  color: var(--button-secondary-ink);
 }
 
 button:active {
@@ -280,7 +267,7 @@ button:disabled {
 .progress span {
   display: block;
   height: 100%;
-  background: linear-gradient(90deg, var(--accent), #f2c26b);
+  background: var(--progress-fill);
   width: 0;
 }
 
@@ -310,5 +297,15 @@ button:disabled {
 
   .main {
     padding: 24px;
+  }
+
+  .detail-layout-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .detail-layout-grid > div:first-child {
+    position: static !important;
+    max-width: 300px;
+    margin: 0 auto;
   }
 }

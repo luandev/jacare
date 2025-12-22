@@ -32,4 +32,5 @@ export type UIState = {
   gridColumns: number;
   stickyPlatform: string;
   stickyRegion: string;
+  theme: "light" | "dark";
 };

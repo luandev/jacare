@@ -6,6 +6,8 @@ import type { Manifest, CrocdbEntry, CrocdbPlatformsResponseData } from "@crocde
 import { API_URL } from "../lib/api";
 import type { SpeedDataPoint } from "../hooks/useDownloadProgress";
 import { useDownloadProgressStore } from "../store";
+import { Card, Button, Badge } from "./ui";
+import { spacing } from "../lib/design-tokens";
 
 export type GameCardProps = {
   // Data source - either entry (BrowsePage) or manifest (LibraryPage)
@@ -106,7 +108,7 @@ export default function GameCard({
   const linkTo = detailLink || libraryDetailLink;
   
   return (
-    <article className="card" style={{ minWidth: 0, maxWidth: 320, margin: "0 auto", ...style }}>
+    <Card style={{ minWidth: 260, maxWidth: 260, overflow: "hidden", margin: "0 auto", ...style }}>
       <div className="thumb-wrapper">
         {linkTo && location ? (
           <Link
@@ -174,40 +176,49 @@ export default function GameCard({
             title
           )}
         </h3>
-        {isOwned && <span className="badge">Owned</span>}
-        {!isOwned && isDownloading && <span className="badge">Downloading…</span>}
+        {isOwned && <Badge variant="success">Owned</Badge>}
+        {!isOwned && actualIsDownloading && <Badge variant="warning">Downloading…</Badge>}
       </div>
       <div className="status">{platform.toUpperCase()}</div>
       {regions.length > 0 && <div className="status">{regions.join(", ")}</div>}
       
       {/* Library-specific: artifact path */}
       {manifest && artifactPath && (
-        <div className="row" style={{ marginTop: 8 }}>
+        <div className="row" style={{ marginTop: spacing.sm }}>
           <span className="status">{manifest.artifacts[0]?.path}</span>
           {onShowInFolder && (
-            <button className="link" onClick={onShowInFolder} style={{ marginLeft: 8 }}>
+            <a
+              className="link"
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                onShowInFolder();
+              }}
+              style={{ marginLeft: spacing.sm, color: "var(--link-color)", fontSize: "14px" }}
+            >
               Show in Folder
-            </button>
+            </a>
           )}
         </div>
       )}
       
       {/* Actions */}
-      <div className="row" style={{ marginTop: 8, flexWrap: "wrap", gap: 8 }}>
+      <div className="row" style={{ marginTop: spacing.sm, flexWrap: "wrap", gap: spacing.sm }}>
         {actions ? (
           actions
         ) : (
           <>
             {!isOwned && !actualIsDownloading && onDownload && (
-              <button onClick={onDownload}>
+              <Button onClick={onDownload} size="sm">
                 Queue Download
-              </button>
+              </Button>
             )}
             {linkTo && location && (
               <Link
                 className="link"
                 to={linkTo}
                 state={{ backgroundLocation: location }}
+                style={{ color: "var(--link-color)", fontSize: "14px" }}
               >
                 Details
               </Link>
@@ -220,6 +231,7 @@ export default function GameCard({
                   e.preventDefault();
                   onShowInFolder();
                 }}
+                style={{ color: "var(--link-color)", fontSize: "14px" }}
               >
                 Show in Folder
               </a>
@@ -230,7 +242,7 @@ export default function GameCard({
       
       {/* Download progress */}
       {actualIsDownloading && (
-        <div style={{ marginTop: 8 }}>
+        <div style={{ marginTop: spacing.sm }}>
           <DownloadProgress
             speedHistory={actualDownloadSpeedHistory}
             currentBytes={actualDownloadBytes}
@@ -239,7 +251,7 @@ export default function GameCard({
           />
         </div>
       )}
-    </article>
+    </Card>
   );
 }
 

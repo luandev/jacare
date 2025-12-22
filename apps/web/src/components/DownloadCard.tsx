@@ -7,6 +7,8 @@ import { useDownloadProgress } from "../hooks/useDownloadProgress";
 import DownloadProgress from "./DownloadProgress";
 import type { SpeedDataPoint } from "../hooks/useDownloadProgress";
 import { useDownloadProgressStore } from "../store";
+import { Card, Button, Badge } from "./ui";
+import { spacing } from "../lib/design-tokens";
 
 type JobPreview = {
   slug: string;
@@ -98,8 +100,8 @@ function DownloadCard({ job, speedHistory: propSpeedHistory, currentBytes: propC
   const preview = job.preview;
 
   return (
-    <article className="card">
-      <div className="row" style={{ gap: 16, alignItems: "flex-start" }}>
+    <Card>
+      <div className="row" style={{ gap: spacing.lg, alignItems: "flex-start" }}>
         {preview?.boxart_url && (
           <div className="thumb-wrapper" style={{ width: 80, flexShrink: 0 }}>
             <img
@@ -112,16 +114,16 @@ function DownloadCard({ job, speedHistory: propSpeedHistory, currentBytes: propC
         )}
         
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="row" style={{ marginBottom: 8 }}>
+          <div className="row" style={{ marginBottom: spacing.sm }}>
             <div>
               <h3 style={{ margin: 0, fontSize: 16 }}>{preview?.title || job.id}</h3>
               {preview?.platform && (
-                <div className="status" style={{ marginTop: 4 }}>
+                <div className="status" style={{ marginTop: spacing.xs }}>
                   {preview.platform.toUpperCase()}
                 </div>
               )}
             </div>
-            <span className="badge">{job.status}</span>
+            <Badge>{job.status}</Badge>
           </div>
 
           <DownloadProgress
@@ -132,35 +134,34 @@ function DownloadCard({ job, speedHistory: propSpeedHistory, currentBytes: propC
 
           <SpeedChart speeds={speeds} />
 
-          <div className="row" style={{ marginTop: 12, justifyContent: "flex-end", gap: 8 }}>
+          <div className="row" style={{ marginTop: spacing.md, justifyContent: "flex-end", gap: spacing.sm }}>
             {job.status === "paused" ? (
-              <button
+              <Button
                 onClick={handleResume}
-                className="primary"
                 disabled={resumeMutation.isPending}
               >
                 {resumeMutation.isPending ? "Resuming..." : "Resume"}
-              </button>
+              </Button>
             ) : job.status === "running" ? (
-              <button
+              <Button
+                variant="secondary"
                 onClick={handlePause}
-                className="secondary"
                 disabled={pauseMutation.isPending}
               >
                 {pauseMutation.isPending ? "Pausing..." : "Pause"}
-              </button>
+              </Button>
             ) : null}
-            <button
+            <Button
+              variant="secondary"
               onClick={handleCancel}
-              className="secondary"
               disabled={cancelMutation.isPending || (job.status !== "running" && job.status !== "paused")}
             >
               {cancelMutation.isPending ? "Cancelling..." : "Cancel"}
-            </button>
+            </Button>
           </div>
         </div>
       </div>
-    </article>
+    </Card>
   );
 }
 

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { spacing, radius } from "../lib/design-tokens";
 
 export function MediaGrid({ coverUrl, screenshots }: { coverUrl?: string; screenshots: string[] }) {
   const [active, setActive] = useState<string | null>(null);
@@ -9,7 +10,7 @@ export function MediaGrid({ coverUrl, screenshots }: { coverUrl?: string; screen
     <div>
       <div
         className="media-grid"
-        style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}
+        style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: spacing.md }}
       >
         {items.map((src) => (
           <img
@@ -22,8 +23,18 @@ export function MediaGrid({ coverUrl, screenshots }: { coverUrl?: string; screen
               width: "100%",
               aspectRatio: "16 / 9",
               objectFit: "cover",
-              borderRadius: "8px",
-              cursor: "pointer"
+              borderRadius: radius.md,
+              cursor: "pointer",
+              transition: "transform 0.2s ease, box-shadow 0.2s ease",
+              boxShadow: "var(--shadow-sm)"
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "scale(1.02)";
+              e.currentTarget.style.boxShadow = "var(--shadow-md)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "scale(1)";
+              e.currentTarget.style.boxShadow = "var(--shadow-sm)";
             }}
             onClick={() => setActive(src)}
           />
@@ -37,16 +48,25 @@ export function MediaGrid({ coverUrl, screenshots }: { coverUrl?: string; screen
           style={{
             position: "fixed",
             inset: 0,
-            background: "rgba(0,0,0,0.8)",
+            background: "rgba(0,0,0,0.85)",
             display: "flex",
             alignItems: "center",
-            justifyContent: "center"
+            justifyContent: "center",
+            zIndex: 1000,
+            cursor: "pointer"
           }}
         >
           <img
             src={active}
             alt="Expanded media"
-            style={{ maxWidth: "90vw", maxHeight: "90vh", borderRadius: "12px" }}
+            style={{ 
+              maxWidth: "90vw", 
+              maxHeight: "90vh", 
+              borderRadius: radius.lg,
+              boxShadow: "var(--shadow-lg)",
+              objectFit: "contain"
+            }}
+            onClick={(e) => e.stopPropagation()}
           />
         </div>
       )}

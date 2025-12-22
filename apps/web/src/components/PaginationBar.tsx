@@ -51,9 +51,10 @@ export default function PaginationBar({
       <div className="row" style={{ justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
         <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
           {showGridControls && onColumnsChange && (
-            <div className="row" style={{ gap: 4, alignItems: "center" }}>
-              <label style={{ fontSize: 11, margin: 0 }}>Columns:</label>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <label htmlFor="columns-select" style={{ fontSize: 11, margin: 0 }}>Columns</label>
               <select
+                id="columns-select"
                 value={columns}
                 onChange={(e) => setColumns(parseInt(e.target.value, 10))}
                 style={{ minWidth: 60, padding: "6px 8px", fontSize: 13 }}

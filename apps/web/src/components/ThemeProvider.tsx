@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
-import type { Theme } from "../lib/theme";
-import { lightTheme } from "../lib/theme";
+import React, { createContext, useContext, useEffect } from "react";
+import type { Theme } from "../lib/theme-types";
+import { lightTheme, darkTheme } from "../lib/theme";
+import { useUIStore } from "../store";
 
 type ThemeContextValue = {
   theme: Theme;
@@ -10,18 +11,26 @@ type ThemeContextValue = {
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(lightTheme);
+  const themePreference = useUIStore((state) => state.theme);
+  const setThemePreference = useUIStore((state) => state.setTheme);
+  
+  const currentTheme: Theme = themePreference === "dark" ? darkTheme : lightTheme;
 
   useEffect(() => {
     const root = document.documentElement;
-    Object.entries(theme.vars).forEach(([key, value]) => {
+    Object.entries(currentTheme.vars).forEach(([key, value]) => {
       root.style.setProperty(key, value);
     });
-    root.setAttribute("data-theme", theme.name);
-  }, [theme]);
+    root.setAttribute("data-theme", currentTheme.name);
+    root.style.colorScheme = currentTheme.name;
+  }, [currentTheme]);
+
+  const setTheme = (theme: Theme) => {
+    setThemePreference(theme.name);
+  };
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme }}>
+    <ThemeContext.Provider value={{ theme: currentTheme, setTheme }}>
       {children}
     </ThemeContext.Provider>
   );

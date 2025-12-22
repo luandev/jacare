@@ -6,6 +6,7 @@ type UIActions = {
   setGridColumns: (columns: number) => void;
   setStickyPlatform: (platform: string) => void;
   setStickyRegion: (region: string) => void;
+  setTheme: (theme: "light" | "dark") => void;
 };
 
 export type UIStore = UIState & UIActions;
@@ -13,7 +14,8 @@ export type UIStore = UIState & UIActions;
 const initialState: UIState = {
   gridColumns: 3,
   stickyPlatform: "",
-  stickyRegion: ""
+  stickyRegion: "",
+  theme: "light"
 };
 
 export const useUIStore = create<UIStore>()(
@@ -23,14 +25,16 @@ export const useUIStore = create<UIStore>()(
       
       setGridColumns: (columns) => set({ gridColumns: columns }),
       setStickyPlatform: (platform) => set({ stickyPlatform: platform }),
-      setStickyRegion: (region) => set({ stickyRegion: region })
+      setStickyRegion: (region) => set({ stickyRegion: region }),
+      setTheme: (theme) => set({ theme })
     }),
     {
       name: "crocdesk-ui-storage",
       partialize: (state) => ({
         stickyPlatform: state.stickyPlatform,
         stickyRegion: state.stickyRegion,
-        gridColumns: state.gridColumns
+        gridColumns: state.gridColumns,
+        theme: state.theme
       })
     }
   )
