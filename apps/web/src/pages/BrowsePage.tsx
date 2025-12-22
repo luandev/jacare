@@ -20,12 +20,24 @@ const RESULTS_PER_PAGE = 60;
 export default function BrowsePage() {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
+  const STICKY_PLATFORM_KEY = "crocdesk:stickyPlatform";
+  const STICKY_REGION_KEY = "crocdesk:stickyRegion";
   
   // Read state from URL params
   const searchKey = searchParams.get("q") || "";
   const platform = searchParams.get("pf") || "";
   const region = searchParams.get("rg") || "";
   const page = parseInt(searchParams.get("page") || "1", 10);
+
+  // Sticky defaults from localStorage when URL params are absent
+  let stickyPlatform = "";
+  let stickyRegion = "";
+  try {
+    stickyPlatform = localStorage.getItem(STICKY_PLATFORM_KEY) || "";
+    stickyRegion = localStorage.getItem(STICKY_REGION_KEY) || "";
+  } catch {}
+  const defaultPlatform = platform || stickyPlatform;
+  const defaultRegion = region || stickyRegion;
   
   const [results, setResults] = useState<CrocdbEntry[]>([]);
   const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1, totalResults: 0 });
@@ -117,6 +129,25 @@ export default function BrowsePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchKey, platform, region, page]);
 
+  // On first load, if URL lacks pf/rg but sticky values exist, apply them to URL to make filters sticky
+  useEffect(() => {
+    if (!platform || !region) {
+      try {
+        const stickyPf = localStorage.getItem(STICKY_PLATFORM_KEY) || "";
+        const stickyRg = localStorage.getItem(STICKY_REGION_KEY) || "";
+        const hasSticky = (!!stickyPf && !platform) || (!!stickyRg && !region);
+        if (hasSticky) {
+          const next = new URLSearchParams(searchParams);
+          if (!platform && stickyPf) next.set("pf", stickyPf);
+          if (!region && stickyRg) next.set("rg", stickyRg);
+          if (!next.get("page")) next.set("page", "1");
+          setSearchParams(next);
+        }
+      } catch {}
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Job progress tracking
   useEffect(() => {
     const source = new EventSource(`${API_URL}/events`);
@@ -182,6 +213,20 @@ export default function BrowsePage() {
     if (rg) nextParams.rg = rg;
     nextParams.page = "1"; // Reset to page 1 on new search
     
+    // Persist sticky selections
+    try {
+      if (pf) {
+        localStorage.setItem(STICKY_PLATFORM_KEY, pf);
+      } else {
+        localStorage.removeItem(STICKY_PLATFORM_KEY);
+      }
+      if (rg) {
+        localStorage.setItem(STICKY_REGION_KEY, rg);
+      } else {
+        localStorage.removeItem(STICKY_REGION_KEY);
+      }
+    } catch {}
+
     setSearchParams(nextParams);
   }
 
@@ -212,7 +257,7 @@ export default function BrowsePage() {
           </div>
           <div>
             <label htmlFor="platform-select">Platform</label>
-            <select id="platform-select" name="platform" defaultValue={platform}>
+            <select id="platform-select" name="platform" defaultValue={defaultPlatform}>
               <option value="">All</option>
               {platformsQuery.data &&
                 Object.entries(platformsQuery.data.data.platforms).map(
@@ -226,7 +271,7 @@ export default function BrowsePage() {
           </div>
           <div>
             <label htmlFor="region-select">Region</label>
-            <select id="region-select" name="region" defaultValue={region}>
+            <select id="region-select" name="region" defaultValue={defaultRegion}>
               <option value="">All</option>
               {regionsQuery.data &&
                 Object.entries(regionsQuery.data.data.regions).map(([id, name]) => (

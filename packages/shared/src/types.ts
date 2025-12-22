@@ -105,7 +105,7 @@ export type LibraryItem = {
 };
 
 export type JobType = "scan_local" | "download_and_install";
-export type JobStatus = "queued" | "running" | "done" | "failed";
+export type JobStatus = "queued" | "running" | "paused" | "done" | "failed";
 
 export type JobRecord = {
   id: string;

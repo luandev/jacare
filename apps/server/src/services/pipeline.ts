@@ -25,7 +25,8 @@ export async function runDownloadAndInstall(
   payload: DownloadJobPayload,
   settings: Settings,
   abortSignal?: AbortSignal,
-  reportProgress?: (progress: number, message?: string, bytesDownloaded?: number, totalBytes?: number) => void
+  reportProgress?: (progress: number, message?: string, bytesDownloaded?: number, totalBytes?: number) => void,
+  jobId?: string
 ): Promise<DownloadJobResult> {
   const defaultReport = (progress: number, message?: string) => {};
   const progressReporter = reportProgress || defaultReport;
@@ -69,7 +70,7 @@ export async function runDownloadAndInstall(
     // Map download progress (0-1) to overall progress (0.2-0.7)
     const overallProgress = 0.2 + (progress * 0.5);
     progressReporter(overallProgress, message, bytesDownloaded, totalBytes);
-  });
+  }, jobId);
   logger.info("File download completed", { slug: entry.slug, destination: downloadPath });
 
   // If the asset is a zip, attempt extraction; otherwise, move directly.
@@ -205,7 +206,8 @@ async function downloadFile(
   url: string,
   destination: string,
   abortSignal?: AbortSignal,
-  reportProgress?: (progress: number, message?: string, bytesDownloaded?: number, totalBytes?: number) => void
+  reportProgress?: (progress: number, message?: string, bytesDownloaded?: number, totalBytes?: number) => void,
+  jobId?: string
 ): Promise<void> {
   if (abortSignal?.aborted) throw new Error("Cancelled by user");
   
@@ -253,9 +255,15 @@ async function downloadFile(
   
   if (abortSignal) {
     abortSignal.addEventListener("abort", async () => {
-      logger.info("Download aborted", { url, destination });
+      logger.info("Download aborted", { url, destination, jobId });
       controller.abort();
-      await cleanupPartFile();
+      // Only clean up part file if job is not paused (i.e., it's a cancel, not a pause)
+      // We need to import isJobPaused to check, but to avoid circular dependency,
+      // we'll check if the error message indicates pause vs cancel
+      // Actually, we can't check pause state here without importing from jobs.ts
+      // So we'll skip cleanup on abort - the cancelJob function will handle cleanup
+      // For pause, we want to keep the part file, so we don't clean up here
+      // The cleanup will only happen in cancelJob explicitly
     });
   }
   
@@ -324,7 +332,8 @@ async function downloadFile(
           abortSignal.addEventListener("abort", async () => {
             stream.destroy();
             fileStream.destroy();
-            await cleanupPartFile();
+            // Don't clean up part file on abort - let cancelJob handle cleanup
+            // For pause, we want to keep the part file
             reject(new Error("Cancelled by user"));
           });
         }
@@ -435,7 +444,8 @@ async function downloadFile(
       abortSignal.addEventListener("abort", async () => {
         stream.destroy();
         fileStream.destroy();
-        await cleanupPartFile();
+        // Don't clean up part file on abort - let cancelJob handle cleanup
+        // For pause, we want to keep the part file
         reject(new Error("Cancelled by user"));
       });
     }

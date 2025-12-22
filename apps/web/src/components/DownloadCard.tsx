@@ -59,11 +59,33 @@ function DownloadCard({ job, speedHistory, currentBytes: propCurrentBytes, curre
     }
   });
 
+  const pauseMutation = useMutation({
+    mutationFn: () => apiPost(`/jobs/${job.id}/pause`, {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+    }
+  });
+
+  const resumeMutation = useMutation({
+    mutationFn: () => apiPost(`/jobs/${job.id}/resume`, {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+    }
+  });
+
   const handleCancel = useCallback(() => {
     if (confirm(`Cancel download: ${job.preview?.title || job.id}?`)) {
       cancelMutation.mutate();
     }
   }, [job, cancelMutation]);
+
+  const handlePause = useCallback(() => {
+    pauseMutation.mutate();
+  }, [pauseMutation]);
+
+  const handleResume = useCallback(() => {
+    resumeMutation.mutate();
+  }, [resumeMutation]);
 
   const preview = job.preview;
 
@@ -102,11 +124,28 @@ function DownloadCard({ job, speedHistory, currentBytes: propCurrentBytes, curre
 
           <SpeedChart speeds={speeds} />
 
-          <div className="row" style={{ marginTop: 12, justifyContent: "flex-end" }}>
+          <div className="row" style={{ marginTop: 12, justifyContent: "flex-end", gap: 8 }}>
+            {job.status === "paused" ? (
+              <button
+                onClick={handleResume}
+                className="primary"
+                disabled={resumeMutation.isPending}
+              >
+                {resumeMutation.isPending ? "Resuming..." : "Resume"}
+              </button>
+            ) : job.status === "running" ? (
+              <button
+                onClick={handlePause}
+                className="secondary"
+                disabled={pauseMutation.isPending}
+              >
+                {pauseMutation.isPending ? "Pausing..." : "Pause"}
+              </button>
+            ) : null}
             <button
               onClick={handleCancel}
               className="secondary"
-              disabled={cancelMutation.isPending || job.status !== "running"}
+              disabled={cancelMutation.isPending || (job.status !== "running" && job.status !== "paused")}
             >
               {cancelMutation.isPending ? "Cancelling..." : "Cancel"}
             </button>

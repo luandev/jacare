@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { enqueueDownloadAndInstall, getJobs, getJobSteps, cancelJob } from "../services/jobs";
+import { enqueueDownloadAndInstall, getJobs, getJobSteps, cancelJob, pauseJob, resumeJob, pauseAllJobs, resumeAllJobs } from "../services/jobs";
 import { getJob } from "../db";
 import { getEntry } from "../services/crocdb";
 import { logger } from "../utils/logger";
@@ -89,6 +89,62 @@ router.post("/:id/cancel", async (req, res) => {
   } catch (error) {
     logger.error("Error cancelling job", error, { jobId: req.params.id });
     res.status(500).json({ error: error instanceof Error ? error.message : "Failed to cancel job" });
+  }
+});
+
+router.post("/:id/pause", async (req, res) => {
+  try {
+    logger.info("Pause job request received", { jobId: req.params.id });
+    const paused = await pauseJob(req.params.id);
+    if (paused) {
+      logger.info("Job paused successfully", { jobId: req.params.id });
+      res.json({ ok: true, message: "Job paused" });
+    } else {
+      logger.warn("Job pause failed", { jobId: req.params.id });
+      res.status(404).json({ error: "Job not found or cannot be paused" });
+    }
+  } catch (error) {
+    logger.error("Error pausing job", error, { jobId: req.params.id });
+    res.status(500).json({ error: error instanceof Error ? error.message : "Failed to pause job" });
+  }
+});
+
+router.post("/:id/resume", async (req, res) => {
+  try {
+    logger.info("Resume job request received", { jobId: req.params.id });
+    const resumed = await resumeJob(req.params.id);
+    if (resumed) {
+      logger.info("Job resumed successfully", { jobId: req.params.id });
+      res.json({ ok: true, message: "Job resumed" });
+    } else {
+      logger.warn("Job resume failed", { jobId: req.params.id });
+      res.status(404).json({ error: "Job not found or cannot be resumed" });
+    }
+  } catch (error) {
+    logger.error("Error resuming job", error, { jobId: req.params.id });
+    res.status(500).json({ error: error instanceof Error ? error.message : "Failed to resume job" });
+  }
+});
+
+router.post("/pause-all", async (_req, res) => {
+  try {
+    logger.info("Pause all jobs request received");
+    const count = await pauseAllJobs();
+    res.json({ ok: true, message: `Paused ${count} job(s)`, count });
+  } catch (error) {
+    logger.error("Error pausing all jobs", error);
+    res.status(500).json({ error: error instanceof Error ? error.message : "Failed to pause all jobs" });
+  }
+});
+
+router.post("/resume-all", async (_req, res) => {
+  try {
+    logger.info("Resume all jobs request received");
+    const count = await resumeAllJobs();
+    res.json({ ok: true, message: `Resumed ${count} job(s)`, count });
+  } catch (error) {
+    logger.error("Error resuming all jobs", error);
+    res.status(500).json({ error: error instanceof Error ? error.message : "Failed to resume all jobs" });
   }
 });
 

@@ -27,6 +27,9 @@ const queue = new PQueue({ concurrency: 2 });
 // Track active job tasks for cancellation
 const activeJobTasks = new Map<string, { abortController: AbortController; task: Promise<void> }>();
 
+// Track paused jobs - map jobId to pause controller
+const pausedJobs = new Set<string>();
+
 export function getJobs(): JobRecord[] {
   return listJobs();
 }
@@ -132,6 +135,114 @@ export async function cancelJob(jobId: string): Promise<boolean> {
   
   logger.warn("Job cannot be cancelled (not queued or running)", { jobId, status: job.status });
   return false;
+}
+
+export async function pauseJob(jobId: string): Promise<boolean> {
+  const job = getJob(jobId);
+  if (!job) {
+    logger.warn("Pause job requested for non-existent job", { jobId });
+    return false;
+  }
+  
+  if (job.status !== "running") {
+    logger.warn("Job cannot be paused (not running)", { jobId, status: job.status });
+    return false;
+  }
+  
+  logger.info("Pausing job", { jobId, type: job.type });
+  
+  // Mark job as paused first
+  pausedJobs.add(jobId);
+  updateJobStatus(jobId, "paused");
+  
+  // Abort the current operation (download will stop but part file is kept)
+  // The downloadFile function will detect abort and stop, but we need to prevent cleanup
+  // We'll handle this by checking pause state before cleanup in the pipeline
+  const activeTask = activeJobTasks.get(jobId);
+  if (activeTask) {
+    // Abort will stop the download stream, but we want to keep the part file
+    // The download will throw an error which we'll catch and not mark as failed
+    activeTask.abortController.abort();
+    // Remove from active tasks - we'll resume it later
+    activeJobTasks.delete(jobId);
+  }
+  
+  logger.info("Job paused", { jobId });
+  return true;
+}
+
+export async function resumeJob(jobId: string): Promise<boolean> {
+  const job = getJob(jobId);
+  if (!job) {
+    logger.warn("Resume job requested for non-existent job", { jobId });
+    return false;
+  }
+  
+  if (job.status !== "paused") {
+    logger.warn("Job cannot be resumed (not paused)", { jobId, status: job.status });
+    return false;
+  }
+  
+  logger.info("Resuming job", { jobId, type: job.type });
+  
+  // Remove from paused set
+  pausedJobs.delete(jobId);
+  
+  // Only resume download_and_install jobs
+  if (job.type === "download_and_install") {
+    const payload = job.payload as DownloadJobPayload;
+    const abortController = new AbortController();
+    const task = queue.add(() => runDownloadJob(job, payload, abortController.signal));
+    activeJobTasks.set(job.id, { abortController, task });
+    
+    // Clean up when task completes
+    task.finally(() => {
+      activeJobTasks.delete(job.id);
+      logger.debug("Job task cleaned up", { jobId: job.id });
+    });
+  } else {
+    // For other job types, just mark as queued and let them restart
+    updateJobStatus(jobId, "queued");
+  }
+  
+  logger.info("Job resumed", { jobId });
+  return true;
+}
+
+export async function pauseAllJobs(): Promise<number> {
+  const jobs = listJobs();
+  let pausedCount = 0;
+  
+  for (const job of jobs) {
+    if (job.status === "running" && job.type === "download_and_install") {
+      if (await pauseJob(job.id)) {
+        pausedCount++;
+      }
+    }
+  }
+  
+  logger.info("Paused all running download jobs", { count: pausedCount });
+  return pausedCount;
+}
+
+export async function resumeAllJobs(): Promise<number> {
+  const jobs = listJobs();
+  let resumedCount = 0;
+  
+  for (const job of jobs) {
+    if (job.status === "paused" && job.type === "download_and_install") {
+      if (await resumeJob(job.id)) {
+        resumedCount++;
+      }
+    }
+  }
+  
+  logger.info("Resumed all paused download jobs", { count: resumedCount });
+  return resumedCount;
+}
+
+export function isJobPaused(jobId: string): boolean {
+  return pausedJobs.has(jobId);
 }
 
 function createJobRecord(
@@ -269,6 +380,12 @@ async function runJob(job: JobRecord, handler: (report: JobReporter) => Promise<
     throw new Error("Cancelled by user");
   }
   
+  // Check if job was paused before starting
+  if (pausedJobs.has(job.id)) {
+    logger.debug("Job is paused, skipping execution", { jobId: job.id });
+    throw new Error("Job is paused");
+  }
+  
   logger.debug("Job execution starting", { jobId: job.id, type: job.type });
   updateJobStatus(job.id, "running");
 
@@ -309,11 +426,22 @@ async function runJob(job: JobRecord, handler: (report: JobReporter) => Promise<
       if (abortSignal?.aborted) {
         throw new Error("Cancelled by user");
       }
+      // Check if job was paused
+      if (pausedJobs.has(job.id)) {
+        throw new Error("Job is paused");
+      }
     };
     
     checkAbort();
     await handler(report);
     checkAbort();
+    
+    // Check if job was paused during execution
+    if (pausedJobs.has(job.id)) {
+      logger.debug("Job was paused during execution", { jobId: job.id });
+      return; // Don't mark as done, keep it paused
+    }
+    
     updateJobStep(stepRecord.id, {
       status: "done",
       progress: 1
@@ -336,6 +464,13 @@ async function runJob(job: JobRecord, handler: (report: JobReporter) => Promise<
       ts: Date.now()
     });
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    // Check if job was paused - if so, don't mark as failed
+    if (pausedJobs.has(job.id) || errorMessage === "Job is paused") {
+      logger.debug("Job was paused, not marking as failed", { jobId: job.id });
+      return; // Keep it paused
+    }
     logger.error("Job failed", error, { jobId: job.id, type: job.type });
     updateJobStep(stepRecord.id, {
       status: "failed",

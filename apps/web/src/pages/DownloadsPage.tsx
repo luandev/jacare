@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiGet, API_URL } from "../lib/api";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { apiGet, apiPost, API_URL } from "../lib/api";
 import type { JobEvent, JobRecord } from "@crocdesk/shared";
 import DownloadCard from "../components/DownloadCard";
 
@@ -23,10 +23,10 @@ export default function DownloadsPage() {
     queryFn: () => apiGet<JobWithPreview[]>("/jobs")
   });
 
-  // Filter to only active download jobs
+  // Filter to only active download jobs (including paused)
   const activeDownloads = useMemo(() => {
     return (jobsQuery.data ?? []).filter(
-      (job) => job.type === "download_and_install" && (job.status === "running" || job.status === "queued")
+      (job) => job.type === "download_and_install" && (job.status === "running" || job.status === "queued" || job.status === "paused")
     );
   }, [jobsQuery.data]);
 
@@ -86,8 +86,13 @@ export default function DownloadsPage() {
     return (
       <div className="grid" style={{ gap: "20px" }}>
         <section className="hero">
-          <h1>Downloads</h1>
-          <p>Active download jobs will appear here.</p>
+          <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+              <h1>Downloads</h1>
+              <p>Active download jobs will appear here.</p>
+            </div>
+            <PauseResumeControls />
+          </div>
         </section>
         <section className="card">
           <div className="status">No active downloads</div>
@@ -99,8 +104,13 @@ export default function DownloadsPage() {
   return (
     <div className="grid" style={{ gap: "20px" }}>
       <section className="hero">
-        <h1>Downloads</h1>
-        <p>Monitor and control active download jobs in real-time.</p>
+        <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <h1>Downloads</h1>
+            <p>Monitor and control active download jobs in real-time.</p>
+          </div>
+          <PauseResumeControls />
+        </div>
       </section>
 
       <section className="list">
@@ -114,6 +124,59 @@ export default function DownloadsPage() {
           />
         ))}
       </section>
+    </div>
+  );
+}
+
+function PauseResumeControls() {
+  const queryClient = useQueryClient();
+  const jobsQuery = useQuery({
+    queryKey: ["jobs"],
+    queryFn: () => apiGet<JobWithPreview[]>("/jobs")
+  });
+
+  const pauseAllMutation = useMutation({
+    mutationFn: () => apiPost("/jobs/pause-all", {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+    }
+  });
+
+  const resumeAllMutation = useMutation({
+    mutationFn: () => apiPost("/jobs/resume-all", {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+    }
+  });
+
+  const jobs = jobsQuery.data ?? [];
+  const runningDownloads = jobs.filter(j => j.type === "download_and_install" && j.status === "running");
+  const pausedDownloads = jobs.filter(j => j.type === "download_and_install" && j.status === "paused");
+
+  if (runningDownloads.length === 0 && pausedDownloads.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="row" style={{ gap: 8 }}>
+      {runningDownloads.length > 0 && (
+        <button
+          onClick={() => pauseAllMutation.mutate()}
+          className="secondary"
+          disabled={pauseAllMutation.isPending}
+        >
+          {pauseAllMutation.isPending ? "Pausing..." : `Pause All (${runningDownloads.length})`}
+        </button>
+      )}
+      {pausedDownloads.length > 0 && (
+        <button
+          onClick={() => resumeAllMutation.mutate()}
+          className="primary"
+          disabled={resumeAllMutation.isPending}
+        >
+          {resumeAllMutation.isPending ? "Resuming..." : `Resume All (${pausedDownloads.length})`}
+        </button>
+      )}
     </div>
   );
 }
