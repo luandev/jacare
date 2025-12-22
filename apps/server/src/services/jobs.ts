@@ -18,6 +18,7 @@ import {
 import { publishEvent } from "../events";
 import { scanLocal } from "./scanner";
 import { runDownloadAndInstall, type DownloadJobPayload } from "./pipeline";
+import { logger } from "../utils/logger";
 
 const queue = new PQueue({ concurrency: 2 });
 
@@ -34,6 +35,7 @@ export function getJobSteps(jobId: string) {
 
 export async function enqueueScanLocal(): Promise<JobRecord> {
   const job = createJobRecord("scan_local", {});
+  logger.info("Scan job enqueued", { jobId: job.id });
   const settings = getSettings() ?? DEFAULT_SETTINGS;
   queue.concurrency = settings.queue?.concurrency ?? 2;
   queue.add(() => runScanJob(job));
@@ -44,6 +46,7 @@ export async function enqueueDownloadAndInstall(
   payload: DownloadJobPayload
 ): Promise<JobRecord> {
   const job = createJobRecord("download_and_install", payload);
+  logger.info("Download job enqueued", { jobId: job.id, slug: payload.slug, linkIndex: payload.linkIndex });
   const settings = getSettings() ?? DEFAULT_SETTINGS;
   queue.concurrency = settings.queue?.concurrency ?? 2;
   
@@ -54,6 +57,7 @@ export async function enqueueDownloadAndInstall(
   // Clean up when task completes
   task.finally(() => {
     activeJobTasks.delete(job.id);
+    logger.debug("Job task cleaned up", { jobId: job.id });
   });
   
   return job;
@@ -62,8 +66,11 @@ export async function enqueueDownloadAndInstall(
 export async function cancelJob(jobId: string): Promise<boolean> {
   const job = getJob(jobId);
   if (!job) {
+    logger.warn("Cancel job requested for non-existent job", { jobId });
     return false;
   }
+  
+  logger.info("Cancelling job", { jobId, status: job.status, type: job.type });
   
   // If job is queued, remove from queue
   if (job.status === "queued") {
@@ -76,6 +83,7 @@ export async function cancelJob(jobId: string): Promise<boolean> {
       ts: Date.now()
     });
     activeJobTasks.delete(jobId);
+    logger.info("Queued job cancelled", { jobId });
     return true;
   }
   
@@ -101,9 +109,11 @@ export async function cancelJob(jobId: string): Promise<boolean> {
       ts: Date.now()
     });
     activeJobTasks.delete(jobId);
+    logger.info("Running job cancelled", { jobId });
     return true;
   }
   
+  logger.warn("Job cannot be cancelled (not queued or running)", { jobId, status: job.status });
   return false;
 }
 
@@ -133,11 +143,14 @@ function createJobRecord(
 }
 
 async function runScanJob(job: JobRecord): Promise<void> {
+  logger.info("Starting scan job", { jobId: job.id });
   await runJob(job, async (report) => {
     const settings = getSettings() ?? DEFAULT_SETTINGS;
     const downloadDir = settings.downloadDir || "./downloads";
     report.step("scan_local", 0.1, `Scanning download root ${downloadDir}`);
+    logger.debug("Scanning directory", { jobId: job.id, downloadDir });
     const items = await scanLocal([{ id: "downloads", path: downloadDir }]);
+    logger.info("Scan found items", { jobId: job.id, count: items.length });
     for (const item of items) {
       upsertLibraryItem({
         path: item.path,
@@ -150,6 +163,7 @@ async function runScanJob(job: JobRecord): Promise<void> {
       });
     }
     report.step("scan_local", 1, `Indexed ${items.length} files`);
+    logger.info("Scan job completed", { jobId: job.id, itemsIndexed: items.length });
   });
 }
 
@@ -158,14 +172,24 @@ export async function runDownloadJob(
   payload: DownloadJobPayload,
   abortSignal?: AbortSignal
 ): Promise<void> {
+  logger.info("Starting download job", { jobId: job.id, slug: payload.slug });
   await runJob(job, async (report) => {
     if (abortSignal?.aborted) {
+      logger.info("Download job aborted before start", { jobId: job.id });
       throw new Error("Cancelled by user");
     }
     
     const settings = getSettings() ?? DEFAULT_SETTINGS;
     const result = await runDownloadAndInstall(payload, settings, abortSignal, (progress, message, bytesDownloaded, totalBytes) => {
       report.step("download_and_install", progress, message, bytesDownloaded, totalBytes);
+      // Log progress milestones
+      if (progress >= 0.25 && progress < 0.26) {
+        logger.debug("Download progress: 25%", { jobId: job.id, slug: payload.slug });
+      } else if (progress >= 0.5 && progress < 0.51) {
+        logger.debug("Download progress: 50%", { jobId: job.id, slug: payload.slug });
+      } else if (progress >= 0.75 && progress < 0.76) {
+        logger.debug("Download progress: 75%", { jobId: job.id, slug: payload.slug });
+      }
     });
 
     const files: string[] = [];
@@ -198,6 +222,12 @@ export async function runDownloadJob(
     }
 
     if (files.length > 0) {
+      logger.info("Download job completed successfully", { 
+        jobId: job.id, 
+        slug: result.entry.slug, 
+        filesCount: files.length,
+        platform: result.entry.platform
+      });
       const firstItem = getLibraryItemByPath(files[0]);
       publishEvent({
         jobId: job.id,
@@ -207,6 +237,8 @@ export async function runDownloadJob(
         libraryItemId: firstItem?.id,
         ts: Date.now()
       });
+    } else {
+      logger.warn("Download job completed but no files were created", { jobId: job.id, slug: payload.slug });
     }
   });
 }
@@ -220,6 +252,7 @@ async function runJob(job: JobRecord, handler: (report: JobReporter) => Promise<
     throw new Error("Cancelled by user");
   }
   
+  logger.debug("Job execution starting", { jobId: job.id, type: job.type });
   updateJobStatus(job.id, "running");
 
   const stepRecord = createJobStep(job.id, job.type);
@@ -278,6 +311,7 @@ async function runJob(job: JobRecord, handler: (report: JobReporter) => Promise<
     });
 
     updateJobStatus(job.id, "done");
+    logger.info("Job completed successfully", { jobId: job.id, type: job.type });
     publishEvent({
       jobId: job.id,
       type: "JOB_DONE",
@@ -285,6 +319,7 @@ async function runJob(job: JobRecord, handler: (report: JobReporter) => Promise<
       ts: Date.now()
     });
   } catch (error) {
+    logger.error("Job failed", error, { jobId: job.id, type: job.type });
     updateJobStep(stepRecord.id, {
       status: "failed",
       message: error instanceof Error ? error.message : "Job failed"

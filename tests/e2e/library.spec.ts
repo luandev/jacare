@@ -68,15 +68,20 @@ test.describe('Library view management', () => {
   });
 
   test('renders items with cover and opens detailed view', async ({ page }) => {
+    // Wait for library to load
+    await page.waitForSelector('article.card', { timeout: 5000 });
     const cards = page.locator('article.card');
     await expect(cards).toHaveCount(1);
-    await expect(cards.nth(0).locator('img.thumb')).toBeVisible();
+    
+    // Wait for image to load (either the actual image or placeholder)
+    const card = cards.nth(0);
+    await expect(card.locator('img.thumb, .thumb-placeholder')).toBeVisible({ timeout: 5000 });
 
     // Open details (modal overlay route)
     await page.getByRole('link', { name: 'Details' }).click();
     const modal = page.getByTestId('modal-card');
-    await expect(modal).toBeVisible();
-    await expect(modal.getByRole('heading', { name: 'Metroid' })).toBeVisible();
+    await expect(modal).toBeVisible({ timeout: 5000 });
+    await expect(modal.getByRole('heading', { name: 'Metroid' })).toBeVisible({ timeout: 5000 });
     await captureOnCI(page, 'library-detail');
   });
 

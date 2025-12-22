@@ -5,6 +5,7 @@ import type { ReadableStream as NodeReadableStream } from "stream/web";
 import type { LibraryItem, Manifest } from "@crocdesk/shared";
 import { writeManifest } from "./manifest";
 import { getEntry, searchEntries } from "./crocdb";
+import { logger } from "../utils/logger";
 
 const SCAN_EXTENSIONS = new Set([
   ".zip",
@@ -46,7 +47,9 @@ export async function scanLocal(roots: ScanRoot[]): Promise<LibraryItem[]> {
     try {
       await walk(rootPath, root.platform, items, manifestCache);
     } catch (error) {
-      console.warn(`Scan skipped for ${rootPath}:`, error);
+      // Import logger at top if not already imported
+      const { logger } = await import("../utils/logger");
+      logger.warn(`Scan skipped for ${rootPath}`, { error: error instanceof Error ? error.message : String(error) });
     }
   }
 

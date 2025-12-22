@@ -13,6 +13,7 @@ test.describe('Settings page', () => {
   test('renders basic settings form', async ({ page }) => {
     await page.getByRole('link', { name: 'Settings' }).click();
     await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
-    await expect(page.getByLabel('Download Directory')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Download Directory' })).toBeVisible();
+    await expect(page.getByPlaceholder('./downloads')).toBeVisible();
   });
 });

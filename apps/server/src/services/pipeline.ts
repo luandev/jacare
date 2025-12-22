@@ -8,6 +8,7 @@ import { getEntry } from "./crocdb";
 import { writeManifest } from "./manifest";
 import { ensureDir, moveFile } from "../utils/fs";
 import { Extract } from "unzipper";
+import { logger } from "../utils/logger";
 
 export type DownloadJobPayload = {
   slug: string;
@@ -30,8 +31,10 @@ export async function runDownloadAndInstall(
   const progressReporter = reportProgress || defaultReport;
   if (abortSignal?.aborted) throw new Error("Cancelled by user");
   progressReporter(0.05, "Resolving entry");
+  logger.debug("Resolving entry", { slug: payload.slug });
   const entryResponse = await getEntry(payload.slug);
   const entry = entryResponse.data.entry;
+  logger.debug("Entry resolved", { slug: entry.slug, platform: entry.platform, title: entry.title });
 
   if (!entry.links || entry.links.length === 0) {
     throw new Error("No download links available");
@@ -45,6 +48,7 @@ export async function runDownloadAndInstall(
   const link = entry.links[resolvedLinkIndex];
 
   if (!ENABLE_DOWNLOADS) {
+    logger.warn("Downloads disabled, skipping download", { slug: entry.slug });
     progressReporter(1, "Downloads disabled; skipping transfer");
     return { entry };
   }
@@ -54,11 +58,19 @@ export async function runDownloadAndInstall(
   const downloadPath = path.join(downloadDir, link.filename || `${entry.slug}.zip`);
 
   progressReporter(0.2, "Downloading asset");
+  logger.info("Starting file download", { 
+    slug: entry.slug, 
+    url: link.url, 
+    destination: downloadPath,
+    format: link.format,
+    size: link.size
+  });
   await downloadFile(link.url, downloadPath, abortSignal, (progress, message, bytesDownloaded, totalBytes) => {
     // Map download progress (0-1) to overall progress (0.2-0.7)
     const overallProgress = 0.2 + (progress * 0.5);
     progressReporter(overallProgress, message, bytesDownloaded, totalBytes);
   });
+  logger.info("File download completed", { slug: entry.slug, destination: downloadPath });
 
   // If the asset is a zip, attempt extraction; otherwise, move directly.
   const isZip = (link.format?.toLowerCase() === "zip") || path.extname(downloadPath).toLowerCase() === ".zip";
@@ -196,17 +208,23 @@ async function downloadFile(
 ): Promise<void> {
   if (abortSignal?.aborted) throw new Error("Cancelled by user");
   
+  logger.debug("Initiating download", { url, destination });
   const controller = new AbortController();
   if (abortSignal) {
-    abortSignal.addEventListener("abort", () => controller.abort());
+    abortSignal.addEventListener("abort", () => {
+      logger.info("Download aborted", { url, destination });
+      controller.abort();
+    });
   }
   
   const response = await fetch(url, { signal: controller.signal });
   if (!response.ok || !response.body) {
+    logger.error("Download failed", new Error(`HTTP ${response.status}`), { url, status: response.status });
     throw new Error(`Download failed: ${response.status}`);
   }
 
   const total = Number(response.headers.get("content-length") ?? 0);
+  logger.debug("Download response received", { url, totalBytes: total, contentType: response.headers.get("content-type") });
   const tempPath = `${destination}.part`;
   await ensureDir(path.dirname(destination));
 
@@ -255,7 +273,9 @@ async function downloadFile(
     throw new Error("Cancelled by user");
   }
 
+  logger.debug("Moving downloaded file to final destination", { tempPath, destination });
   await moveFile(tempPath, destination);
+  logger.debug("Download file operation completed", { destination, totalBytes: total });
 }
 
 async function finalizeLayout(
