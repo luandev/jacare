@@ -116,3 +116,4 @@ describe('GameCard', () => {
     expect(placeholder).toBeInTheDocument();
   });
 });
+

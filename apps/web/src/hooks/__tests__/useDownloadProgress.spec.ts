@@ -52,3 +52,4 @@ describe('useDownloadProgress', () => {
     expect(result.current.eta).toBeNull();
   });
 });
+

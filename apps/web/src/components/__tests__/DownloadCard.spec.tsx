@@ -112,3 +112,4 @@ describe('DownloadCard', () => {
     expect(progressElement).toBeInTheDocument();
   });
 });
+
