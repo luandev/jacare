@@ -71,6 +71,12 @@ jobs:
         with:
           script: |
             const runUrl = `https://github.com/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`;
+            const issueNumber = context.issue?.number || context.payload.pull_request?.number;
+
+            if (!issueNumber) {
+              core.warning('Skipping PR comment: pull_request payload not available.');
+              return;
+            }
             const body = [
               "CI run completed for this pull request.",
               "",
@@ -82,6 +88,6 @@ jobs:
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.payload.pull_request.number,
+              issue_number: issueNumber,
               body,
             });
