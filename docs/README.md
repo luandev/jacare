@@ -11,7 +11,7 @@ Welcome to the full technical README for **Jacare**, the Brazilian-inspired desk
 - [Development scripts](#development-scripts)
 - [Configuration](#configuration)
 - [Data & storage](#data--storage)
-- [API quick reference](#api-quick-reference)
+- [API reference](#api-reference)
 - [Production build](#production-build)
 - [Support](#support)
 
@@ -22,7 +22,7 @@ Jacare helps you browse, enrich, and launch ROMs from one place. It keeps your l
 - **Electron shell** boots the server and ships the React UI for a native desktop experience.
 - **Express API** powers Crocdb searches, manifest writing, and job orchestration.
 - **React + Vite UI** calls the API over REST + SSE for real-time job updates.
-- **SQLite backing store** keeps settings, profiles, cached Crocdb responses, library items, and job tracking tables.
+- **SQLite backing store** keeps settings, cached Crocdb responses, library items, and job tracking tables.
 
 ## Repository layout
 - `apps/server` – Express API, jobs, local scanning, and Crocdb client.
@@ -31,7 +31,7 @@ Jacare helps you browse, enrich, and launch ROMs from one place. It keeps your l
 - `packages/shared` – Shared types, defaults, and the manifest schema used across workspaces.
 
 ## Prerequisites
-- Node.js 18+
+- Node.js 20+
 - npm
 - Optional: Git LFS if you store binaries or media in the repo.
 
@@ -42,34 +42,76 @@ npm ci
 
 ## Development scripts
 - `npm run dev` – Run shared build watch + server + web + desktop together.
+- `npm run dev:shared` – Start the shared package in watch mode.
 - `npm run dev:server` – Start the Express API and job runners.
 - `npm run dev:web` – Start the React UI via Vite.
 - `npm run dev:desktop` – Start the Electron shell pointing at the dev server.
 - `npm run build` – Build all workspaces.
 - `npm run typecheck` – Type-check the monorepo.
+- `npm run lint` – Lint all TypeScript and React code.
+- `npm run test:unit` – Run unit tests with Vitest.
 
 ## Configuration
-- `CROCDESK_PORT` (default `3333`)
-- `CROCDESK_DATA_DIR` (default `./data`)
-- `CROCDESK_ENABLE_DOWNLOADS` (default `false`)
-- `CROCDB_BASE_URL` (default `https://api.crocdb.net`)
-- `CROCDB_CACHE_TTL_MS` (default `86400000`)
-- `VITE_API_URL` (default `http://localhost:3333`)
-- `CROCDESK_DEV_URL` (default `http://localhost:5173`)
+- `CROCDESK_PORT` (default `3333`) – Server port
+- `CROCDESK_DATA_DIR` (default `./data`) – Directory for SQLite databases and cache
+- `CROCDESK_ENABLE_DOWNLOADS` (default `false`) – Enable download functionality
+- `CROCDB_BASE_URL` (default `https://api.crocdb.net`) – Crocdb API base URL
+- `CROCDB_CACHE_TTL_MS` (default `86400000`) – Cache TTL in milliseconds (24 hours)
+- `VITE_API_URL` (default `http://localhost:3333`) – API URL for web client
+- `CROCDESK_DEV_URL` (default `http://localhost:5173`) – Dev server URL for Electron
+
+Settings stored in the database:
+- `downloadDir` – Temporary directory for zip file downloads (deleted after extraction)
+- `libraryDir` – Root directory where extracted game files are stored. All scanning and library operations work from this root.
+- `queue.concurrency` (optional) – Maximum concurrent jobs
 
 ## Data & storage
-- SQLite tables: `settings`, `profiles`, `crocdb_cache_search`, `crocdb_cache_entry`, `library_items`, `jobs`, `job_steps`.
-- Each scanned ROM folder receives a `.crocdesk.json` manifest describing the game entry.
-- Data directory defaults to `./data`; point it to a faster disk or network share as needed.
+- **SQLite tables:**
+  - `settings` – Application settings (downloadDir, libraryDir, queue config)
+  - `crocdb_cache_search` – Cached search results from Crocdb
+  - `crocdb_cache_entry` – Cached entry data from Crocdb
+  - `library_items` – Indexed ROM files with metadata
+  - `jobs` – Job records (scan_local, download_and_install)
+  - `job_steps` – Individual step progress for jobs
+- **Manifests:** Each scanned ROM folder receives a `.crocdesk.json` manifest describing the game entry.
+- **Data directory:** Defaults to `./data`; point it to a faster disk or network share as needed.
 
-## API quick reference
-- Base URL: `http://localhost:<CROCDESK_PORT>` (3333 by default) or the packaged server inside Electron.
-- Endpoints:
-  - `POST /search` – Query Crocdb for matches.
-  - `POST /entry` – Pull metadata and assets for a specific result.
-  - `GET /platforms` / `GET /regions` / `GET /info` – Reference data for the UI.
-  - `GET /events` – SSE stream for job progress (scans, downloads, cache refreshes).
-- Responses are wrapped as `{ info, data }` objects for consistency.
+## API reference
+- **Base URL:** `http://localhost:<CROCDESK_PORT>` (3333 by default) or the packaged server inside Electron.
+
+### Crocdb endpoints
+- `POST /crocdb/search` – Query Crocdb for matches. Request body: `{ search_key?, platforms?, regions?, rom_id?, max_results?, page? }`
+- `POST /crocdb/entry` – Pull metadata and assets for a specific result. Request body: `{ slug }`
+- `GET /crocdb/platforms` – Get available platforms
+- `GET /crocdb/regions` – Get available regions
+- `GET /crocdb/info` – Get Crocdb service info
+
+### Library endpoints
+- `GET /library/items?platform=<platform>` – List library items (optionally filtered by platform)
+- `GET /library/games?platform=<platform>` – List library games (optionally filtered by platform)
+- `POST /library/scan/local` – Trigger a local scan job
+- `DELETE /library/item?dir=<path>` – Delete a library item and its directory
+
+### Jobs endpoints
+- `GET /jobs` – List all jobs with preview data
+- `GET /jobs/:id` – Get job details and steps
+- `POST /jobs/download` – Enqueue a download and install job. Request body: `{ slug, linkIndex? }`
+- `POST /jobs/:id/cancel` – Cancel a job
+- `POST /jobs/:id/pause` – Pause a job
+- `POST /jobs/:id/resume` – Resume a paused job
+- `POST /jobs/pause-all` – Pause all jobs
+- `POST /jobs/resume-all` – Resume all paused jobs
+
+### Settings endpoints
+- `GET /settings` – Get current settings
+- `PUT /settings` – Update settings. Request body: Settings object
+
+### Other endpoints
+- `GET /events` – SSE stream for job progress (scans, downloads, cache refreshes)
+- `GET /file?path=<path>` – Serve files from the library directory (JSON files are parsed, others are streamed)
+- `GET /health` – Health check endpoint
+
+**Responses:** Wrapped as `{ info, data }` objects for consistency.
 
 ## Production build
 - Run `npm run build` to compile all workspaces.
@@ -77,6 +119,6 @@ npm ci
 - CI on `main` can publish release archives with the latest changelog and README.
 
 ## Support
-- Issues & roadmap: [GitHub Issues](https://github.com/your-org/crocdesk/issues)
+- Issues & roadmap: [GitHub Issues](https://github.com/luandev/jacare/issues)
 - Crocdb service: [https://crocdb.net](https://crocdb.net) and [https://api.crocdb.net](https://api.crocdb.net)
 - Tech stack docs: [Electron](https://www.electronjs.org/), [Express](https://expressjs.com/), [Vite](https://vitejs.dev/), [React](https://react.dev/)
