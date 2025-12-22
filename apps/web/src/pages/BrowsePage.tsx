@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import PlatformIcon from "../components/PlatformIcon";
+import PaginationBar from "../components/PaginationBar";
 import { apiGet, apiPost, API_URL } from "../lib/api";
 import type {
   CrocdbApiResponse,
@@ -14,18 +15,24 @@ import type {
   JobEvent
 } from "@crocdesk/shared";
 
+const RESULTS_PER_PAGE = 60;
+
 export default function BrowsePage() {
   const location = useLocation();
-  const STORAGE_KEY = "crocdesk:browseState";
   const [searchParams, setSearchParams] = useSearchParams();
-  const [searchKey, setSearchKey] = useState("");
-  const [platform, setPlatform] = useState("");
-  const [region, setRegion] = useState("");
+  
+  // Read state from URL params
+  const searchKey = searchParams.get("q") || "";
+  const platform = searchParams.get("pf") || "";
+  const region = searchParams.get("rg") || "";
+  const page = parseInt(searchParams.get("page") || "1", 10);
+  
   const [results, setResults] = useState<CrocdbEntry[]>([]);
+  const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1, totalResults: 0 });
   const [status, setStatus] = useState<string>("");
   const [downloadingSlugs, setDownloadingSlugs] = useState<Set<string>>(new Set());
   const [progressBySlug, setProgressBySlug] = useState<Record<string, number>>({});
-  const [selectedLinkIndexBySlug, setSelectedLinkIndexBySlug] = useState<Record<string, number>>({});
+  const [gridColumns, setGridColumns] = useState(3);
 
   const platformsQuery = useQuery({
     queryKey: ["platforms"],
@@ -70,21 +77,12 @@ export default function BrowsePage() {
       ),
     onSuccess: (response) => {
       setResults(response.data.results ?? []);
+      setPagination({
+        currentPage: response.data.current_page ?? 1,
+        totalPages: response.data.total_pages ?? 1,
+        totalResults: response.data.total_results ?? 0
+      });
       setStatus(`Found ${response.data.total_results} results`);
-      try {
-        const saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || "{}");
-        sessionStorage.setItem(
-          STORAGE_KEY,
-          JSON.stringify({
-            ...saved,
-            searchKey,
-            platform,
-            region,
-            status: `Found ${response.data.total_results} results`,
-            results: response.data.results ?? []
-          })
-        );
-      } catch {}
     },
     onError: (error) => {
       setStatus(error instanceof Error ? error.message : "Search failed");
@@ -103,6 +101,21 @@ export default function BrowsePage() {
     onError: (error) =>
       setStatus(error instanceof Error ? error.message : "Download failed")
   });
+  // Auto-search when URL params change
+  useEffect(() => {
+    if (searchKey || platform || region) {
+      searchMutation.mutate({
+        search_key: searchKey || undefined,
+        platforms: platform ? [platform] : undefined,
+        regions: region ? [region] : undefined,
+        max_results: RESULTS_PER_PAGE,
+        page
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchKey, platform, region, page]);
+
+  // Job progress tracking
   useEffect(() => {
     const source = new EventSource(`${API_URL}/events`);
     source.onmessage = (event) => {
@@ -121,98 +134,35 @@ export default function BrowsePage() {
             });
           }
           if (data.type === "JOB_RESULT") {
-            // When a download finishes, make sure library items are refreshed
             ownedQuery.refetch().catch(() => {});
           }
         }
       } catch {}
     };
     return () => source.close();
-  }, []);
-
-
-  useEffect(() => {
-    // Restore previous state from sessionStorage
-    try {
-      // Prefer URL query params if present
-      const q = searchParams.get("q") || undefined;
-      const pf = searchParams.get("pf") || undefined;
-      const rg = searchParams.get("rg") || undefined;
-      if (q) setSearchKey(q);
-      if (pf) setPlatform(pf);
-      if (rg) setRegion(rg);
-
-      const raw = sessionStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const saved = JSON.parse(raw) as {
-          searchKey?: string;
-          platform?: string;
-          region?: string;
-          results?: CrocdbEntry[];
-          status?: string;
-        };
-        if (!q && saved.searchKey) setSearchKey(saved.searchKey);
-        if (!pf && saved.platform) setPlatform(saved.platform);
-        if (!rg && saved.region) setRegion(saved.region);
-        if (saved.results && !results.length) setResults(saved.results);
-        if (saved.status) setStatus(saved.status);
-      }
-    } catch {}
-  }, []);
-
-  // After initial hydration, enable persistence writes
-  const hydratedRef = useRef(false);
-  useEffect(() => {
-    hydratedRef.current = true;
-    // If URL has params but no results yet, auto-run search to refill grid
-    const q = searchParams.get("q") || undefined;
-    const pf = searchParams.get("pf") || undefined;
-    const rg = searchParams.get("rg") || undefined;
-    if ((q || pf || rg) && results.length === 0) {
-      searchMutation.mutate({
-        search_key: q ?? undefined,
-        platforms: pf ? [pf] : undefined,
-        regions: rg ? [rg] : undefined,
-        max_results: 60,
-        page: 1
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Persist lightweight state on changes
-  useEffect(() => {
-    if (!hydratedRef.current) return;
-    try {
-      const saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || "{}");
-      sessionStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({
-          ...saved,
-          searchKey,
-          platform,
-          region,
-          status,
-          results
-        })
-      );
-    } catch {}
-  }, [searchKey, platform, region, status, results]);
+  }, [ownedQuery]);
 
   function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const formData = new FormData(event.currentTarget);
     const nextParams: Record<string, string> = {};
-    if (searchKey) nextParams.q = searchKey;
-    if (platform) nextParams.pf = platform;
-    if (region) nextParams.rg = region;
+    const q = (formData.get("search") as string) || "";
+    const pf = (formData.get("platform") as string) || "";
+    const rg = (formData.get("region") as string) || "";
+    
+    if (q) nextParams.q = q;
+    if (pf) nextParams.pf = pf;
+    if (rg) nextParams.rg = rg;
+    nextParams.page = "1"; // Reset to page 1 on new search
+    
     setSearchParams(nextParams);
-    searchMutation.mutate({
-      search_key: searchKey || undefined,
-      platforms: platform ? [platform] : undefined,
-      regions: region ? [region] : undefined,
-      max_results: 60,
-      page: 1
-    });
+  }
+
+  function handlePageChange(newPage: number) {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set("page", newPage.toString());
+    setSearchParams(nextParams);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   return (
@@ -228,14 +178,14 @@ export default function BrowsePage() {
             <label htmlFor="search-input">Search</label>
             <input
               id="search-input"
-              value={searchKey}
-              onChange={(event) => setSearchKey(event.target.value)}
+              name="search"
+              defaultValue={searchKey}
               placeholder="Croc, Zelda, Metroid"
             />
           </div>
           <div>
             <label htmlFor="platform-select">Platform</label>
-            <select id="platform-select" value={platform} onChange={(event) => setPlatform(event.target.value)}>
+            <select id="platform-select" name="platform" defaultValue={platform}>
               <option value="">All</option>
               {platformsQuery.data &&
                 Object.entries(platformsQuery.data.data.platforms).map(
@@ -249,7 +199,7 @@ export default function BrowsePage() {
           </div>
           <div>
             <label htmlFor="region-select">Region</label>
-            <select id="region-select" value={region} onChange={(event) => setRegion(event.target.value)}>
+            <select id="region-select" name="region" defaultValue={region}>
               <option value="">All</option>
               {regionsQuery.data &&
                 Object.entries(regionsQuery.data.data.regions).map(([id, name]) => (
@@ -264,7 +214,7 @@ export default function BrowsePage() {
         {status && <div className="status">{status}</div>}
       </section>
 
-      <section className="grid cols-3">
+      <section className={`grid cols-${gridColumns}`} style={{ gridTemplateColumns: `repeat(auto-fit, minmax(${Math.max(140, 320 - (gridColumns - 3) * 40)}px, 1fr))` }}>
         {results.map((entry) => {
           const isOwned = ownedSlugs.has(entry.slug);
           const isDownloading = downloadingSlugs.has(entry.slug);
@@ -310,7 +260,7 @@ export default function BrowsePage() {
                 </div>
               </div>
               <div className="row">
-                <h3 className="card-title">
+                <h3 style={{ margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   <Link to={`/game/${entry.slug}`} state={{ backgroundLocation: location }}>
                     {entry.title}
                   </Link>
@@ -320,19 +270,17 @@ export default function BrowsePage() {
               </div>
               <div className="status">{entry.platform.toUpperCase()}</div>
               <div className="status">{entry.regions.join(", ")}</div>
-              <div className="row" style={{ marginTop: "12px", flexWrap: "wrap" }}>
-                <span className="status">Links: {entry.links.length}</span>
-                {renderFormatChooser(entry)}
-              </div>
               <div className="row" style={{ marginTop: 8, flexWrap: "wrap", gap: 8 }}>
                 {!isOwned && !isDownloading ? (
                   <button
-                    onClick={() =>
+                    onClick={() => {
+                      const format = getPreferredFormat(entry);
+                      const linkIndex = findLinkIndex(entry, format);
                       downloadMutation.mutate({
                         slug: entry.slug,
-                        linkIndex: computeSelectedLinkIndex(entry)
-                      })
-                    }
+                        linkIndex
+                      });
+                    }}
                   >
                     Queue Download
                   </button>
@@ -372,101 +320,48 @@ export default function BrowsePage() {
           );
         })}
       </section>
+
+      <PaginationBar
+        currentPage={pagination.currentPage}
+        totalPages={pagination.totalPages}
+        onPageChange={handlePageChange}
+        onColumnsChange={setGridColumns}
+        showGridControls={true}
+        storageKey="crocdesk:browseGridColumns"
+      />
     </div>
   );
 }
 
-function computeSelectedLinkIndex(entry: CrocdbEntry): number | undefined {
-  // Use user-picked index when present
-  const stored = (computeSelectedLinkIndex as any)._get(entry.slug);
-  if (typeof stored === "number") return stored;
-  // If only one format, let server heuristics decide (may prefer Myrient automatically)
+function getPreferredFormat(entry: CrocdbEntry): string {
   const formats = Array.from(new Set(entry.links.map((l) => (l.format || "").toLowerCase())));
-  if (formats.length <= 1) return undefined;
-  // With multiple formats, compute a sensible default index using Myrient preference
-  const idx = chooseLinkIndexForEntry(entry, defaultPreferredFormat(entry));
-  return idx;
-}
-
-function renderFormatChooser(entry: CrocdbEntry): JSX.Element | null {
-  // Derive formats
-  const formats = Array.from(
-    new Set(entry.links.map((l) => (l.format || "").toLowerCase()))
-  );
-  if (formats.length <= 1) return null;
-
-  // Determine current selection for this slug
-  const getSelectedIndex = (computeSelectedLinkIndex as any)._get(entry.slug);
-  const selectedIdx: number | undefined = typeof getSelectedIndex === "number"
-    ? getSelectedIndex
-    : chooseLinkIndexForEntry(entry, defaultPreferredFormat(entry));
-  const selectedFormat = selectedIdx != null
-    ? (entry.links[selectedIdx].format || "").toLowerCase()
-    : defaultPreferredFormat(entry);
-
-  // Render a compact chooser
-  return (
-    <>
-      <span className="status" style={{ marginLeft: 8 }}>FORMAT</span>
-      <select
-        id={`fmt-${entry.slug}`}
-        value={selectedFormat}
-        onChange={(e) => {
-          const fmt = e.target.value.toLowerCase();
-          const idx = chooseLinkIndexForEntry(entry, fmt);
-          (computeSelectedLinkIndex as any)._set(entry.slug, idx);
-        }}
-        style={{ minWidth: 110 }}
-      >
-        {formats.map((fmt) => (
-          <option key={fmt} value={fmt}>
-            {fmt.toUpperCase()}
-          </option>
-        ))}
-      </select>
-    </>
-  );
-}
-
-function defaultPreferredFormat(entry: CrocdbEntry): string {
-  // Prefer a format that has Myrient host; otherwise the first format
-  const linksByFormat = new Map<string, typeof entry.links>();
-  for (const l of entry.links) {
-    const f = (l.format || "").toLowerCase();
-    linksByFormat.set(f, [...(linksByFormat.get(f) ?? []), l]);
-  }
-  for (const [fmt, links] of linksByFormat) {
-    if (links.some((l) => (l.host || "").toLowerCase() === "myrient")) {
+  if (formats.length <= 1) return formats[0] || "";
+  
+  // Prefer format with Myrient host
+  for (const fmt of formats) {
+    if (entry.links.some((l) => 
+      (l.format || "").toLowerCase() === fmt && 
+      (l.host || "").toLowerCase() === "myrient"
+    )) {
       return fmt;
     }
   }
-  return Array.from(linksByFormat.keys())[0] ?? "";
+  return formats[0] || "";
 }
 
-function chooseLinkIndexForEntry(entry: CrocdbEntry, preferredFormat?: string): number {
-  let candidates = entry.links;
-  if (preferredFormat) {
-    candidates = entry.links.filter(
-      (l) => (l.format || "").toLowerCase() === preferredFormat.toLowerCase()
-    );
-    if (candidates.length === 0) {
-      candidates = entry.links;
-    }
-  }
-  const myrientIdx = candidates.findIndex(
-    (l) => (l.host || "").toLowerCase() === "myrient"
+function findLinkIndex(entry: CrocdbEntry, preferredFormat?: string): number | undefined {
+  if (!preferredFormat) return undefined;
+  
+  const candidates = entry.links.filter(
+    (l) => (l.format || "").toLowerCase() === preferredFormat.toLowerCase()
   );
+  if (candidates.length === 0) return undefined;
+  
+  // Prefer Myrient
+  const myrientIdx = candidates.findIndex((l) => (l.host || "").toLowerCase() === "myrient");
   const chosen = myrientIdx >= 0 ? candidates[myrientIdx] : candidates[0];
-  const originalIdx = entry.links.findIndex((l) => l.url === chosen.url);
-  return originalIdx >= 0 ? originalIdx : 0;
+  return entry.links.findIndex((l) => l.url === chosen.url);
 }
-
-// Lightweight closure-based registry for selection state, avoiding prop drilling in this file
-(computeSelectedLinkIndex as any)._store = {} as Record<string, number>;
-(computeSelectedLinkIndex as any)._get = (slug: string) => (computeSelectedLinkIndex as any)._store[slug];
-(computeSelectedLinkIndex as any)._set = (slug: string, idx: number) => {
-  (computeSelectedLinkIndex as any)._store[slug] = idx;
-};
 
 function toFileHref(p: string): string {
   const normalized = p.replace(/\\/g, "/");

@@ -124,14 +124,6 @@ h3 {
   box-shadow: var(--shadow-color);
 }
 
-.card-title {
-  margin: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: var(--cover-w);
-}
-
 .thumb-wrapper {
   position: relative;
   width: var(--cover-w);
@@ -179,12 +171,24 @@ img.thumb.cover-img {
   gap: 18px;
 }
 
+.grid.cols-2 {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
 .grid.cols-3 {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
-.grid.cols-2 {
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+.grid.cols-4 {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.grid.cols-5 {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.grid.cols-6 {
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
 }
 
 .controls {
@@ -278,6 +282,14 @@ button:disabled {
   height: 100%;
   background: linear-gradient(90deg, var(--accent), #f2c26b);
   width: 0;
+}
+
+.pagination-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 100;
+  margin-top: 20px;
+  box-shadow: 0 -4px 12px rgba(27, 26, 22, 0.08);
 }
 
 @media (max-width: 900px) {

@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { apiGet, apiPost } from "../lib/api";
 import type { LibraryItem, Manifest } from "@crocdesk/shared";
 import GameCard from "../components/GameCard";
+import PaginationBar from "../components/PaginationBar";
 
 export default function LibraryPage() {
   const [items, setItems] = useState<LibraryItem[]>([]);
@@ -10,6 +11,7 @@ export default function LibraryPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string>("");
+  const [gridColumns, setGridColumns] = useState(3);
 
   useEffect(() => {
     let cancelled = false;
@@ -95,7 +97,7 @@ export default function LibraryPage() {
           </div>
         </div>
       </section>
-      <div className="grid cols-3">
+      <div className={`grid cols-${gridColumns}`} style={{ gridTemplateColumns: `repeat(auto-fit, minmax(${Math.max(140, 320 - (gridColumns - 3) * 40)}px, 1fr))` }}>
         {items.map((item) => {
           const manifest = manifests[item.path];
           if (!manifest) return null;
@@ -144,6 +146,15 @@ export default function LibraryPage() {
           );
         })}
       </div>
+
+      <PaginationBar
+        currentPage={1}
+        totalPages={1}
+        onPageChange={() => {}}
+        onColumnsChange={setGridColumns}
+        showGridControls={true}
+        storageKey="crocdesk:libraryGridColumns"
+      />
     </div>
   );
 }
