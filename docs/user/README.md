@@ -35,3 +35,4 @@ Jacare is a desktop app that helps you keep your game ROMs tidy. It finds detail
 ## Need help?
 - Check for updates on the GitHub releases page.
 - Open an issue on GitHub with details about what went wrong and what you expected.
+- Planning to load ROMs onto a retro handheld like the R36S or RG40XXH? See the handheld-specific walkthrough in [`retro-handhelds.md`](./retro-handhelds.md).
