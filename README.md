@@ -42,6 +42,14 @@ Jacare (Portuguese for "caiman") is a Brazilian-flavored, croc-tough desktop ROM
 
 > Tip: The desktop app expects the web dev server at `http://localhost:5173` by default. Override with `CROCDESK_DEV_URL` if you change the Vite port.
 
+## Screenshots 📸
+
+Here’s a quick look at Jacare in action:
+
+![Browse Page](docs/Screenshot.png)
+
+![Library & Details](docs/Screenshot2.png)
+
 ## Configuration & data ⚙️
 - **Default port:** `CROCDESK_PORT=3333`.
 - **Data directory:** `CROCDESK_DATA_DIR=./data` holds SQLite databases, cache tables, and manifest files. Customize it to point Jacare at a shared drive or fast SSD.

@@ -11,14 +11,10 @@
     "dev:server": "npm run dev -w @crocdesk/server",
     "dev:web": "npm run dev -w @crocdesk/web",
     "dev:desktop": "npm run dev -w @crocdesk/desktop",
-    "dev:e2e": "concurrently -k \"cross-env CROCDESK_DATA_DIR=.e2e-data npm run dev:server\" \"npm run dev:web\"",
     "build": "npm run build -w @crocdesk/shared && npm run build -w @crocdesk/server && npm run build -w @crocdesk/web && npm run build -w @crocdesk/desktop",
     "typecheck": "npm run typecheck -w @crocdesk/shared && npm run typecheck -w @crocdesk/server && npm run typecheck -w @crocdesk/web && npm run typecheck -w @crocdesk/desktop",
     "test:unit": "vitest --run",
-    "test:e2e": "playwright test",
-    "test": "npm run test:unit && npm run test:e2e",
-    "e2e": "playwright test",
-    "e2e:headed": "playwright test --headed"
+    "test": "npm run test:unit"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",

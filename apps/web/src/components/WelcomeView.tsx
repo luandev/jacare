@@ -176,3 +176,6 @@ export function shouldShowWelcome(): boolean {
   if (typeof window === "undefined") return false;
   return localStorage.getItem(WELCOME_STORAGE_KEY) !== "true";
 }
+
+
+

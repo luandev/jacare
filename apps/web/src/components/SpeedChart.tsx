@@ -70,3 +70,6 @@ export default function SpeedChart({ speeds, maxBars = 20 }: SpeedChartProps) {
 }
 
 
+
+
+

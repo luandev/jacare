@@ -121,3 +121,6 @@ export function DetailLayout({
 
 
 
+
+
+
