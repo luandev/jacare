@@ -19,6 +19,8 @@ Jacare (Portuguese for "caiman") is a Brazilian-flavored, croc-tough desktop ROM
 - `apps/desktop` – Electron main process wrapping the server and web UI for a native experience.
 - `packages/shared` – Shared types, defaults, and the manifest schema used across workspaces.
 
+See [`docker/README.md`](docker/README.md) for a Docker Compose template with platform-specific mount examples.
+
 ## Getting started 🚀
 1. **Install dependencies** 📦
    ```bash
