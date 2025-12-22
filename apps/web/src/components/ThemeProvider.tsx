@@ -25,6 +25,30 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     root.style.colorScheme = currentTheme.name;
   }, [currentTheme]);
 
+  // Listen for system theme changes (only if user hasn't explicitly set a preference)
+  useEffect(() => {
+    // Check if theme was explicitly set by user
+    const hasExplicitPreference = () => {
+      try {
+        return localStorage.getItem("jacare:theme-explicit") === "true";
+      } catch {
+        return false;
+      }
+    };
+
+    // Only listen to system changes if user hasn't explicitly set a preference
+    if (!hasExplicitPreference() && typeof window !== "undefined") {
+      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+      const handleChange = (e: MediaQueryListEvent) => {
+        const systemTheme = e.matches ? "dark" : "light";
+        setThemePreference(systemTheme);
+      };
+
+      mediaQuery.addEventListener("change", handleChange);
+      return () => mediaQuery.removeEventListener("change", handleChange);
+    }
+  }, [setThemePreference]);
+
   const setTheme = (theme: Theme) => {
     setThemePreference(theme.name);
   };

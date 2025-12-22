@@ -33,6 +33,8 @@ export default function SettingsPage() {
 
   const handleThemeChange = (newTheme: "light" | "dark") => {
     setThemePreference(newTheme);
+    // Mark that user has explicitly set a theme preference
+    localStorage.setItem("jacare:theme-explicit", "true");
     // ThemeProvider will pick up the change automatically
   };
 
@@ -40,7 +42,7 @@ export default function SettingsPage() {
     <div className="grid" style={{ gap: "20px" }}>
       <section className="hero">
         <h1>Settings</h1>
-        <p>Manage your CrocDesk directories, theme, and queue behavior.</p>
+        <p>Manage your Jacare directories, theme, and queue behavior.</p>
       </section>
 
       <Card>

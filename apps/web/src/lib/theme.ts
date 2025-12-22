@@ -2,7 +2,7 @@ import type { Theme } from "./theme-types";
 
 /**
  * Light Theme
- * Warm beige/cream base with orange accent
+ * Warm beige/cream base with cool green accent
  */
 export const lightTheme: Theme = {
   name: "light",
@@ -13,11 +13,11 @@ export const lightTheme: Theme = {
     "--ink": "#1b1a16",
     "--muted": "#6c665f",
     
-    // Accents
-    "--accent": "#e68a2e",
-    "--accent-strong": "#cc6c1f",
-    "--accent-hover": "#d67a25",
-    "--accent-active": "#b85a15",
+    // Accents (cool green)
+    "--accent": "#2d8659",
+    "--accent-strong": "#1f6b47",
+    "--accent-hover": "#259965",
+    "--accent-active": "#1a5a3a",
     
     // Surfaces
     "--card": "#fffaf2",
@@ -30,11 +30,11 @@ export const lightTheme: Theme = {
     "--shadow-sm": "0 2px 8px rgba(27, 26, 22, 0.08)",
     "--shadow-md": "0 4px 12px rgba(27, 26, 22, 0.12)",
     
-    // Shell
-    "--sidebar-bg": "#201c16",
-    "--sidebar-ink": "#f8f3ec",
-    "--nav-pill": "rgba(255, 255, 255, 0.06)",
-    "--nav-pill-active": "#e68a2e",
+    // Shell (very dark vibrant green for maximum visibility in light theme)
+    "--sidebar-bg": "#0d2818",
+    "--sidebar-ink": "#646464ff",
+    "--nav-pill": "rgba(255, 255, 255, 0.18)",
+    "--nav-pill-active": "#2d8659",
     
     // Badges & pills
     "--badge-bg": "#f1e2d1",
@@ -47,10 +47,10 @@ export const lightTheme: Theme = {
     "--badge-error-ink": "#721c24",
     
     // Buttons
-    "--button-primary-bg": "#e68a2e",
-    "--button-primary-border": "#cc6c1f",
-    "--button-primary-ink": "#1b1a16",
-    "--button-primary-hover": "#d67a25",
+    "--button-primary-bg": "#2d8659",
+    "--button-primary-border": "#1f6b47",
+    "--button-primary-ink": "#ffffff",
+    "--button-primary-hover": "#259965",
     "--button-secondary-bg": "#f3e3cf",
     "--button-secondary-border": "#e2c8a3",
     "--button-secondary-ink": "#1b1a16",
@@ -62,18 +62,18 @@ export const lightTheme: Theme = {
     
     // Progress
     "--progress-bg": "#ece4d9",
-    "--progress-fill": "linear-gradient(90deg, var(--accent), #f2c26b)",
+    "--progress-fill": "linear-gradient(90deg, var(--accent), #4da876)",
     
     // Inputs
     "--input-bg": "#ffffff",
     "--input-border": "#e0d6c6",
-    "--input-border-focus": "#e68a2e",
+    "--input-border-focus": "#2d8659",
     "--input-ink": "#1b1a16",
     "--input-placeholder": "#9b9388",
     
     // Links
-    "--link-color": "#e68a2e",
-    "--link-hover": "#cc6c1f",
+    "--link-color": "#2d8659",
+    "--link-hover": "#1f6b47",
     
     // Fixed cover sizes
     "--cover-w": "200px",
@@ -83,7 +83,7 @@ export const lightTheme: Theme = {
 
 /**
  * Dark Theme
- * Dark gray/charcoal base with brighter orange accent for better contrast
+ * Dark gray/charcoal base with cool green accent for better contrast
  */
 export const darkTheme: Theme = {
   name: "dark",
@@ -94,11 +94,11 @@ export const darkTheme: Theme = {
     "--ink": "#e0e0e0",
     "--muted": "#9b9b9b",
     
-    // Accents (brighter for better contrast)
-    "--accent": "#ff9d4d",
-    "--accent-strong": "#ff8c33",
-    "--accent-hover": "#ffad66",
-    "--accent-active": "#ff7a1a",
+    // Accents (cool green, brighter for better contrast)
+    "--accent": "#3db875",
+    "--accent-strong": "#2d8659",
+    "--accent-hover": "#4dc885",
+    "--accent-active": "#259965",
     
     // Surfaces
     "--card": "#252525",
@@ -112,10 +112,10 @@ export const darkTheme: Theme = {
     "--shadow-md": "0 4px 12px rgba(0, 0, 0, 0.35)",
     
     // Shell
-    "--sidebar-bg": "#0f0f0f",
+    "--sidebar-bg": "#0f1a14",
     "--sidebar-ink": "#e0e0e0",
     "--nav-pill": "rgba(255, 255, 255, 0.08)",
-    "--nav-pill-active": "#ff9d4d",
+    "--nav-pill-active": "#3db875",
     
     // Badges & pills
     "--badge-bg": "#3a3a3a",
@@ -128,10 +128,10 @@ export const darkTheme: Theme = {
     "--badge-error-ink": "#ff6b6b",
     
     // Buttons
-    "--button-primary-bg": "#ff9d4d",
-    "--button-primary-border": "#ff8c33",
-    "--button-primary-ink": "#1a1a1a",
-    "--button-primary-hover": "#ffad66",
+    "--button-primary-bg": "#3db875",
+    "--button-primary-border": "#2d8659",
+    "--button-primary-ink": "#ffffff",
+    "--button-primary-hover": "#4dc885",
     "--button-secondary-bg": "#3a3a3a",
     "--button-secondary-border": "#4a4a4a",
     "--button-secondary-ink": "#e0e0e0",
@@ -143,18 +143,18 @@ export const darkTheme: Theme = {
     
     // Progress
     "--progress-bg": "#3a3a3a",
-    "--progress-fill": "linear-gradient(90deg, var(--accent), #ffb366)",
+    "--progress-fill": "linear-gradient(90deg, var(--accent), #5dd99a)",
     
     // Inputs
     "--input-bg": "#2a2a2a",
     "--input-border": "#3a3a3a",
-    "--input-border-focus": "#ff9d4d",
+    "--input-border-focus": "#3db875",
     "--input-ink": "#e0e0e0",
     "--input-placeholder": "#6b6b6b",
     
     // Links
-    "--link-color": "#ff9d4d",
-    "--link-hover": "#ffad66",
+    "--link-color": "#3db875",
+    "--link-hover": "#4dc885",
     
     // Fixed cover sizes
     "--cover-w": "200px",

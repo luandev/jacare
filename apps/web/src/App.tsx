@@ -1,5 +1,5 @@
 import { BrowserRouter, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
-import { useMemo, useEffect } from "react";
+import { useMemo, useEffect, useState } from "react";
 import BrowsePage from "./pages/BrowsePage";
 import LibraryPage from "./pages/LibraryPage";
 import QueuePage from "./pages/QueuePage";
@@ -7,6 +7,7 @@ import DownloadsPage from "./pages/DownloadsPage";
 import SettingsPage from "./pages/SettingsPage";
 import GameDetailPage from "./pages/GameDetailPage";
 import LibraryItemDetailPage from "./pages/LibraryItemDetailPage";
+import { WelcomeView, shouldShowWelcome } from "./components/WelcomeView";
 // useMemo imported above
 
 function AppRoutes() {
@@ -81,14 +82,22 @@ function ModalOverlay({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  const [showWelcome, setShowWelcome] = useState(false);
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
     isActive ? "active" : undefined;
+
+  useEffect(() => {
+    // Check if we should show welcome on mount
+    if (shouldShowWelcome()) {
+      setShowWelcome(true);
+    }
+  }, []);
 
   return (
     <BrowserRouter>
       <div className="app-shell">
         <aside className="sidebar">
-          <div className="logo">CrocDesk</div>
+          <div className="logo">Jacare</div>
           <nav className="nav">
             <NavLink to="/" end className={navLinkClass}>
               Browse
@@ -111,6 +120,7 @@ export default function App() {
         <main className="main">
           <AppRoutes />
         </main>
+        {showWelcome && <WelcomeView onClose={() => setShowWelcome(false)} />}
       </div>
     </BrowserRouter>
   );
