@@ -10,11 +10,18 @@ import settingsRouter from "./routes/settings";
 import libraryRouter from "./routes/library";
 import jobsRouter from "./routes/jobs";
 import { logger } from "./utils/logger";
+import { resumeAllJobs } from "./services/jobs";
 
 async function start(): Promise<void> {
   logger.info("Starting CrocDesk server");
   await initDb();
   logger.info("Database initialized");
+  
+  // Auto-resume paused downloads on startup
+  const resumedCount = await resumeAllJobs();
+  if (resumedCount > 0) {
+    logger.info(`Auto-resumed ${resumedCount} paused download job(s) on startup`);
+  }
 
   const app = express();
   app.use(cors({ origin: true }));
