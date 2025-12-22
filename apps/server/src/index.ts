@@ -65,7 +65,13 @@ async function start(): Promise<void> {
       // Stream binary/text files directly
       res.sendFile(absPath);
     } catch (e) {
-      logger.error("File not found", e, { absPath });
+      // Optional cover images are expected to be missing sometimes - don't log as error
+      const isOptionalImage = /\.(jpg|jpeg|png|webp)$/i.test(absPath) && 
+        /(cover|boxart)/i.test(path.basename(absPath));
+      if (!isOptionalImage) {
+        // Only log errors for non-optional files (optional images are tried as fallbacks)
+        logger.error("File not found", e, { absPath });
+      }
       res.status(404).json({ error: "File not found" });
     }
   });

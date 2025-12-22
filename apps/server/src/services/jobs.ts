@@ -1,6 +1,7 @@
 import PQueue from "p-queue";
 import crypto from "crypto";
 import { promises as fs } from "fs";
+import path from "path";
 import type { JobRecord } from "@crocdesk/shared";
 import { DEFAULT_SETTINGS } from "@crocdesk/shared";
 import {
@@ -18,6 +19,7 @@ import {
 import { publishEvent } from "../events";
 import { scanLocal } from "./scanner";
 import { runDownloadAndInstall, type DownloadJobPayload } from "./pipeline";
+import { getEntry } from "./crocdb";
 import { logger } from "../utils/logger";
 
 const queue = new PQueue({ concurrency: 2 });
@@ -74,6 +76,13 @@ export async function cancelJob(jobId: string): Promise<boolean> {
   
   // If job is queued, remove from queue
   if (job.status === "queued") {
+    // Clean up part file for download jobs (in case it exists from a previous failed attempt)
+    if (job.type === "download_and_install") {
+      cleanupDownloadPartFile(job).catch((err) => {
+        logger.warn("Failed to cleanup part file on cancel", { jobId, error: err });
+      });
+    }
+    
     updateJobStatus(jobId, "failed");
     publishEvent({
       jobId,
@@ -91,6 +100,14 @@ export async function cancelJob(jobId: string): Promise<boolean> {
   const activeTask = activeJobTasks.get(jobId);
   if (activeTask && job.status === "running") {
     activeTask.abortController.abort();
+    
+    // Clean up part file for download jobs
+    if (job.type === "download_and_install") {
+      cleanupDownloadPartFile(job).catch((err) => {
+        logger.warn("Failed to cleanup part file on cancel", { jobId, error: err });
+      });
+    }
+    
     // Find the job step to update
     const steps = listJobSteps(jobId);
     if (steps.length > 0) {
@@ -332,5 +349,63 @@ async function runJob(job: JobRecord, handler: (report: JobReporter) => Promise<
       slug: job.type === "download_and_install" && typeof job.payload.slug === "string" ? (job.payload.slug as string) : undefined,
       ts: Date.now()
     });
+  }
+}
+
+/**
+ * Clean up partial download file (.part) for a download job
+ */
+async function cleanupDownloadPartFile(job: JobRecord): Promise<void> {
+  if (job.type !== "download_and_install") {
+    return;
+  }
+  
+  const payload = job.payload as DownloadJobPayload;
+  if (!payload.slug) {
+    return;
+  }
+  
+  try {
+    // Get entry to determine download path
+    const entryResponse = await getEntry(payload.slug);
+    const entry = entryResponse.data.entry;
+    
+    if (!entry.links || entry.links.length === 0) {
+      return;
+    }
+    
+    // Choose link (same logic as in runDownloadAndInstall)
+    let resolvedLinkIndex: number;
+    if (typeof payload.linkIndex === "number") {
+      resolvedLinkIndex = payload.linkIndex;
+    } else {
+      // Prefer Myrient host when available
+      const myrientIdx = entry.links.findIndex(
+        (l) => (l.host || "").toLowerCase() === "myrient"
+      );
+      resolvedLinkIndex = myrientIdx >= 0 ? myrientIdx : 0;
+    }
+    const link = entry.links[resolvedLinkIndex];
+    
+    // Reconstruct download path
+    const settings = getSettings() ?? DEFAULT_SETTINGS;
+    const downloadDir = path.resolve(settings.downloadDir || "./downloads");
+    const downloadPath = path.join(downloadDir, link.filename || `${entry.slug}.zip`);
+    const partPath = `${downloadPath}.part`;
+    
+    // Delete part file if it exists
+    try {
+      await fs.access(partPath);
+      await fs.unlink(partPath);
+      logger.info("Part file cleaned up on cancel", { jobId: job.id, partPath });
+    } catch (err) {
+      // File doesn't exist, which is fine
+      if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
+        throw err;
+      }
+    }
+  } catch (error) {
+    logger.warn("Error cleaning up part file", { jobId: job.id, error });
+    // Don't throw - cleanup failure shouldn't prevent cancellation
   }
 }

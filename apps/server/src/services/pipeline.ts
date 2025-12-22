@@ -208,31 +208,194 @@ async function downloadFile(
 ): Promise<void> {
   if (abortSignal?.aborted) throw new Error("Cancelled by user");
   
-  logger.debug("Initiating download", { url, destination });
+  const tempPath = `${destination}.part`;
+  await ensureDir(path.dirname(destination));
+  
+  // Check for existing part file to resume
+  let existingSize = 0;
+  let isResuming = false;
+  try {
+    const stats = await fs.stat(tempPath);
+    existingSize = stats.size;
+    isResuming = existingSize > 0;
+    if (isResuming) {
+      logger.info("Resuming download", { url, destination, existingSize });
+      if (reportProgress && existingSize > 0) {
+        // Report initial progress based on existing file size
+        // We'll update this once we know the total size
+        reportProgress(0, "Resuming download", existingSize, 0);
+      }
+    }
+  } catch (err) {
+    // Part file doesn't exist, start fresh
+    if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
+      throw err;
+    }
+  }
+  
+  logger.debug("Initiating download", { url, destination, isResuming, existingSize });
   const controller = new AbortController();
+  
+  // Cleanup helper
+  const cleanupPartFile = async () => {
+    try {
+      await fs.access(tempPath);
+      await fs.unlink(tempPath);
+      logger.debug("Part file cleaned up", { tempPath });
+    } catch (err) {
+      // File doesn't exist or already deleted, which is fine
+      if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
+        logger.warn("Error cleaning up part file", { tempPath, error: err });
+      }
+    }
+  };
+  
   if (abortSignal) {
-    abortSignal.addEventListener("abort", () => {
+    abortSignal.addEventListener("abort", async () => {
       logger.info("Download aborted", { url, destination });
       controller.abort();
+      await cleanupPartFile();
     });
   }
   
-  const response = await fetch(url, { signal: controller.signal });
+  // Prepare fetch options with Range header if resuming
+  const fetchOptions: RequestInit = { signal: controller.signal };
+  if (isResuming && existingSize > 0) {
+    fetchOptions.headers = {
+      Range: `bytes=${existingSize}-`
+    };
+  }
+  
+  const response = await fetch(url, fetchOptions);
+  
+  // Handle Range request responses
+  if (isResuming) {
+    if (response.status === 416) {
+      // Range Not Satisfiable - file may have changed, delete part and restart
+      logger.warn("Range request failed (416), restarting download", { url, existingSize });
+      await cleanupPartFile();
+      existingSize = 0;
+      isResuming = false;
+      // Retry without Range header
+      const retryResponse = await fetch(url, { signal: controller.signal });
+      if (!retryResponse.ok || !retryResponse.body) {
+        logger.error("Download failed after retry", new Error(`HTTP ${retryResponse.status}`), { url, status: retryResponse.status });
+        throw new Error(`Download failed: ${retryResponse.status}`);
+      }
+      const total = Number(retryResponse.headers.get("content-length") ?? 0);
+      const fileStream = (await fs.open(tempPath, "w")).createWriteStream();
+      let downloaded = 0;
+      
+      await new Promise<void>((resolve, reject) => {
+        if (abortSignal?.aborted) {
+          reject(new Error("Cancelled by user"));
+          return;
+        }
+        
+        const stream = Readable.fromWeb(retryResponse.body as unknown as NodeReadableStream);
+        
+        stream.on("data", (chunk: Buffer) => {
+          if (abortSignal?.aborted) {
+            stream.destroy();
+            fileStream.destroy();
+            reject(new Error("Cancelled by user"));
+            return;
+          }
+          
+          downloaded += chunk.length;
+          const progress = total > 0 ? downloaded / total : 0;
+          if (reportProgress) {
+            reportProgress(progress, "Downloading asset", downloaded, total);
+          }
+        });
+
+        stream.on("error", async (err) => {
+          await cleanupPartFile();
+          reject(err);
+        });
+        fileStream.on("error", async (err) => {
+          await cleanupPartFile();
+          reject(err);
+        });
+        fileStream.on("finish", resolve);
+        
+        if (abortSignal) {
+          abortSignal.addEventListener("abort", async () => {
+            stream.destroy();
+            fileStream.destroy();
+            await cleanupPartFile();
+            reject(new Error("Cancelled by user"));
+          });
+        }
+
+        stream.pipe(fileStream);
+      });
+
+      if (abortSignal?.aborted) {
+        await cleanupPartFile();
+        throw new Error("Cancelled by user");
+      }
+
+      logger.debug("Moving downloaded file to final destination", { tempPath, destination });
+      await moveFile(tempPath, destination);
+      logger.debug("Download file operation completed", { destination, totalBytes: total });
+      return;
+    } else if (response.status === 200) {
+      // Server doesn't support Range requests, log warning and continue with full download
+      logger.warn("Server doesn't support Range requests, downloading from beginning", { url });
+      await cleanupPartFile();
+      existingSize = 0;
+      isResuming = false;
+    }
+  }
+  
   if (!response.ok || !response.body) {
     logger.error("Download failed", new Error(`HTTP ${response.status}`), { url, status: response.status });
     throw new Error(`Download failed: ${response.status}`);
   }
 
-  const total = Number(response.headers.get("content-length") ?? 0);
-  logger.debug("Download response received", { url, totalBytes: total, contentType: response.headers.get("content-type") });
-  const tempPath = `${destination}.part`;
-  await ensureDir(path.dirname(destination));
-
-  const fileStream = (await fs.open(tempPath, "w")).createWriteStream();
+  // Get total size from Content-Range header if resuming, otherwise Content-Length
+  let total = 0;
+  if (isResuming && response.status === 206) {
+    // Partial Content - extract total from Content-Range header
+    const contentRange = response.headers.get("content-range");
+    if (contentRange) {
+      const match = contentRange.match(/\/(\d+)$/);
+      if (match) {
+        total = Number(match[1]);
+      }
+    }
+  } else {
+    total = Number(response.headers.get("content-length") ?? 0);
+  }
+  
+  // If we're resuming but don't have total yet, estimate from existing size
+  if (isResuming && total === 0) {
+    total = existingSize * 2; // Rough estimate, will be updated as we download
+  }
+  
+  logger.debug("Download response received", { 
+    url, 
+    totalBytes: total, 
+    existingSize,
+    isResuming,
+    status: response.status,
+    contentType: response.headers.get("content-type") 
+  });
+  
+  // Open file in append mode if resuming, write mode otherwise
+  const fileStream = (await fs.open(tempPath, isResuming ? "a" : "w")).createWriteStream();
   let downloaded = 0;
+  
+  // Report initial progress if resuming
+  if (isResuming && total > 0 && reportProgress) {
+    const initialProgress = existingSize / total;
+    reportProgress(initialProgress, "Resuming download", existingSize, total);
+  }
 
   await new Promise<void>((resolve, reject) => {
     if (abortSignal?.aborted) {
+      cleanupPartFile().catch(() => {});
       reject(new Error("Cancelled by user"));
       return;
     }
@@ -243,25 +406,35 @@ async function downloadFile(
       if (abortSignal?.aborted) {
         stream.destroy();
         fileStream.destroy();
+        cleanupPartFile().catch(() => {});
         reject(new Error("Cancelled by user"));
         return;
       }
       
       downloaded += chunk.length;
-      const progress = total > 0 ? downloaded / total : 0;
+      // Calculate progress accounting for existing bytes when resuming
+      const totalDownloaded = existingSize + downloaded;
+      const progress = total > 0 ? totalDownloaded / total : 0;
       if (reportProgress) {
-        reportProgress(progress, "Downloading asset", downloaded, total);
+        reportProgress(progress, isResuming ? "Resuming download" : "Downloading asset", totalDownloaded, total);
       }
     });
 
-    stream.on("error", reject);
-    fileStream.on("error", reject);
+    stream.on("error", async (err) => {
+      await cleanupPartFile();
+      reject(err);
+    });
+    fileStream.on("error", async (err) => {
+      await cleanupPartFile();
+      reject(err);
+    });
     fileStream.on("finish", resolve);
     
     if (abortSignal) {
-      abortSignal.addEventListener("abort", () => {
+      abortSignal.addEventListener("abort", async () => {
         stream.destroy();
         fileStream.destroy();
+        await cleanupPartFile();
         reject(new Error("Cancelled by user"));
       });
     }
@@ -270,6 +443,7 @@ async function downloadFile(
   });
 
   if (abortSignal?.aborted) {
+    await cleanupPartFile();
     throw new Error("Cancelled by user");
   }
 
