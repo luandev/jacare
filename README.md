@@ -1,7 +1,7 @@
 # 🐊 Jacare
 
-[![CI](https://github.com/your-org/crocdesk/actions/workflows/ci.yml/badge.svg)](https://github.com/your-org/crocdesk/actions/workflows/ci.yml)
-[![Release](https://github.com/your-org/crocdesk/actions/workflows/release.yml/badge.svg)](https://github.com/your-org/crocdesk/actions/workflows/release.yml)
+[![CI](https://github.com/luandev/jacare/actions/workflows/ci.yml/badge.svg)](https://github.com/luandev/jacare/actions/workflows/ci.yml)
+[![Release](https://github.com/luandev/jacare/actions/workflows/release.yml/badge.svg)](https://github.com/luandev/jacare/actions/workflows/release.yml)
 
 Jacare (Portuguese for "caiman") is a Brazilian-flavored, croc-tough desktop ROM library manager. It combines an Electron shell, an Express API, and a Vite-powered React UI so you can organize, scrape, and launch games from a single experience—wrapping the hosted [Crocdb](https://crocdb.net) service for search and metadata while running local jobs to keep your library synchronized. 🇧🇷
 
@@ -84,7 +84,7 @@ Data is stored in SQLite tables for settings, Crocdb caches, library items, jobs
 - CI builds on the `main` branch automatically publish release archives to GitHub with the latest changelog and README so you can download ready-to-run packages.
 
 ## Helpful links 🔗
-- Jacare issues & roadmap: [GitHub Issues](https://github.com/your-org/crocdesk/issues)
+- Jacare issues & roadmap: [GitHub Issues](https://github.com/luandev/jacare/issues)
 - Crocdb service: [https://crocdb.net](https://crocdb.net) and API docs at [https://api.crocdb.net](https://api.crocdb.net)
 - Electron: [https://www.electronjs.org/](https://www.electronjs.org/)
 - Express: [https://expressjs.com/](https://expressjs.com/)
