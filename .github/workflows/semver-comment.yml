@@ -44,8 +44,16 @@ jobs:
 
             const hasDirective = comments.some((comment) => /\/semver:\s*(major|minor|patch)/i.test(comment.body || ''));
             const guidance = [
+              '## ⚠️ Missing Semantic Version Directive',
+              '',
               'Please add a semantic version directive comment to this pull request.',
-              'Use `/semver: patch`, `/semver: minor`, or `/semver: major` to describe the expected release impact.',
+              '',
+              '**Quick reference:**',
+              '- `/semver: patch` - Bug fixes, minor changes',
+              '- `/semver: minor` - New features (backward compatible)',
+              '- `/semver: major` - Breaking changes',
+              '',
+              `📖 See [the semver comment template](/${context.repo.owner}/${context.repo.repo}/blob/main/.github/semver-comment-template.md) for detailed examples and guidelines.`,
             ].join('\n');
 
             if (!hasDirective) {
