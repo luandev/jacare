@@ -45,7 +45,7 @@ export async function scanLocal(roots: ScanRoot[]): Promise<LibraryItem[]> {
   for (const root of roots) {
     const rootPath = root.path;
     try {
-      await walk(rootPath, root.platform, items, manifestCache);
+      await walk(rootPath, undefined, items, manifestCache);
     } catch (error) {
       // Import logger at top if not already imported
       const { logger } = await import("../utils/logger");
@@ -164,7 +164,6 @@ async function readManifest(
         regions: match?.regions ?? []
       },
       artifacts,
-      profileId: "local-scan",
       createdAt: new Date().toISOString()
     };
     await writeManifest(dir, manifest);
