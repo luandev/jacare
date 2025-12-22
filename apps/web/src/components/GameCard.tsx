@@ -1,68 +1,218 @@
 import React from "react";
+import { Link, type Location } from "react-router-dom";
 import PlatformIcon from "./PlatformIcon";
-import type { Manifest } from "@crocdesk/shared";
+import type { Manifest, CrocdbEntry, CrocdbPlatformsResponseData } from "@crocdesk/shared";
 import { API_URL } from "../lib/api";
 
 export type GameCardProps = {
-  manifest: Manifest;
-  artifactPath: string;
+  // Data source - either entry (BrowsePage) or manifest (LibraryPage)
+  entry?: CrocdbEntry;
+  manifest?: Manifest;
+  artifactPath?: string;
+  
+  // State
+  isOwned?: boolean;
+  isDownloading?: boolean;
+  downloadProgress?: number;
+  
+  // Handlers
+  onDownload?: () => void;
   onShowInFolder?: () => void;
   actions?: React.ReactNode;
+  
+  // Additional data
+  platformsData?: CrocdbPlatformsResponseData;
+  location?: Location;
+  
+  // Styling
+  style?: React.CSSProperties;
 };
 
-export default function GameCard({ manifest, artifactPath, onShowInFolder, actions }: GameCardProps) {
-  const { crocdb } = manifest;
-  const baseDir = dirname(artifactPath);
-  const coverCandidates = ["cover.jpg", "cover.png", "cover.webp", "boxart.jpg", "boxart.png"];
-  const version = manifest.createdAt ?? "";
-  const coverUrls = coverCandidates.map((name) => `${API_URL}/file?path=${encodeURIComponent(joinPath(baseDir, name))}&v=${encodeURIComponent(version)}`);
+export default function GameCard({
+  entry,
+  manifest,
+  artifactPath,
+  isOwned = false,
+  isDownloading = false,
+  downloadProgress,
+  onDownload,
+  onShowInFolder,
+  actions,
+  platformsData,
+  location,
+  style
+}: GameCardProps) {
+  // Normalize data from either source
+  const title = entry?.title ?? manifest?.crocdb.title ?? "";
+  const platform = entry?.platform ?? manifest?.crocdb.platform ?? "";
+  const regions = entry?.regions ?? manifest?.crocdb.regions ?? [];
+  const slug = entry?.slug ?? manifest?.crocdb.slug ?? "";
+  const boxartUrl = entry?.boxart_url;
+  
+  // Determine cover image source
   const [imgIndex, setImgIndex] = React.useState(0);
   const [imgError, setImgError] = React.useState(false);
-  const currentCoverUrl = coverUrls[imgIndex];
+  
+  let coverUrl: string | undefined;
+  let coverUrls: string[] = [];
+  
+  if (entry && boxartUrl) {
+    // BrowsePage: use boxart_url directly
+    coverUrl = boxartUrl;
+  } else if (manifest && artifactPath) {
+    // LibraryPage: try local cover files
+    const baseDir = dirname(artifactPath);
+    const coverCandidates = ["cover.jpg", "cover.png", "cover.webp", "boxart.jpg", "boxart.png"];
+    const version = manifest.createdAt ?? "";
+    coverUrls = coverCandidates.map((name) => 
+      `${API_URL}/file?path=${encodeURIComponent(joinPath(baseDir, name))}&v=${encodeURIComponent(version)}`
+    );
+    coverUrl = coverUrls[imgIndex];
+  }
+  
+  const platformName = platformsData?.platforms?.[platform]?.name ?? platform;
+  const platformBrand = platformsData?.platforms?.[platform]?.brand;
+  
+  const handleImageError = () => {
+    if (coverUrls.length > 0 && imgIndex < coverUrls.length - 1) {
+      setImgIndex((i) => i + 1);
+    } else {
+      setImgError(true);
+    }
+  };
+  
+  // Determine detail link - prefer entry link (BrowsePage) over manifest link (LibraryPage)
+  const detailLink = entry && slug ? `/game/${slug}` : undefined;
+  const libraryDetailLink = !entry && manifest && artifactPath ? `/library/item?dir=${encodeURIComponent(dirname(artifactPath))}` : undefined;
+  const linkTo = detailLink || libraryDetailLink;
+  
   return (
-    <article className="card" style={{ width: 240 }}>
+    <article className="card" style={{ minWidth: 0, maxWidth: 320, margin: "0 auto", ...style }}>
       <div className="thumb-wrapper">
-        {!imgError && currentCoverUrl ? (
-          <img
-            src={currentCoverUrl}
-            alt={`${crocdb.title} cover art`}
-            className="thumb cover-img"
-            loading="lazy"
-            onError={() => {
-              if (imgIndex < coverUrls.length - 1) {
-                setImgIndex((i) => i + 1);
-              } else {
-                setImgError(true);
-              }
-            }}
-          />
+        {linkTo && location ? (
+          <Link
+            to={linkTo}
+            state={{ backgroundLocation: location }}
+            aria-label={`Open ${title} details`}
+          >
+            {!imgError && coverUrl ? (
+              <img
+                src={coverUrl}
+                alt={`${title} cover art`}
+                className="thumb cover-img"
+                loading="lazy"
+                onError={handleImageError}
+              />
+            ) : (
+              <div className="thumb-placeholder">
+                <PlatformIcon
+                  platform={platform}
+                  brand={platformBrand}
+                  label={title}
+                  size={42}
+                />
+              </div>
+            )}
+          </Link>
         ) : (
-          <div className="thumb-placeholder">
-            <PlatformIcon
-              platform={crocdb.platform}
-              label={crocdb.title}
-              size={42}
-            />
-          </div>
+          <>
+            {!imgError && coverUrl ? (
+              <img
+                src={coverUrl}
+                alt={`${title} cover art`}
+                className="thumb cover-img"
+                loading="lazy"
+                onError={handleImageError}
+              />
+            ) : (
+              <div className="thumb-placeholder">
+                <PlatformIcon
+                  platform={platform}
+                  brand={platformBrand}
+                  label={title}
+                  size={42}
+                />
+              </div>
+            )}
+          </>
         )}
-        <div className="platform-badge" title={crocdb.platform.toUpperCase()}>
-          <PlatformIcon platform={crocdb.platform} size={24} />
+        <div className="platform-badge" title={platform.toUpperCase()}>
+          <PlatformIcon
+            platform={platform}
+            brand={platformBrand}
+            label={platformName}
+            size={24}
+          />
         </div>
       </div>
       <div className="row">
-        <h3 className="card-title">{crocdb.title}</h3>
+        <h3 style={{ margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {linkTo && location ? (
+            <Link to={linkTo} state={{ backgroundLocation: location }}>
+              {title}
+            </Link>
+          ) : (
+            title
+          )}
+        </h3>
+        {isOwned && <span className="badge">Owned</span>}
+        {!isOwned && isDownloading && <span className="badge">Downloading…</span>}
       </div>
-      <div className="status">{crocdb.platform.toUpperCase()}</div>
-      <div className="status">{crocdb.regions?.join(", ")}</div>
-      <div className="row" style={{ marginTop: "12px" }}>
-        <span className="status">{manifest.artifacts[0]?.path}</span>
-        <button className="link" onClick={onShowInFolder} style={{ marginLeft: 8 }}>
-          Show in Folder
-        </button>
-      </div>
-      {actions && (
+      <div className="status">{platform.toUpperCase()}</div>
+      {regions.length > 0 && <div className="status">{regions.join(", ")}</div>}
+      
+      {/* Library-specific: artifact path */}
+      {manifest && artifactPath && (
         <div className="row" style={{ marginTop: 8 }}>
-          {actions}
+          <span className="status">{manifest.artifacts[0]?.path}</span>
+          {onShowInFolder && (
+            <button className="link" onClick={onShowInFolder} style={{ marginLeft: 8 }}>
+              Show in Folder
+            </button>
+          )}
+        </div>
+      )}
+      
+      {/* Actions */}
+      <div className="row" style={{ marginTop: 8, flexWrap: "wrap", gap: 8 }}>
+        {actions ? (
+          actions
+        ) : (
+          <>
+            {!isOwned && !isDownloading && onDownload && (
+              <button onClick={onDownload}>
+                Queue Download
+              </button>
+            )}
+            {linkTo && location && (
+              <Link
+                className="link"
+                to={linkTo}
+                state={{ backgroundLocation: location }}
+              >
+                Details
+              </Link>
+            )}
+            {isOwned && onShowInFolder && (
+              <a
+                className="link"
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onShowInFolder();
+                }}
+              >
+                Show in Folder
+              </a>
+            )}
+          </>
+        )}
+      </div>
+      
+      {/* Download progress */}
+      {isDownloading && typeof downloadProgress === "number" && (
+        <div className="progress" style={{ marginTop: 8, width: "100%" }}>
+          <span style={{ width: `${Math.max(0, Math.min(1, downloadProgress)) * 100}%` }} />
         </div>
       )}
     </article>

@@ -108,6 +108,7 @@ export default function LibraryPage() {
               key={item.path}
               manifest={manifest}
               artifactPath={artifactPath}
+              location={location}
               onShowInFolder={() => {
                 if (window.crocdesk?.revealInFolder) {
                   window.crocdesk.revealInFolder(item.path);

@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Link, useLocation, useSearchParams } from "react-router-dom";
-import PlatformIcon from "../components/PlatformIcon";
+import { useLocation, useSearchParams } from "react-router-dom";
+import GameCard from "../components/GameCard";
 import PaginationBar from "../components/PaginationBar";
 import { apiGet, apiPost, API_URL } from "../lib/api";
 import type {
@@ -221,102 +221,28 @@ export default function BrowsePage() {
           const ownedItem = ownedItemsBySlug.get(entry.slug)?.[0];
           const progress = progressBySlug[entry.slug] ?? 0;
           return (
-            <article className="card" key={entry.slug} style={{ minWidth: 0, maxWidth: 320, margin: "0 auto" }}>
-              <div className="thumb-wrapper">
-                <Link
-                  to={`/game/${entry.slug}`}
-                  state={{ backgroundLocation: location }}
-                  aria-label={`Open ${entry.title} details`}
-                >
-                  {entry.boxart_url ? (
-                    <img
-                      src={entry.boxart_url}
-                      alt={`${entry.title} cover art`}
-                      className="thumb cover-img"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="thumb-placeholder">
-                      <PlatformIcon
-                        platform={entry.platform}
-                        brand={platformsQuery.data?.data.platforms?.[entry.platform]?.brand}
-                        label={
-                          platformsQuery.data?.data.platforms?.[entry.platform]?.name ?? entry.platform
-                        }
-                        size={42}
-                      />
-                    </div>
-                  )}
-                </Link>
-                <div className="platform-badge" title={entry.platform.toUpperCase()}>
-                  <PlatformIcon
-                    platform={entry.platform}
-                    brand={platformsQuery.data?.data.platforms?.[entry.platform]?.brand}
-                    label={
-                      platformsQuery.data?.data.platforms?.[entry.platform]?.name ?? entry.platform
-                    }
-                    size={24}
-                  />
-                </div>
-              </div>
-              <div className="row">
-                <h3 style={{ margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  <Link to={`/game/${entry.slug}`} state={{ backgroundLocation: location }}>
-                    {entry.title}
-                  </Link>
-                </h3>
-                {isOwned && <span className="badge">Owned</span>}
-                {!isOwned && isDownloading && <span className="badge">Downloading…</span>}
-              </div>
-              <div className="status">{entry.platform.toUpperCase()}</div>
-              <div className="status">{entry.regions.join(", ")}</div>
-              <div className="row" style={{ marginTop: 8, flexWrap: "wrap", gap: 8 }}>
-                {!isOwned && !isDownloading ? (
-                  <button
-                    onClick={() => {
-                      const format = getPreferredFormat(entry);
-                      const linkIndex = findLinkIndex(entry, format);
-                      downloadMutation.mutate({
-                        slug: entry.slug,
-                        linkIndex
-                      });
-                    }}
-                  >
-                    Queue Download
-                  </button>
-                ) : (
-                  <>
-                    <Link
-                      className="link"
-                      to={`/game/${entry.slug}`}
-                      state={{ backgroundLocation: location }}
-                    >
-                      Details
-                    </Link>
-                    {ownedItem?.path && (
-                      <a
-                        className="link"
-                        href={toFileHref(ownedItem.path)}
-                        onClick={(e) => {
-                          const p = ownedItem.path;
-                          if (window.crocdesk?.revealInFolder) {
-                            e.preventDefault();
-                            window.crocdesk.revealInFolder(p);
-                          }
-                        }}
-                      >
-                        Show in Folder
-                      </a>
-                    )}
-                  </>
-                )}
-              </div>
-              {isDownloading && typeof progress === "number" && (
-                <div className="progress" style={{ marginTop: 8, width: "100%" }}>
-                  <span style={{ width: `${Math.max(0, Math.min(1, progress)) * 100}%` }} />
-                </div>
-              )}
-            </article>
+            <GameCard
+              key={entry.slug}
+              entry={entry}
+              isOwned={isOwned}
+              isDownloading={isDownloading}
+              downloadProgress={progress}
+              platformsData={platformsQuery.data?.data}
+              location={location}
+              onDownload={() => {
+                const format = getPreferredFormat(entry);
+                const linkIndex = findLinkIndex(entry, format);
+                downloadMutation.mutate({
+                  slug: entry.slug,
+                  linkIndex
+                });
+              }}
+              onShowInFolder={ownedItem?.path ? () => {
+                if (window.crocdesk?.revealInFolder) {
+                  window.crocdesk.revealInFolder(ownedItem.path);
+                }
+              } : undefined}
+            />
           );
         })}
       </section>
