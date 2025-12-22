@@ -5,7 +5,7 @@
 
 Jacare (Portuguese for "caiman") is a Brazilian-flavored, croc-tough desktop ROM library manager. It combines an Electron shell, an Express API, and a Vite-powered React UI so you can organize, scrape, and launch games from a single experience—wrapping the hosted [Crocdb](https://crocdb.net) service for search and metadata while running local jobs to keep your library synchronized. 🇧🇷
 
-<video controls src="https://github.com/luandev/jacare/raw/main/docs/demo.mp4"></video>
+![Demo](docs/demo.gif)
 
 
 > Want details? Pick your path:
