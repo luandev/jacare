@@ -5,6 +5,9 @@
 
 Jacare (Portuguese for "caiman") is a Brazilian-flavored, croc-tough desktop ROM library manager. It combines an Electron shell, an Express API, and a Vite-powered React UI so you can organize, scrape, and launch games from a single experience—wrapping the hosted [Crocdb](https://crocdb.net) service for search and metadata while running local jobs to keep your library synchronized. 🇧🇷
 
+<video controls src="https://github.com/luandev/jacare/raw/main/docs/demo.mp4"></video>
+
+
 > Want details? Pick your path:
 > - 📚 **Developer guide:** Head to [`docs/README.md`](docs/README.md) for the full technical rundown.
 > - 😀 **Friendly guide:** Open [`docs/user/README.md`](docs/user/README.md) for a non-technical walkthrough.
@@ -47,13 +50,6 @@ See [`docker/README.md`](docker/README.md) for a Docker Compose template with pl
 
 > Tip: The desktop app expects the web dev server at `http://localhost:5173` by default. Override with `CROCDESK_DEV_URL` if you change the Vite port.
 
-## Screenshots 📸
-
-Here’s a quick look at Jacare in action:
-
-![Browse Page](docs/Screenshot.png)
-
-![Library & Details](docs/Screenshot2.png)
 
 ## Configuration & data ⚙️
 - **Default port:** `CROCDESK_PORT=3333`.
