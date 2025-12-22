@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { enqueueDownloadAndInstall, getJobs, getJobSteps } from "../services/jobs";
+import { enqueueDownloadAndInstall, getJobs, getJobSteps, cancelJob } from "../services/jobs";
 import { getJob } from "../db";
 import { getEntry } from "../services/crocdb";
 
@@ -53,23 +53,31 @@ router.get("/:id", (req, res) => {
 });
 
 router.post("/download", async (req, res) => {
-  const { slug, profileId, linkIndex } = req.body ?? {};
-  if (!slug || !profileId) {
-    res.status(400).json({ error: "slug and profileId are required" });
+  const { slug, linkIndex } = req.body ?? {};
+  if (!slug) {
+    res.status(400).json({ error: "slug is required" });
     return;
   }
   const parsedLinkIndex =
     typeof linkIndex === "number" ? linkIndex : undefined;
   const job = await enqueueDownloadAndInstall({
     slug,
-    profileId,
     linkIndex: parsedLinkIndex
   });
   res.json(job);
 });
 
-router.post("/:id/cancel", (_req, res) => {
-  res.status(501).json({ error: "Cancel not implemented in MVP" });
+router.post("/:id/cancel", async (req, res) => {
+  try {
+    const cancelled = await cancelJob(req.params.id);
+    if (cancelled) {
+      res.json({ ok: true, message: "Job cancelled" });
+    } else {
+      res.status(404).json({ error: "Job not found or cannot be cancelled" });
+    }
+  } catch (error) {
+    res.status(500).json({ error: error instanceof Error ? error.message : "Failed to cancel job" });
+  }
 });
 
 export default router;

@@ -20,7 +20,7 @@ export default function GameCard({ manifest, artifactPath, onShowInFolder, actio
   const [imgError, setImgError] = React.useState(false);
   const currentCoverUrl = coverUrls[imgIndex];
   return (
-    <article className="card" style={{ minWidth: 0 }}>
+    <article className="card" style={{ width: 240 }}>
       <div className="thumb-wrapper">
         {!imgError && currentCoverUrl ? (
           <img

@@ -3,6 +3,7 @@ import { useMemo, useEffect } from "react";
 import BrowsePage from "./pages/BrowsePage";
 import LibraryPage from "./pages/LibraryPage";
 import QueuePage from "./pages/QueuePage";
+import DownloadsPage from "./pages/DownloadsPage";
 import SettingsPage from "./pages/SettingsPage";
 import GameDetailPage from "./pages/GameDetailPage";
 import LibraryItemDetailPage from "./pages/LibraryItemDetailPage";
@@ -20,6 +21,7 @@ function AppRoutes() {
         <Route path="/library" element={<LibraryPage />} />
         <Route path="/library/item" element={<LibraryItemDetailPage />} />
         <Route path="/queue" element={<QueuePage />} />
+        <Route path="/downloads" element={<DownloadsPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/game/:slug" element={<GameDetailPage />} />
       </Routes>
@@ -96,6 +98,9 @@ export default function App() {
             </NavLink>
             <NavLink to="/queue" className={navLinkClass}>
               Queue
+            </NavLink>
+            <NavLink to="/downloads" className={navLinkClass}>
+              Downloads
             </NavLink>
             <NavLink to="/settings" className={navLinkClass}>
               Settings

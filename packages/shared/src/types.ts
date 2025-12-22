@@ -142,5 +142,8 @@ export type JobEvent = {
   files?: string[];
   slug?: string;
   libraryItemId?: number;
+  // Byte-level progress for download speed calculation
+  bytesDownloaded?: number;
+  totalBytes?: number;
   ts: number;
 };

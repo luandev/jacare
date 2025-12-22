@@ -23,9 +23,13 @@ export type DownloadJobResult = {
 export async function runDownloadAndInstall(
   payload: DownloadJobPayload,
   settings: Settings,
-  reportProgress: (progress: number, message?: string) => void
+  abortSignal?: AbortSignal,
+  reportProgress?: (progress: number, message?: string, bytesDownloaded?: number, totalBytes?: number) => void
 ): Promise<DownloadJobResult> {
-  reportProgress(0.05, "Resolving entry");
+  const defaultReport = (progress: number, message?: string) => {};
+  const progressReporter = reportProgress || defaultReport;
+  if (abortSignal?.aborted) throw new Error("Cancelled by user");
+  progressReporter(0.05, "Resolving entry");
   const entryResponse = await getEntry(payload.slug);
   const entry = entryResponse.data.entry;
 
@@ -41,7 +45,7 @@ export async function runDownloadAndInstall(
   const link = entry.links[resolvedLinkIndex];
 
   if (!ENABLE_DOWNLOADS) {
-    reportProgress(1, "Downloads disabled; skipping transfer");
+    progressReporter(1, "Downloads disabled; skipping transfer");
     return { entry };
   }
 
@@ -49,14 +53,19 @@ export async function runDownloadAndInstall(
   await ensureDir(downloadDir);
   const downloadPath = path.join(downloadDir, link.filename || `${entry.slug}.zip`);
 
-  reportProgress(0.2, "Downloading asset");
-  await downloadFile(link.url, downloadPath, reportProgress);
+  progressReporter(0.2, "Downloading asset");
+  await downloadFile(link.url, downloadPath, abortSignal, (progress, message, bytesDownloaded, totalBytes) => {
+    // Map download progress (0-1) to overall progress (0.2-0.7)
+    const overallProgress = 0.2 + (progress * 0.5);
+    progressReporter(overallProgress, message, bytesDownloaded, totalBytes);
+  });
 
   // If the asset is a zip, attempt extraction; otherwise, move directly.
   const isZip = (link.format?.toLowerCase() === "zip") || path.extname(downloadPath).toLowerCase() === ".zip";
   if (isZip) {
     try {
-      reportProgress(0.6, "Extracting archive");
+      if (abortSignal?.aborted) throw new Error("Cancelled by user");
+      progressReporter(0.6, "Extracting archive");
       // Extract to /downloads/{console}/{game}
       const platform = entry.platform || "unknown";
       const gameName = formatName(entry);
@@ -67,7 +76,8 @@ export async function runDownloadAndInstall(
       // Remove zip after extraction
       await fs.unlink(downloadPath);
 
-      reportProgress(0.75, "Finalizing layout");
+      if (abortSignal?.aborted) throw new Error("Cancelled by user");
+      progressReporter(0.75, "Finalizing layout");
       const { outputDir, outputPaths } = await finalizeLayoutMany(entry, extractDir, settings);
 
       // Save boxart locally for library thumbnails
@@ -92,14 +102,16 @@ export async function runDownloadAndInstall(
       };
       await writeManifest(outputDir, manifest);
 
-      reportProgress(1, "Complete");
+      if (abortSignal?.aborted) throw new Error("Cancelled by user");
+      progressReporter(1, "Complete");
       return { entry, outputPaths };
     } catch (e) {
       // Fallback: if extraction fails, proceed with direct layout move
     }
   }
 
-  reportProgress(0.8, "Finalizing layout");
+  if (abortSignal?.aborted) throw new Error("Cancelled by user");
+  progressReporter(0.8, "Finalizing layout");
   const outputPath = await finalizeLayout(entry, downloadPath, settings);
 
   // Save boxart locally for library thumbnails
@@ -109,7 +121,8 @@ export async function runDownloadAndInstall(
   const manifest = buildManifest(entry, outputPath, stats.size);
   await writeManifest(path.dirname(outputPath), manifest);
 
-  reportProgress(1, "Complete");
+  if (abortSignal?.aborted) throw new Error("Cancelled by user");
+  progressReporter(1, "Complete");
   return { entry, outputPath };
 }
 
@@ -178,9 +191,17 @@ function chooseLinkIndex(entry: CrocdbEntry): number {
 async function downloadFile(
   url: string,
   destination: string,
-  reportProgress: (progress: number, message?: string) => void
+  abortSignal?: AbortSignal,
+  reportProgress?: (progress: number, message?: string, bytesDownloaded?: number, totalBytes?: number) => void
 ): Promise<void> {
-  const response = await fetch(url);
+  if (abortSignal?.aborted) throw new Error("Cancelled by user");
+  
+  const controller = new AbortController();
+  if (abortSignal) {
+    abortSignal.addEventListener("abort", () => controller.abort());
+  }
+  
+  const response = await fetch(url, { signal: controller.signal });
   if (!response.ok || !response.body) {
     throw new Error(`Download failed: ${response.status}`);
   }
@@ -193,20 +214,46 @@ async function downloadFile(
   let downloaded = 0;
 
   await new Promise<void>((resolve, reject) => {
+    if (abortSignal?.aborted) {
+      reject(new Error("Cancelled by user"));
+      return;
+    }
+    
     const stream = Readable.fromWeb(response.body as unknown as NodeReadableStream);
+    
     stream.on("data", (chunk: Buffer) => {
+      if (abortSignal?.aborted) {
+        stream.destroy();
+        fileStream.destroy();
+        reject(new Error("Cancelled by user"));
+        return;
+      }
+      
       downloaded += chunk.length;
-      if (total > 0) {
-        reportProgress(0.2 + 0.5 * (downloaded / total), "Downloading asset");
+      const progress = total > 0 ? downloaded / total : 0;
+      if (reportProgress) {
+        reportProgress(progress, "Downloading asset", downloaded, total);
       }
     });
 
     stream.on("error", reject);
     fileStream.on("error", reject);
     fileStream.on("finish", resolve);
+    
+    if (abortSignal) {
+      abortSignal.addEventListener("abort", () => {
+        stream.destroy();
+        fileStream.destroy();
+        reject(new Error("Cancelled by user"));
+      });
+    }
 
     stream.pipe(fileStream);
   });
+
+  if (abortSignal?.aborted) {
+    throw new Error("Cancelled by user");
+  }
 
   await moveFile(tempPath, destination);
 }

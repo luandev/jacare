@@ -6,6 +6,7 @@ import { DEFAULT_SETTINGS } from "@crocdesk/shared";
 import {
   createJob,
   createJobStep,
+  getJob,
   getSettings,
   listJobSteps,
   listJobs,
@@ -19,6 +20,9 @@ import { scanLocal } from "./scanner";
 import { runDownloadAndInstall, type DownloadJobPayload } from "./pipeline";
 
 const queue = new PQueue({ concurrency: 2 });
+
+// Track active job tasks for cancellation
+const activeJobTasks = new Map<string, { abortController: AbortController; task: Promise<void> }>();
 
 export function getJobs(): JobRecord[] {
   return listJobs();
@@ -42,8 +46,65 @@ export async function enqueueDownloadAndInstall(
   const job = createJobRecord("download_and_install", payload);
   const settings = getSettings() ?? DEFAULT_SETTINGS;
   queue.concurrency = settings.queue?.concurrency ?? 2;
-  queue.add(() => runDownloadJob(job, payload));
+  
+  const abortController = new AbortController();
+  const task = queue.add(() => runDownloadJob(job, payload, abortController.signal));
+  activeJobTasks.set(job.id, { abortController, task });
+  
+  // Clean up when task completes
+  task.finally(() => {
+    activeJobTasks.delete(job.id);
+  });
+  
   return job;
+}
+
+export async function cancelJob(jobId: string): Promise<boolean> {
+  const job = getJob(jobId);
+  if (!job) {
+    return false;
+  }
+  
+  // If job is queued, remove from queue
+  if (job.status === "queued") {
+    updateJobStatus(jobId, "failed");
+    publishEvent({
+      jobId,
+      type: "JOB_FAILED",
+      message: "Cancelled by user",
+      slug: job.type === "download_and_install" && typeof job.payload.slug === "string" ? (job.payload.slug as string) : undefined,
+      ts: Date.now()
+    });
+    activeJobTasks.delete(jobId);
+    return true;
+  }
+  
+  // If job is running, abort it
+  const activeTask = activeJobTasks.get(jobId);
+  if (activeTask && job.status === "running") {
+    activeTask.abortController.abort();
+    // Find the job step to update
+    const steps = listJobSteps(jobId);
+    if (steps.length > 0) {
+      const lastStep = steps[steps.length - 1];
+      updateJobStep(lastStep.id, {
+        status: "failed",
+        message: "Cancelled by user"
+      });
+    }
+    updateJobStatus(jobId, "failed");
+    publishEvent({
+      jobId,
+      type: "JOB_FAILED",
+      message: "Cancelled by user",
+      slug: job.type === "download_and_install" && typeof job.payload.slug === "string" ? (job.payload.slug as string) : undefined,
+      ts: Date.now()
+    });
+    activeJobTasks.delete(jobId);
+    return true;
+  }
+  
+  return false;
 }
 
 function createJobRecord(
@@ -94,12 +155,17 @@ async function runScanJob(job: JobRecord): Promise<void> {
 
 export async function runDownloadJob(
   job: JobRecord,
-  payload: DownloadJobPayload
+  payload: DownloadJobPayload,
+  abortSignal?: AbortSignal
 ): Promise<void> {
   await runJob(job, async (report) => {
+    if (abortSignal?.aborted) {
+      throw new Error("Cancelled by user");
+    }
+    
     const settings = getSettings() ?? DEFAULT_SETTINGS;
-    const result = await runDownloadAndInstall(payload, settings, (progress, message) => {
-      report.step("download_and_install", progress, message);
+    const result = await runDownloadAndInstall(payload, settings, abortSignal, (progress, message, bytesDownloaded, totalBytes) => {
+      report.step("download_and_install", progress, message, bytesDownloaded, totalBytes);
     });
 
     const files: string[] = [];
@@ -146,10 +212,14 @@ export async function runDownloadJob(
 }
 
 type JobReporter = {
-  step: (step: string, progress: number, message?: string) => void;
+  step: (step: string, progress: number, message?: string, bytesDownloaded?: number, totalBytes?: number) => void;
 };
 
-async function runJob(job: JobRecord, handler: (report: JobReporter) => Promise<void>): Promise<void> {
+async function runJob(job: JobRecord, handler: (report: JobReporter) => Promise<void>, abortSignal?: AbortSignal): Promise<void> {
+  if (abortSignal?.aborted) {
+    throw new Error("Cancelled by user");
+  }
+  
   updateJobStatus(job.id, "running");
 
   const stepRecord = createJobStep(job.id, job.type);
@@ -163,7 +233,7 @@ async function runJob(job: JobRecord, handler: (report: JobReporter) => Promise<
   });
 
   const report: JobReporter = {
-    step: (step, progress, message) => {
+    step: (step, progress, message, bytesDownloaded, totalBytes) => {
       updateJobStep(stepRecord.id, {
         status: "running",
         progress,
@@ -175,6 +245,8 @@ async function runJob(job: JobRecord, handler: (report: JobReporter) => Promise<
         step,
         progress,
         message,
+        bytesDownloaded,
+        totalBytes,
         slug: job.type === "download_and_install" && typeof job.payload.slug === "string" ? (job.payload.slug as string) : undefined,
         ts: Date.now()
       });
@@ -182,7 +254,16 @@ async function runJob(job: JobRecord, handler: (report: JobReporter) => Promise<
   };
 
   try {
+    // Check abort signal periodically
+    const checkAbort = () => {
+      if (abortSignal?.aborted) {
+        throw new Error("Cancelled by user");
+      }
+    };
+    
+    checkAbort();
     await handler(report);
+    checkAbort();
     updateJobStep(stepRecord.id, {
       status: "done",
       progress: 1

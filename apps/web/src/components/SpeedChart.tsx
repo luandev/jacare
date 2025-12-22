@@ -1,0 +1,50 @@
+import { useMemo } from "react";
+
+export type SpeedChartProps = {
+  speeds: number[]; // MB/s values
+  maxBars?: number;
+};
+
+const MB_TO_BYTES = 1048576;
+
+export default function SpeedChart({ speeds, maxBars = 20 }: SpeedChartProps) {
+  const displaySpeeds = useMemo(() => {
+    return speeds.slice(-maxBars);
+  }, [speeds, maxBars]);
+
+  const maxSpeed = useMemo(() => {
+    if (displaySpeeds.length === 0) return 1;
+    return Math.max(...displaySpeeds, 0.1); // Minimum 0.1 MB/s for scaling
+  }, [displaySpeeds]);
+
+  if (displaySpeeds.length === 0) {
+    return (
+      <div className="speed-chart" style={{ height: 40, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <span className="status" style={{ fontSize: 11 }}>No data</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="speed-chart" style={{ height: 40, display: "flex", alignItems: "flex-end", gap: 2 }}>
+      {displaySpeeds.map((speed, idx) => {
+        const height = (speed / maxSpeed) * 100;
+        return (
+          <div
+            key={idx}
+            style={{
+              flex: 1,
+              minWidth: 3,
+              height: `${Math.max(height, 2)}%`,
+              backgroundColor: "var(--accent)",
+              borderRadius: "2px 2px 0 0",
+              transition: "height 0.2s ease"
+            }}
+            title={`${speed.toFixed(2)} MB/s`}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
