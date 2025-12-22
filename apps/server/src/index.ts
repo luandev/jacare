@@ -83,6 +83,32 @@ async function start(): Promise<void> {
     }
   });
 
+  // Serve static web assets in production (when bundled with desktop app)
+  const webDistPath = path.resolve(__dirname, "../../web/dist");
+  try {
+    const fs = await import("fs");
+    const webDistExists = await fs.promises.access(webDistPath).then(() => true).catch(() => false);
+    if (webDistExists) {
+      app.use(express.static(webDistPath));
+      // SPA fallback: serve index.html for all non-API routes
+      app.get("*", (req, res, next) => {
+        // Skip API routes
+        if (req.path.startsWith("/crocdb") || 
+            req.path.startsWith("/settings") || 
+            req.path.startsWith("/library") || 
+            req.path.startsWith("/jobs") || 
+            req.path.startsWith("/events") || 
+            req.path.startsWith("/file") || 
+            req.path.startsWith("/health")) {
+          return next();
+        }
+        res.sendFile(path.join(webDistPath, "index.html"));
+      });
+    }
+  } catch {
+    // Web dist not available, skip static serving
+  }
+
   app.get("/health", (_req, res) => {
     res.json({ ok: true });
   });

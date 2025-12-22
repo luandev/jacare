@@ -15,7 +15,9 @@
     "typecheck": "npm run typecheck -w @crocdesk/shared && npm run typecheck -w @crocdesk/server && npm run typecheck -w @crocdesk/web && npm run typecheck -w @crocdesk/desktop",
     "lint": "eslint . --ext .ts,.tsx",
     "test:unit": "vitest --run",
-    "test": "npm run test:unit"
+    "test": "npm run test:unit",
+    "package:desktop": "npm run build && npm run package -w @crocdesk/desktop",
+    "package:server": "npm run build && npm run package -w @crocdesk/server"
   },
   "devDependencies": {
     "@playwright/test": "^1.48.2",
