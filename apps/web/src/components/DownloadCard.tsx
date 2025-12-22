@@ -5,6 +5,8 @@ import type { JobRecord } from "@crocdesk/shared";
 import SpeedChart from "./SpeedChart";
 import { useDownloadProgress } from "../hooks/useDownloadProgress";
 import DownloadProgress from "./DownloadProgress";
+import type { SpeedDataPoint } from "../hooks/useDownloadProgress";
+import { useDownloadProgressStore } from "../store";
 
 type JobPreview = {
   slug: string;
@@ -13,8 +15,6 @@ type JobPreview = {
   boxart_url?: string;
 };
 type JobWithPreview = JobRecord & { preview?: JobPreview };
-
-import type { SpeedDataPoint } from "../hooks/useDownloadProgress";
 
 const MB_TO_BYTES = 1048576;
 
@@ -25,10 +25,18 @@ export type DownloadCardProps = {
   currentProgress?: number;
 };
 
-function DownloadCard({ job, speedHistory, currentBytes: propCurrentBytes, currentProgress: propCurrentProgress }: DownloadCardProps) {
+function DownloadCard({ job, speedHistory: propSpeedHistory, currentBytes: propCurrentBytes, currentProgress: propCurrentProgress }: DownloadCardProps) {
   const queryClient = useQueryClient();
-  const currentBytes = propCurrentBytes || null;
-  const currentProgress = propCurrentProgress ?? 0;
+  
+  // Get progress data from store if not provided via props
+  const speedDataByJobId = useDownloadProgressStore((state) => state.speedDataByJobId);
+  const bytesByJobId = useDownloadProgressStore((state) => state.bytesByJobId);
+  const progressByJobId = useDownloadProgressStore((state) => state.progressByJobId);
+  
+  // Use props if provided, otherwise fall back to store
+  const speedHistory = propSpeedHistory.length > 0 ? propSpeedHistory : (speedDataByJobId[job.id] || []);
+  const currentBytes = propCurrentBytes ?? bytesByJobId[job.id] ?? null;
+  const currentProgress = propCurrentProgress ?? progressByJobId[job.id] ?? 0;
 
   // Use shared hook for calculations
   const { currentSpeed, eta } = useDownloadProgress(speedHistory, currentBytes, currentProgress);

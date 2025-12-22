@@ -5,6 +5,7 @@ import DownloadProgress from "./DownloadProgress";
 import type { Manifest, CrocdbEntry, CrocdbPlatformsResponseData } from "@crocdesk/shared";
 import { API_URL } from "../lib/api";
 import type { SpeedDataPoint } from "../hooks/useDownloadProgress";
+import { useDownloadProgressStore } from "../store";
 
 export type GameCardProps = {
   // Data source - either entry (BrowsePage) or manifest (LibraryPage)
@@ -54,6 +55,18 @@ export default function GameCard({
   const regions = entry?.regions ?? manifest?.crocdb.regions ?? [];
   const slug = entry?.slug ?? manifest?.crocdb.slug ?? "";
   const boxartUrl = entry?.boxart_url;
+  
+  // Get download progress from store if not provided via props
+  const downloadingSlugs = useDownloadProgressStore((state) => state.downloadingSlugs);
+  const progressBySlug = useDownloadProgressStore((state) => state.progressBySlug);
+  const speedDataBySlug = useDownloadProgressStore((state) => state.speedDataBySlug);
+  const bytesBySlug = useDownloadProgressStore((state) => state.bytesBySlug);
+  
+  // Use props if provided, otherwise fall back to store
+  const actualIsDownloading = isDownloading ?? (slug ? downloadingSlugs.has(slug) : false);
+  const actualDownloadProgress = downloadProgress ?? (slug ? progressBySlug[slug] : undefined);
+  const actualDownloadSpeedHistory = downloadSpeedHistory.length > 0 ? downloadSpeedHistory : (slug ? speedDataBySlug[slug] || [] : []);
+  const actualDownloadBytes = downloadBytes ?? (slug ? bytesBySlug[slug] : null);
   
   // Determine cover image source
   const [imgIndex, setImgIndex] = React.useState(0);
@@ -185,7 +198,7 @@ export default function GameCard({
           actions
         ) : (
           <>
-            {!isOwned && !isDownloading && onDownload && (
+            {!isOwned && !actualIsDownloading && onDownload && (
               <button onClick={onDownload}>
                 Queue Download
               </button>
@@ -216,12 +229,12 @@ export default function GameCard({
       </div>
       
       {/* Download progress */}
-      {isDownloading && (
+      {actualIsDownloading && (
         <div style={{ marginTop: 8 }}>
           <DownloadProgress
-            speedHistory={downloadSpeedHistory}
-            currentBytes={downloadBytes}
-            currentProgress={downloadProgress}
+            speedHistory={actualDownloadSpeedHistory}
+            currentBytes={actualDownloadBytes}
+            currentProgress={actualDownloadProgress}
             compact={true}
           />
         </div>

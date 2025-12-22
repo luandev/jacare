@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiGet, API_URL } from "../lib/api";
-import type { JobEvent, JobRecord } from "@crocdesk/shared";
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { apiGet } from "../lib/api";
+import type { JobRecord } from "@crocdesk/shared";
 import PlatformIcon from "../components/PlatformIcon";
 import DownloadCard from "../components/DownloadCard";
 import DownloadProgress from "../components/DownloadProgress";
+import { useDownloadProgressStore, useSSEStore, useJobResultsStore } from "../store";
+import { useSSE } from "../store/hooks/useSSE";
 
 type JobPreview = {
   slug: string;
@@ -15,72 +17,20 @@ type JobPreview = {
 type JobWithPreview = JobRecord & { preview?: JobPreview };
 
 export default function QueuePage() {
-  const queryClient = useQueryClient();
-  const [lastEvent, setLastEvent] = useState<JobEvent | null>(null);
-  const [progressByJob, setProgressByJob] = useState<Record<string, number>>({});
-  const [resultByJob, setResultByJob] = useState<Record<string, { files?: string[]; slug?: string; libraryItemId?: number }>>({});
-  const [speedDataByJob, setSpeedDataByJob] = useState<Record<string, { bytes: number; timestamp: number }[]>>({});
-  const [bytesByJob, setBytesByJob] = useState<Record<string, { downloaded: number; total: number }>>({});
+  // Ensure SSE connection is active
+  useSSE();
+  
+  // Get state from stores
+  const lastEvent = useSSEStore((state) => state.lastEvent);
+  const progressByJobId = useDownloadProgressStore((state) => state.progressByJobId);
+  const speedDataByJobId = useDownloadProgressStore((state) => state.speedDataByJobId);
+  const bytesByJobId = useDownloadProgressStore((state) => state.bytesByJobId);
+  const resultByJob = useJobResultsStore((state) => state.resultByJob);
 
   const jobsQuery = useQuery({
     queryKey: ["jobs"],
     queryFn: () => apiGet<JobWithPreview[]>("/jobs")
   });
-
-  useEffect(() => {
-    const source = new EventSource(`${API_URL}/events`);
-    source.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data) as JobEvent;
-        setLastEvent(data);
-        if (data.type === "STEP_PROGRESS") {
-          if (typeof data.progress === "number") {
-            setProgressByJob((prev) => ({ ...prev, [data.jobId]: data.progress ?? 0 }));
-          }
-          // Track byte-level progress for download speed calculation
-          if (data.bytesDownloaded !== undefined && data.totalBytes !== undefined) {
-            setBytesByJob((prev) => ({
-              ...prev,
-              [data.jobId]: { downloaded: data.bytesDownloaded!, total: data.totalBytes! }
-            }));
-            setSpeedDataByJob((prev) => {
-              const history = prev[data.jobId] || [];
-              const newHistory = [...history, { bytes: data.bytesDownloaded!, timestamp: data.ts }].slice(-30); // Keep last 30 samples
-              return { ...prev, [data.jobId]: newHistory };
-            });
-          }
-        }
-        if (data.type === "JOB_DONE") {
-          // Reset progress when done; details may arrive via JOB_RESULT next
-          setProgressByJob((prev) => ({ ...prev, [data.jobId]: 1 }));
-        }
-        if (data.type === "JOB_RESULT") {
-          setResultByJob((prev) => ({
-            ...prev,
-            [data.jobId]: { files: data.files, slug: data.slug, libraryItemId: data.libraryItemId }
-          }));
-        }
-        // Remove completed/failed jobs from tracking
-        if (data.type === "JOB_DONE" || data.type === "JOB_FAILED") {
-          setSpeedDataByJob((prev) => {
-            const next = { ...prev };
-            delete next[data.jobId];
-            return next;
-          });
-          setBytesByJob((prev) => {
-            const next = { ...prev };
-            delete next[data.jobId];
-            return next;
-          });
-        }
-        queryClient.invalidateQueries({ queryKey: ["jobs"] });
-      } catch {
-        // Ignore malformed SSE payloads.
-      }
-    };
-
-    return () => source.close();
-  }, [queryClient]);
 
   return (
     <div className="grid" style={{ gap: "20px" }}>
@@ -112,9 +62,9 @@ export default function QueuePage() {
                   </div>
                 )}
                 <DownloadProgress
-                  speedHistory={speedDataByJob[lastEvent.jobId] || []}
-                  currentBytes={bytesByJob[lastEvent.jobId]}
-                  currentProgress={progressByJob[lastEvent.jobId]}
+                  speedHistory={speedDataByJobId[lastEvent.jobId] || []}
+                  currentBytes={bytesByJobId[lastEvent.jobId]}
+                  currentProgress={progressByJobId[lastEvent.jobId]}
                   compact={true}
                 />
               </>
@@ -139,7 +89,7 @@ export default function QueuePage() {
 
       <section className="list">
         {(jobsQuery.data ?? []).map((job) => {
-          const jobProgress = progressByJob[job.id];
+          const jobProgress = progressByJobId[job.id];
           const jobResult = resultByJob[job.id];
           const slug = jobResult?.slug || job.preview?.slug || (job.payload?.slug as string | undefined);
           const fileLinks = jobResult?.files ?? [];
@@ -150,8 +100,8 @@ export default function QueuePage() {
               <DownloadCard
                 key={job.id}
                 job={job}
-                speedHistory={speedDataByJob[job.id] || []}
-                currentBytes={bytesByJob[job.id]}
+                speedHistory={speedDataByJobId[job.id] || []}
+                currentBytes={bytesByJobId[job.id]}
                 currentProgress={jobProgress}
               />
             );

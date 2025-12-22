@@ -4,7 +4,9 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useLocation, useSearchParams } from "react-router-dom";
 import GameCard from "../components/GameCard";
 import PaginationBar from "../components/PaginationBar";
-import { apiGet, apiPost, API_URL } from "../lib/api";
+import { apiGet, apiPost } from "../lib/api";
+import { useDownloadProgressStore, useUIStore } from "../store";
+import { useSSE } from "../store/hooks/useSSE";
 import type {
   CrocdbApiResponse,
   CrocdbEntry,
@@ -18,10 +20,11 @@ import type {
 const RESULTS_PER_PAGE = 60;
 
 export default function BrowsePage() {
+  // Ensure SSE connection is active
+  useSSE();
+  
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const STICKY_PLATFORM_KEY = "crocdesk:stickyPlatform";
-  const STICKY_REGION_KEY = "crocdesk:stickyRegion";
   
   // Read state from URL params
   const searchKey = searchParams.get("q") || "";
@@ -29,24 +32,26 @@ export default function BrowsePage() {
   const region = searchParams.get("rg") || "";
   const page = parseInt(searchParams.get("page") || "1", 10);
 
-  // Sticky defaults from localStorage when URL params are absent
-  let stickyPlatform = "";
-  let stickyRegion = "";
-  try {
-    stickyPlatform = localStorage.getItem(STICKY_PLATFORM_KEY) || "";
-    stickyRegion = localStorage.getItem(STICKY_REGION_KEY) || "";
-  } catch {}
+  // Get UI state from store
+  const stickyPlatform = useUIStore((state) => state.stickyPlatform);
+  const stickyRegion = useUIStore((state) => state.stickyRegion);
+  const gridColumns = useUIStore((state) => state.gridColumns);
+  const setGridColumns = useUIStore((state) => state.setGridColumns);
+  const setStickyPlatform = useUIStore((state) => state.setStickyPlatform);
+  const setStickyRegion = useUIStore((state) => state.setStickyRegion);
+  
   const defaultPlatform = platform || stickyPlatform;
   const defaultRegion = region || stickyRegion;
+  
+  // Get download progress from store
+  const downloadingSlugs = useDownloadProgressStore((state) => state.downloadingSlugs);
+  const progressBySlug = useDownloadProgressStore((state) => state.progressBySlug);
+  const speedDataBySlug = useDownloadProgressStore((state) => state.speedDataBySlug);
+  const bytesBySlug = useDownloadProgressStore((state) => state.bytesBySlug);
   
   const [results, setResults] = useState<CrocdbEntry[]>([]);
   const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1, totalResults: 0 });
   const [status, setStatus] = useState<string>("");
-  const [downloadingSlugs, setDownloadingSlugs] = useState<Set<string>>(new Set());
-  const [progressBySlug, setProgressBySlug] = useState<Record<string, number>>({});
-  const [speedDataBySlug, setSpeedDataBySlug] = useState<Record<string, { bytes: number; timestamp: number }[]>>({});
-  const [bytesBySlug, setBytesBySlug] = useState<Record<string, { downloaded: number; total: number }>>({});
-  const [gridColumns, setGridColumns] = useState(3);
 
   const platformsQuery = useQuery({
     queryKey: ["platforms"],
@@ -106,11 +111,9 @@ export default function BrowsePage() {
   const downloadMutation = useMutation({
     mutationFn: (payload: { slug: string; linkIndex?: number }) =>
       apiPost("/jobs/download", payload),
-    onSuccess: (_resp, variables) => {
+    onSuccess: () => {
       setStatus("Download job queued");
-      if (variables?.slug) {
-        setDownloadingSlugs((prev) => new Set(prev).add(variables.slug));
-      }
+      // Download state will be updated via SSE events
     },
     onError: (error) =>
       setStatus(error instanceof Error ? error.message : "Download failed")
@@ -132,73 +135,17 @@ export default function BrowsePage() {
   // On first load, if URL lacks pf/rg but sticky values exist, apply them to URL to make filters sticky
   useEffect(() => {
     if (!platform || !region) {
-      try {
-        const stickyPf = localStorage.getItem(STICKY_PLATFORM_KEY) || "";
-        const stickyRg = localStorage.getItem(STICKY_REGION_KEY) || "";
-        const hasSticky = (!!stickyPf && !platform) || (!!stickyRg && !region);
-        if (hasSticky) {
-          const next = new URLSearchParams(searchParams);
-          if (!platform && stickyPf) next.set("pf", stickyPf);
-          if (!region && stickyRg) next.set("rg", stickyRg);
-          if (!next.get("page")) next.set("page", "1");
-          setSearchParams(next);
-        }
-      } catch {}
+      const hasSticky = (!!stickyPlatform && !platform) || (!!stickyRegion && !region);
+      if (hasSticky) {
+        const next = new URLSearchParams(searchParams);
+        if (!platform && stickyPlatform) next.set("pf", stickyPlatform);
+        if (!region && stickyRegion) next.set("rg", stickyRegion);
+        if (!next.get("page")) next.set("page", "1");
+        setSearchParams(next);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Job progress tracking
-  useEffect(() => {
-    const source = new EventSource(`${API_URL}/events`);
-    source.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data) as JobEvent;
-        if (data.slug) {
-          if (data.type === "STEP_PROGRESS") {
-            if (typeof data.progress === "number") {
-              setProgressBySlug((prev) => ({ ...prev, [data.slug as string]: (data.progress as number) }));
-              setDownloadingSlugs((prev) => new Set(prev).add(data.slug!));
-            }
-            // Track byte-level progress for speed calculation
-            if (data.bytesDownloaded !== undefined && data.totalBytes !== undefined) {
-              setBytesBySlug((prev) => ({
-                ...prev,
-                [data.slug as string]: { downloaded: data.bytesDownloaded!, total: data.totalBytes! }
-              }));
-              setSpeedDataBySlug((prev) => {
-                const history = prev[data.slug as string] || [];
-                const newHistory = [...history, { bytes: data.bytesDownloaded!, timestamp: data.ts }].slice(-30); // Keep last 30 samples
-                return { ...prev, [data.slug as string]: newHistory };
-              });
-            }
-          }
-          if (data.type === "JOB_DONE" || data.type === "JOB_FAILED") {
-            setDownloadingSlugs((prev) => {
-              const next = new Set(prev);
-              next.delete(data.slug!);
-              return next;
-            });
-            // Clean up speed data
-            setSpeedDataBySlug((prev) => {
-              const next = { ...prev };
-              delete next[data.slug!];
-              return next;
-            });
-            setBytesBySlug((prev) => {
-              const next = { ...prev };
-              delete next[data.slug!];
-              return next;
-            });
-          }
-          if (data.type === "JOB_RESULT") {
-            ownedQuery.refetch().catch(() => {});
-          }
-        }
-      } catch {}
-    };
-    return () => source.close();
-  }, [ownedQuery]);
 
   function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -213,19 +160,17 @@ export default function BrowsePage() {
     if (rg) nextParams.rg = rg;
     nextParams.page = "1"; // Reset to page 1 on new search
     
-    // Persist sticky selections
-    try {
-      if (pf) {
-        localStorage.setItem(STICKY_PLATFORM_KEY, pf);
-      } else {
-        localStorage.removeItem(STICKY_PLATFORM_KEY);
-      }
-      if (rg) {
-        localStorage.setItem(STICKY_REGION_KEY, rg);
-      } else {
-        localStorage.removeItem(STICKY_REGION_KEY);
-      }
-    } catch {}
+    // Persist sticky selections to store
+    if (pf) {
+      setStickyPlatform(pf);
+    } else {
+      setStickyPlatform("");
+    }
+    if (rg) {
+      setStickyRegion(rg);
+    } else {
+      setStickyRegion("");
+    }
 
     setSearchParams(nextParams);
   }

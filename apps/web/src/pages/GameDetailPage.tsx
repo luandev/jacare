@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { apiGet, apiPost, API_URL } from "../lib/api";
-import type { CrocdbApiResponse, CrocdbEntryResponseData, LibraryItem, JobEvent } from "@crocdesk/shared";
+import { apiGet, apiPost } from "../lib/api";
+import type { CrocdbApiResponse, CrocdbEntryResponseData, LibraryItem } from "@crocdesk/shared";
 import { DetailLayout } from "../components/DetailLayout";
 import { MediaGrid } from "../components/MediaGrid";
+import { useDownloadProgressStore } from "../store";
+import { useSSE } from "../store/hooks/useSSE";
 
 export default function GameDetailPage() {
   const { slug } = useParams();
@@ -27,30 +28,18 @@ export default function GameDetailPage() {
       apiPost("/jobs/download", payload)
   });
 
+  // Ensure SSE connection is active
+  useSSE();
+  
   const entry = entryQuery.data?.data.entry;
   const isOwned = !!ownedQuery.data?.some((item) => item.gameSlug === entry?.slug);
   const ownedItems = (ownedQuery.data ?? []).filter((item) => item.gameSlug === entry?.slug);
-  const [isDownloading, setIsDownloading] = useState<boolean>(false);
-  const [progress, setProgress] = useState<number>(0);
-
-  useEffect(() => {
-    const source = new EventSource(`${API_URL}/events`);
-    source.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data) as JobEvent;
-        if (data.slug && data.slug === entry?.slug) {
-          if (data.type === "STEP_PROGRESS" && typeof data.progress === "number") {
-            setIsDownloading(true);
-            setProgress(data.progress);
-          }
-          if (data.type === "JOB_DONE" || data.type === "JOB_FAILED") {
-            setIsDownloading(false);
-          }
-        }
-      } catch {}
-    };
-    return () => source.close();
-  }, [entry?.slug]);
+  
+  // Get download state from store
+  const downloadingSlugs = useDownloadProgressStore((state) => state.downloadingSlugs);
+  const progressBySlug = useDownloadProgressStore((state) => state.progressBySlug);
+  const isDownloading = entry?.slug ? downloadingSlugs.has(entry.slug) : false;
+  const progress = entry?.slug ? (progressBySlug[entry.slug] ?? 0) : 0;
 
   if (!entry) {
     return (

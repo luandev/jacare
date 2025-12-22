@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
-import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import { apiGet, apiPost, API_URL } from "../lib/api";
-import type { JobEvent, JobRecord } from "@crocdesk/shared";
+import { useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiGet, apiPost } from "../lib/api";
+import type { JobRecord } from "@crocdesk/shared";
 import DownloadCard from "../components/DownloadCard";
+import { useDownloadProgressStore } from "../store";
+import { useSSE } from "../store/hooks/useSSE";
 
 type JobPreview = {
   slug: string;
@@ -13,10 +15,13 @@ type JobPreview = {
 type JobWithPreview = JobRecord & { preview?: JobPreview };
 
 export default function DownloadsPage() {
-  const queryClient = useQueryClient();
-  const [speedDataByJob, setSpeedDataByJob] = useState<Record<string, { bytes: number; timestamp: number }[]>>({});
-  const [bytesByJob, setBytesByJob] = useState<Record<string, { downloaded: number; total: number }>>({});
-  const [progressByJob, setProgressByJob] = useState<Record<string, number>>({});
+  // Ensure SSE connection is active
+  useSSE();
+  
+  // Get progress data from store
+  const progressByJobId = useDownloadProgressStore((state) => state.progressByJobId);
+  const speedDataByJobId = useDownloadProgressStore((state) => state.speedDataByJobId);
+  const bytesByJobId = useDownloadProgressStore((state) => state.bytesByJobId);
 
   const jobsQuery = useQuery({
     queryKey: ["jobs"],
@@ -29,58 +34,6 @@ export default function DownloadsPage() {
       (job) => job.type === "download_and_install" && (job.status === "running" || job.status === "queued" || job.status === "paused")
     );
   }, [jobsQuery.data]);
-
-  useEffect(() => {
-    const source = new EventSource(`${API_URL}/events`);
-    source.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data) as JobEvent;
-        
-        // Track byte-level progress for speed calculation
-        if (data.type === "STEP_PROGRESS") {
-          if (typeof data.progress === "number") {
-            setProgressByJob((prev) => ({ ...prev, [data.jobId]: data.progress! }));
-          }
-          if (data.bytesDownloaded !== undefined && data.totalBytes !== undefined) {
-            setBytesByJob((prev) => ({
-              ...prev,
-              [data.jobId]: { downloaded: data.bytesDownloaded!, total: data.totalBytes! }
-            }));
-            setSpeedDataByJob((prev) => {
-              const history = prev[data.jobId] || [];
-              const newHistory = [...history, { bytes: data.bytesDownloaded!, timestamp: data.ts }].slice(-30); // Keep last 30 samples
-              return { ...prev, [data.jobId]: newHistory };
-            });
-          }
-        }
-        
-        // Remove completed/failed jobs from tracking
-        if (data.type === "JOB_DONE" || data.type === "JOB_FAILED") {
-          setSpeedDataByJob((prev) => {
-            const next = { ...prev };
-            delete next[data.jobId];
-            return next;
-          });
-          setBytesByJob((prev) => {
-            const next = { ...prev };
-            delete next[data.jobId];
-            return next;
-          });
-          setProgressByJob((prev) => {
-            const next = { ...prev };
-            delete next[data.jobId];
-            return next;
-          });
-        }
-        
-        queryClient.invalidateQueries({ queryKey: ["jobs"] });
-      } catch {
-        // Ignore malformed SSE payloads
-      }
-    };
-
-    return () => source.close();
-  }, [queryClient]);
 
   if (activeDownloads.length === 0) {
     return (
@@ -118,9 +71,9 @@ export default function DownloadsPage() {
           <DownloadCard
             key={job.id}
             job={job}
-            speedHistory={speedDataByJob[job.id] || []}
-            currentBytes={bytesByJob[job.id]}
-            currentProgress={progressByJob[job.id]}
+            speedHistory={speedDataByJobId[job.id] || []}
+            currentBytes={bytesByJobId[job.id]}
+            currentProgress={progressByJobId[job.id]}
           />
         ))}
       </section>
