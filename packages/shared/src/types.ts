@@ -21,8 +21,6 @@ export type CrocdbEntry = {
   links: CrocdbLink[];
 };
 
-export type CrocdbSortOption = "popularity" | "title";
-
 export type CrocdbSearchRequest = {
   search_key?: string;
   platforms?: string[];
@@ -30,7 +28,6 @@ export type CrocdbSearchRequest = {
   rom_id?: string;
   max_results?: number;
   page?: number;
-  sort_by?: CrocdbSortOption;
 };
 
 export type CrocdbSearchResponseData = {
@@ -62,34 +59,14 @@ export type CrocdbApiResponse<T> = {
   data: T;
 };
 
-export type LibraryRoot = {
-  id: string;
-  path: string;
-  platform?: string;
-};
-
 export type Settings = {
-  libraryRoots: LibraryRoot[];
+  /**
+   * Root directory where CrocDesk downloads and manages games.
+   * All scanning and library operations work from this single root.
+   */
   downloadDir: string;
   queue?: {
     concurrency?: number;
-  };
-};
-
-export type PlatformProfile = {
-  root: string;
-  format?: string;
-  naming?: string;
-};
-
-export type Profile = {
-  id: string;
-  name: string;
-  platforms: Record<string, PlatformProfile>;
-  transferTargetId?: string;
-  postActions?: {
-    writeManifest?: boolean;
-    writePlaylists?: boolean;
   };
 };
 
@@ -108,7 +85,6 @@ export type Manifest = {
     regions: string[];
   };
   artifacts: ManifestArtifact[];
-  profileId: string;
   createdAt: string;
 };
 

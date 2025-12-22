@@ -2,9 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import path from "path";
 import os from "os";
 import { promises as fs } from "fs";
-import type { JobRecord, Profile, Settings } from "@crocdesk/shared";
+import type { JobRecord, Settings } from "@crocdesk/shared";
 
-const downloadPayload = { slug: "cool-game", profileId: "profile-1" };
+const downloadPayload = { slug: "cool-game" };
 const baseEntry = {
   slug: "cool-game",
   title: "Cool Game",
@@ -22,20 +22,9 @@ const createJob = (): JobRecord => ({
   updatedAt: Date.now()
 });
 
-const createProfile = (root: string): Profile => ({
-  id: "profile-1",
-  name: "Profile",
-  platforms: {
-    snes: {
-      root,
-      naming: "{Title} ({Region})"
-    }
-  }
-});
-
 const settingsFor = (downloadDir: string): Settings => ({
   downloadDir,
-  libraryRoots: []
+  queue: {}
 });
 
 describe("runDownloadJob", () => {
@@ -58,17 +47,14 @@ describe("runDownloadJob", () => {
 
     const upsertLibraryItem = vi.fn();
     const getSettings = vi.fn(() => settingsFor(path.join(tempDir, "downloads")));
-    const getProfile = vi.fn(() => createProfile(tempDir));
     const createJobStep = vi.fn(() => ({ id: 1 }));
 
     vi.doMock("@crocdesk/shared", () => ({
-      DEFAULT_PROFILE: createProfile(tempDir),
       DEFAULT_SETTINGS: settingsFor(path.join(tempDir, "downloads"))
     }));
     vi.doMock("../db", () => ({
       createJob: vi.fn(),
       createJobStep,
-      getProfile,
       getSettings,
       listJobSteps: vi.fn(),
       listJobs: vi.fn(),
@@ -100,20 +86,17 @@ describe("runDownloadJob", () => {
     });
     expect(createJobStep).toHaveBeenCalled();
     expect(getSettings).toHaveBeenCalled();
-    expect(getProfile).toHaveBeenCalledWith(downloadPayload.profileId);
   });
 
   it("skips library updates when no file was downloaded", async () => {
     const upsertLibraryItem = vi.fn();
 
     vi.doMock("@crocdesk/shared", () => ({
-      DEFAULT_PROFILE: createProfile(tempDir),
       DEFAULT_SETTINGS: settingsFor(path.join(tempDir, "downloads"))
     }));
     vi.doMock("../db", () => ({
       createJob: vi.fn(),
       createJobStep: vi.fn(() => ({ id: 1 })),
-      getProfile: vi.fn(() => createProfile(tempDir)),
       getSettings: vi.fn(() => settingsFor(path.join(tempDir, "downloads"))),
       listJobSteps: vi.fn(),
       listJobs: vi.fn(),

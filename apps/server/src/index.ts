@@ -7,7 +7,6 @@ import { PORT } from "./config";
 import { sseHandler } from "./events";
 import crocdbRouter from "./routes/crocdb";
 import settingsRouter from "./routes/settings";
-import profilesRouter from "./routes/profiles";
 import libraryRouter from "./routes/library";
 import jobsRouter from "./routes/jobs";
 
@@ -59,7 +58,6 @@ async function start(): Promise<void> {
 
   app.use("/crocdb", crocdbRouter);
   app.use("/settings", settingsRouter);
-  app.use("/profiles", profilesRouter);
   app.use("/library", libraryRouter);
   app.use("/jobs", jobsRouter);
 

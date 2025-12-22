@@ -51,7 +51,7 @@ Jacare (Portuguese for "caiman") is a Brazilian-flavored, croc-tough desktop ROM
 - **Web client base URL:** `VITE_API_URL` (defaults to `http://localhost:3333`).
 - **Electron dev URL:** `CROCDESK_DEV_URL` (defaults to `http://localhost:5173`).
 
-Data is stored in SQLite tables for settings, profiles, Crocdb caches, library items, jobs, and job steps. Each scanned folder receives a `.crocdesk.json` manifest describing the game entry.
+Data is stored in SQLite tables for settings, Crocdb caches, library items, jobs, and job steps. Each scanned folder receives a `.crocdesk.json` manifest describing the game entry.
 
 ## Using Jacare 🎮
 1. Launch the server (or the desktop app, which starts it for you).

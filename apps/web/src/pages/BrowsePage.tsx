@@ -10,13 +10,9 @@ import type {
   CrocdbPlatformsResponseData,
   CrocdbRegionsResponseData,
   CrocdbSearchResponseData,
-  CrocdbSortOption,
   LibraryItem,
-  Profile,
   JobEvent
 } from "@crocdesk/shared";
-
-const SORT_OPTIONS: CrocdbSortOption[] = ["popularity", "title"];
 
 export default function BrowsePage() {
   const location = useLocation();
@@ -25,18 +21,11 @@ export default function BrowsePage() {
   const [searchKey, setSearchKey] = useState("");
   const [platform, setPlatform] = useState("");
   const [region, setRegion] = useState("");
-  const [sortBy, setSortBy] = useState<CrocdbSortOption>("popularity");
   const [results, setResults] = useState<CrocdbEntry[]>([]);
   const [status, setStatus] = useState<string>("");
-  const [selectedProfileId, setSelectedProfileId] = useState<string>("");
   const [downloadingSlugs, setDownloadingSlugs] = useState<Set<string>>(new Set());
   const [progressBySlug, setProgressBySlug] = useState<Record<string, number>>({});
   const [selectedLinkIndexBySlug, setSelectedLinkIndexBySlug] = useState<Record<string, number>>({});
-
-  const profilesQuery = useQuery({
-    queryKey: ["profiles"],
-    queryFn: () => apiGet<Profile[]>("/profiles")
-  });
 
   const platformsQuery = useQuery({
     queryKey: ["platforms"],
@@ -91,8 +80,6 @@ export default function BrowsePage() {
             searchKey,
             platform,
             region,
-            sortBy,
-            selectedProfileId,
             status: `Found ${response.data.total_results} results`,
             results: response.data.results ?? []
           })
@@ -105,7 +92,7 @@ export default function BrowsePage() {
   });
 
   const downloadMutation = useMutation({
-    mutationFn: (payload: { slug: string; profileId: string; linkIndex?: number }) =>
+    mutationFn: (payload: { slug: string; linkIndex?: number }) =>
       apiPost("/jobs/download", payload),
     onSuccess: (_resp, variables) => {
       setStatus("Download job queued");
@@ -134,8 +121,8 @@ export default function BrowsePage() {
             });
           }
           if (data.type === "JOB_RESULT") {
-            // Refresh ownership state when files arrive
-            // Trigger library items refetch implicitly via ownedQuery by invalidation is not available here; reuse query's refetch
+            // When a download finishes, make sure library items are refreshed
+            ownedQuery.refetch().catch(() => {});
           }
         }
       } catch {}
@@ -151,13 +138,9 @@ export default function BrowsePage() {
       const q = searchParams.get("q") || undefined;
       const pf = searchParams.get("pf") || undefined;
       const rg = searchParams.get("rg") || undefined;
-      const sort = searchParams.get("sort") || undefined;
       if (q) setSearchKey(q);
       if (pf) setPlatform(pf);
       if (rg) setRegion(rg);
-      if (sort && SORT_OPTIONS.includes(sort as CrocdbSortOption)) {
-        setSortBy(sort as CrocdbSortOption);
-      }
 
       const raw = sessionStorage.getItem(STORAGE_KEY);
       if (raw) {
@@ -165,27 +148,17 @@ export default function BrowsePage() {
           searchKey?: string;
           platform?: string;
           region?: string;
-          sortBy?: string;
-          selectedProfileId?: string;
           results?: CrocdbEntry[];
           status?: string;
         };
         if (!q && saved.searchKey) setSearchKey(saved.searchKey);
         if (!pf && saved.platform) setPlatform(saved.platform);
         if (!rg && saved.region) setRegion(saved.region);
-        if (!sort && saved.sortBy && SORT_OPTIONS.includes(saved.sortBy as CrocdbSortOption)) {
-          setSortBy(saved.sortBy as CrocdbSortOption);
-        }
-        if (saved.selectedProfileId) setSelectedProfileId(saved.selectedProfileId);
         if (saved.results && !results.length) setResults(saved.results);
         if (saved.status) setStatus(saved.status);
       }
     } catch {}
-
-    if (!selectedProfileId && profilesQuery.data?.length) {
-      setSelectedProfileId(profilesQuery.data[0].id);
-    }
-  }, [profilesQuery.data, selectedProfileId]);
+  }, []);
 
   // After initial hydration, enable persistence writes
   const hydratedRef = useRef(false);
@@ -195,17 +168,11 @@ export default function BrowsePage() {
     const q = searchParams.get("q") || undefined;
     const pf = searchParams.get("pf") || undefined;
     const rg = searchParams.get("rg") || undefined;
-    const sortParam = searchParams.get("sort");
-    const sort =
-      sortParam && SORT_OPTIONS.includes(sortParam as CrocdbSortOption)
-        ? (sortParam as CrocdbSortOption)
-        : sortBy;
     if ((q || pf || rg) && results.length === 0) {
       searchMutation.mutate({
         search_key: q ?? undefined,
         platforms: pf ? [pf] : undefined,
         regions: rg ? [rg] : undefined,
-        sort_by: sort,
         max_results: 60,
         page: 1
       });
@@ -225,14 +192,12 @@ export default function BrowsePage() {
           searchKey,
           platform,
           region,
-          sortBy,
-          selectedProfileId,
           status,
           results
         })
       );
     } catch {}
-  }, [searchKey, platform, region, sortBy, selectedProfileId, status, results]);
+  }, [searchKey, platform, region, status, results]);
 
   function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -240,13 +205,11 @@ export default function BrowsePage() {
     if (searchKey) nextParams.q = searchKey;
     if (platform) nextParams.pf = platform;
     if (region) nextParams.rg = region;
-    if (sortBy) nextParams.sort = sortBy;
     setSearchParams(nextParams);
     searchMutation.mutate({
       search_key: searchKey || undefined,
       platforms: platform ? [platform] : undefined,
       regions: region ? [region] : undefined,
-      sort_by: sortBy,
       max_results: 60,
       page: 1
     });
@@ -296,133 +259,118 @@ export default function BrowsePage() {
                 ))}
             </select>
           </div>
-          <div>
-            <label htmlFor="sort-select">Sort</label>
-            <select
-              id="sort-select"
-              value={sortBy}
-              onChange={(event) => setSortBy(event.target.value as CrocdbSortOption)}
-            >
-              <option value="popularity">Popularity</option>
-              <option value="title">Title (A-Z)</option>
-            </select>
-          </div>
-          <div>
-            <label htmlFor="profile-select">Profile</label>
-            <select
-              id="profile-select"
-              value={selectedProfileId}
-              onChange={(event) => setSelectedProfileId(event.target.value)}
-            >
-              {(profilesQuery.data ?? []).map((profile) => (
-                <option key={profile.id} value={profile.id}>
-                  {profile.name}
-                </option>
-              ))}
-            </select>
-          </div>
           <button type="submit">Search</button>
         </form>
         {status && <div className="status">{status}</div>}
       </section>
 
       <section className="grid cols-3">
-        {results.map((entry) => (
-          <article className="card" key={entry.slug}>
-            <div className="thumb-wrapper">
-              <Link
-                to={`/game/${entry.slug}`}
-                state={{ backgroundLocation: location }}
-                aria-label={`Open ${entry.title} details`}
-              >
-                {entry.boxart_url ? (
-                  <img
-                    src={entry.boxart_url}
-                    alt={`${entry.title} cover art`}
-                    className="thumb"
-                    loading="lazy"
-                    style={{ width: "100%", aspectRatio: "3 / 4", objectFit: "cover", borderRadius: "8px" }}
-                  />
-                ) : (
-                  <div className="thumb-placeholder">
-                    <PlatformIcon
-                      platform={entry.platform}
-                      brand={platformsQuery.data?.data.platforms?.[entry.platform]?.brand}
-                      label={platformsQuery.data?.data.platforms?.[entry.platform]?.name ?? entry.platform}
-                      size={42}
-                    />
-                  </div>
-                )}
-              </Link>
-              <div className="platform-badge" title={entry.platform.toUpperCase()}>
-                <PlatformIcon
-                  platform={entry.platform}
-                  brand={platformsQuery.data?.data.platforms?.[entry.platform]?.brand}
-                  label={platformsQuery.data?.data.platforms?.[entry.platform]?.name ?? entry.platform}
-                  size={24}
-                />
-              </div>
-            </div>
-            <div className="row">
-              <h3>
-                <Link to={`/game/${entry.slug}`} state={{ backgroundLocation: location }}>
-                  {entry.title}
-                </Link>
-              </h3>
-              {ownedSlugs.has(entry.slug) && <span className="badge">Owned</span>}
-              {!ownedSlugs.has(entry.slug) && downloadingSlugs.has(entry.slug) && (
-                <span className="badge">Downloading…</span>
-              )}
-            </div>
-            <div className="status">{entry.platform.toUpperCase()}</div>
-            <div className="status">{entry.regions.join(", ")}</div>
-            <div className="row" style={{ marginTop: "12px", flexWrap: "wrap" }}>
-              <span className="status">Links: {entry.links.length}</span>
-              {renderFormatChooser(entry)}
-              {!ownedSlugs.has(entry.slug) && !downloadingSlugs.has(entry.slug) ? (
-                <button
-                  onClick={() =>
-                    selectedProfileId &&
-                    downloadMutation.mutate({
-                      slug: entry.slug,
-                      profileId: selectedProfileId,
-                      linkIndex: computeSelectedLinkIndex(entry)
-                    })
-                  }
-                  disabled={!selectedProfileId}
+        {results.map((entry) => {
+          const isOwned = ownedSlugs.has(entry.slug);
+          const isDownloading = downloadingSlugs.has(entry.slug);
+          const ownedItem = ownedItemsBySlug.get(entry.slug)?.[0];
+          const progress = progressBySlug[entry.slug] ?? 0;
+          return (
+            <article className="card" key={entry.slug} style={{ minWidth: 0, maxWidth: 320, margin: "0 auto" }}>
+              <div className="thumb-wrapper">
+                <Link
+                  to={`/game/${entry.slug}`}
+                  state={{ backgroundLocation: location }}
+                  aria-label={`Open ${entry.title} details`}
                 >
-                  Queue Download
-                </button>
-              ) : (
-                <div className="row" style={{ gap: 8, alignItems: "center" }}>
-                  <Link className="link" to={`/game/${entry.slug}`} state={{ backgroundLocation: location }}>
-                    View
-                  </Link>
-                  {ownedItemsBySlug.get(entry.slug)?.[0]?.path && (
-                    <a
-                      className="link"
-                      href={toFileHref(ownedItemsBySlug.get(entry.slug)![0].path)}
-                      onClick={(e) => {
-                        const p = ownedItemsBySlug.get(entry.slug)![0].path;
-                        if (window.crocdesk?.revealInFolder) {
-                          e.preventDefault();
-                          window.crocdesk.revealInFolder(p);
+                  {entry.boxart_url ? (
+                    <img
+                      src={entry.boxart_url}
+                      alt={`${entry.title} cover art`}
+                      className="thumb cover-img"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="thumb-placeholder">
+                      <PlatformIcon
+                        platform={entry.platform}
+                        brand={platformsQuery.data?.data.platforms?.[entry.platform]?.brand}
+                        label={
+                          platformsQuery.data?.data.platforms?.[entry.platform]?.name ?? entry.platform
                         }
-                      }}
-                    >
-                      Show in Folder
-                    </a>
+                        size={42}
+                      />
+                    </div>
                   )}
+                </Link>
+                <div className="platform-badge" title={entry.platform.toUpperCase()}>
+                  <PlatformIcon
+                    platform={entry.platform}
+                    brand={platformsQuery.data?.data.platforms?.[entry.platform]?.brand}
+                    label={
+                      platformsQuery.data?.data.platforms?.[entry.platform]?.name ?? entry.platform
+                    }
+                    size={24}
+                  />
+                </div>
+              </div>
+              <div className="row">
+                <h3 className="card-title">
+                  <Link to={`/game/${entry.slug}`} state={{ backgroundLocation: location }}>
+                    {entry.title}
+                  </Link>
+                </h3>
+                {isOwned && <span className="badge">Owned</span>}
+                {!isOwned && isDownloading && <span className="badge">Downloading…</span>}
+              </div>
+              <div className="status">{entry.platform.toUpperCase()}</div>
+              <div className="status">{entry.regions.join(", ")}</div>
+              <div className="row" style={{ marginTop: "12px", flexWrap: "wrap" }}>
+                <span className="status">Links: {entry.links.length}</span>
+                {renderFormatChooser(entry)}
+              </div>
+              <div className="row" style={{ marginTop: 8, flexWrap: "wrap", gap: 8 }}>
+                {!isOwned && !isDownloading ? (
+                  <button
+                    onClick={() =>
+                      downloadMutation.mutate({
+                        slug: entry.slug,
+                        linkIndex: computeSelectedLinkIndex(entry)
+                      })
+                    }
+                  >
+                    Queue Download
+                  </button>
+                ) : (
+                  <>
+                    <Link
+                      className="link"
+                      to={`/game/${entry.slug}`}
+                      state={{ backgroundLocation: location }}
+                    >
+                      Details
+                    </Link>
+                    {ownedItem?.path && (
+                      <a
+                        className="link"
+                        href={toFileHref(ownedItem.path)}
+                        onClick={(e) => {
+                          const p = ownedItem.path;
+                          if (window.crocdesk?.revealInFolder) {
+                            e.preventDefault();
+                            window.crocdesk.revealInFolder(p);
+                          }
+                        }}
+                      >
+                        Show in Folder
+                      </a>
+                    )}
+                  </>
+                )}
+              </div>
+              {isDownloading && typeof progress === "number" && (
+                <div className="progress" style={{ marginTop: 8, width: "100%" }}>
+                  <span style={{ width: `${Math.max(0, Math.min(1, progress)) * 100}%` }} />
                 </div>
               )}
-            {downloadingSlugs.has(entry.slug) && typeof progressBySlug[entry.slug] === "number" && (
-              <div className="progress" style={{ marginTop: 8, width: "100%" }}>
-                <span style={{ width: `${Math.max(0, Math.min(1, progressBySlug[entry.slug])) * 100}%` }} />
-              </div>
-            )}
-            </div>
-          </article>
-        ))}
+            </article>
+          );
+        })}
       </section>
     </div>
   );

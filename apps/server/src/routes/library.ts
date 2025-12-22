@@ -63,7 +63,6 @@ router.delete("/item", async (req, res) => {
   }
   const settings = getSettings();
   const allowedRoots = [
-    ...(settings?.libraryRoots?.map((r) => path.resolve(r.path)) ?? []),
     path.resolve(settings?.downloadDir || "./downloads"),
     path.resolve(process.cwd(), "apps", "server", "donwloads")
   ];

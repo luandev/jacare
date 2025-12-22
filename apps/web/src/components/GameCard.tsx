@@ -26,9 +26,8 @@ export default function GameCard({ manifest, artifactPath, onShowInFolder, actio
           <img
             src={currentCoverUrl}
             alt={`${crocdb.title} cover art`}
-            className="thumb"
+            className="thumb cover-img"
             loading="lazy"
-            style={{ width: "100%", aspectRatio: "3 / 4", objectFit: "cover", borderRadius: 8 }}
             onError={() => {
               if (imgIndex < coverUrls.length - 1) {
                 setImgIndex((i) => i + 1);
@@ -51,7 +50,7 @@ export default function GameCard({ manifest, artifactPath, onShowInFolder, actio
         </div>
       </div>
       <div className="row">
-        <h3 style={{ margin: 0 }}>{crocdb.title}</h3>
+        <h3 className="card-title">{crocdb.title}</h3>
       </div>
       <div className="status">{crocdb.platform.toUpperCase()}</div>
       <div className="status">{crocdb.regions?.join(", ")}</div>

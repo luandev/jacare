@@ -91,9 +91,8 @@ export default function QueuePage() {
                   <img
                     src={job.preview.boxart_url}
                     alt={`${job.preview.title} cover art`}
-                    className="thumb"
+                    className="thumb cover-img"
                     loading="lazy"
-                    style={{ width: "100%", aspectRatio: "3 / 4", objectFit: "cover", borderRadius: "8px" }}
                   />
                 ) : (
                   <div className="thumb-placeholder">

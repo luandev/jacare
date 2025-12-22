@@ -2,7 +2,7 @@ import path from "path";
 import { promises as fs } from "fs";
 import { Readable } from "stream";
 import type { ReadableStream as NodeReadableStream } from "stream/web";
-import type { LibraryItem, LibraryRoot, Manifest } from "@crocdesk/shared";
+import type { LibraryItem, Manifest } from "@crocdesk/shared";
 import { writeManifest } from "./manifest";
 import { getEntry, searchEntries } from "./crocdb";
 
@@ -35,7 +35,9 @@ const SCAN_EXTENSIONS = new Set([
   ".m3u"
 ]);
 
-export async function scanLocal(roots: LibraryRoot[]): Promise<LibraryItem[]> {
+export type ScanRoot = { id: string; path: string };
+
+export async function scanLocal(roots: ScanRoot[]): Promise<LibraryItem[]> {
   const items: LibraryItem[] = [];
   const manifestCache = new Map<string, Manifest | null>();
 

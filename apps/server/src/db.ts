@@ -1,12 +1,11 @@
 import Database from "better-sqlite3";
 import path from "path";
-import { DEFAULT_PROFILE, DEFAULT_SETTINGS } from "@crocdesk/shared";
+import { DEFAULT_SETTINGS } from "@crocdesk/shared";
 import type {
   JobRecord,
   JobStatus,
   JobStepRecord,
   LibraryItem,
-  Profile,
   Settings
 } from "@crocdesk/shared";
 import { CROCDESK_DATA_DIR } from "./config";
@@ -24,11 +23,6 @@ export async function initDb(): Promise<void> {
   db.exec(`
     CREATE TABLE IF NOT EXISTS settings (
       id INTEGER PRIMARY KEY CHECK (id = 1),
-      data TEXT NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS profiles (
-      id TEXT PRIMARY KEY,
       data TEXT NOT NULL
     );
 
@@ -91,10 +85,6 @@ function ensureDefaults(): void {
   if (!settings) {
     setSettings(DEFAULT_SETTINGS);
   }
-
-  if (listProfiles().length === 0) {
-    saveProfile(DEFAULT_PROFILE);
-  }
 }
 
 export function getSettings(): Settings | null {
@@ -112,31 +102,6 @@ export function setSettings(settings: Settings): void {
   getDb()
     .prepare("INSERT INTO settings (id, data) VALUES (1, ?) ON CONFLICT(id) DO UPDATE SET data = ?")
     .run(payload, payload);
-}
-
-export function listProfiles(): Profile[] {
-  const rows = getDb()
-    .prepare("SELECT data FROM profiles")
-    .all() as { data: string }[];
-  return rows.map((row) => JSON.parse(row.data) as Profile);
-}
-
-export function getProfile(id: string): Profile | null {
-  const row = getDb()
-    .prepare("SELECT data FROM profiles WHERE id = ?")
-    .get(id) as { data: string } | undefined;
-  return row ? (JSON.parse(row.data) as Profile) : null;
-}
-
-export function saveProfile(profile: Profile): void {
-  const payload = JSON.stringify(profile);
-  getDb()
-    .prepare("INSERT INTO profiles (id, data) VALUES (?, ?) ON CONFLICT(id) DO UPDATE SET data = ?")
-    .run(profile.id, payload, payload);
-}
-
-export function deleteProfile(id: string): void {
-  getDb().prepare("DELETE FROM profiles WHERE id = ?").run(id);
 }
 
 export function upsertLibraryItem(item: Omit<LibraryItem, "id">): void {

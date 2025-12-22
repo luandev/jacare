@@ -2,11 +2,10 @@ import PQueue from "p-queue";
 import crypto from "crypto";
 import { promises as fs } from "fs";
 import type { JobRecord } from "@crocdesk/shared";
-import { DEFAULT_PROFILE, DEFAULT_SETTINGS } from "@crocdesk/shared";
+import { DEFAULT_SETTINGS } from "@crocdesk/shared";
 import {
   createJob,
   createJobStep,
-  getProfile,
   getSettings,
   listJobSteps,
   listJobs,
@@ -75,9 +74,9 @@ function createJobRecord(
 async function runScanJob(job: JobRecord): Promise<void> {
   await runJob(job, async (report) => {
     const settings = getSettings() ?? DEFAULT_SETTINGS;
-    const roots = settings.libraryRoots ?? [];
-    report.step("scan_local", 0.1, `Scanning ${roots.length} roots`);
-    const items = await scanLocal(roots);
+    const downloadDir = settings.downloadDir || "./downloads";
+    report.step("scan_local", 0.1, `Scanning download root ${downloadDir}`);
+    const items = await scanLocal([{ id: "downloads", path: downloadDir }]);
     for (const item of items) {
       upsertLibraryItem({
         path: item.path,
@@ -99,8 +98,7 @@ export async function runDownloadJob(
 ): Promise<void> {
   await runJob(job, async (report) => {
     const settings = getSettings() ?? DEFAULT_SETTINGS;
-    const profile = getProfile(payload.profileId) ?? DEFAULT_PROFILE;
-    const result = await runDownloadAndInstall(payload, settings, profile, (progress, message) => {
+    const result = await runDownloadAndInstall(payload, settings, (progress, message) => {
       report.step("download_and_install", progress, message);
     });
 

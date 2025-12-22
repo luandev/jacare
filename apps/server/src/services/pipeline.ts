@@ -2,7 +2,7 @@ import path from "path";
 import { promises as fs } from "fs";
 import { Readable } from "stream";
 import type { ReadableStream as NodeReadableStream } from "stream/web";
-import type { CrocdbEntry, Manifest, Profile, Settings } from "@crocdesk/shared";
+import type { CrocdbEntry, Manifest, Settings } from "@crocdesk/shared";
 import { ENABLE_DOWNLOADS } from "../config";
 import { getEntry } from "./crocdb";
 import { writeManifest } from "./manifest";
@@ -11,7 +11,6 @@ import { Extract } from "unzipper";
 
 export type DownloadJobPayload = {
   slug: string;
-  profileId: string;
   linkIndex?: number;
 };
 
@@ -24,7 +23,6 @@ export type DownloadJobResult = {
 export async function runDownloadAndInstall(
   payload: DownloadJobPayload,
   settings: Settings,
-  profile: Profile,
   reportProgress: (progress: number, message?: string) => void
 ): Promise<DownloadJobResult> {
   reportProgress(0.05, "Resolving entry");
@@ -61,7 +59,7 @@ export async function runDownloadAndInstall(
       reportProgress(0.6, "Extracting archive");
       // Extract to /downloads/{console}/{game}
       const platform = entry.platform || "unknown";
-      const gameName = formatName(entry, profile.platforms[platform]?.naming);
+      const gameName = formatName(entry);
       const extractDir = path.join(downloadDir, platform, gameName);
       await ensureDir(extractDir);
       await extractZip(downloadPath, extractDir);
@@ -70,32 +68,29 @@ export async function runDownloadAndInstall(
       await fs.unlink(downloadPath);
 
       reportProgress(0.75, "Finalizing layout");
-      const { outputDir, outputPaths } = await finalizeLayoutMany(entry, extractDir, profile);
+      const { outputDir, outputPaths } = await finalizeLayoutMany(entry, extractDir, settings);
 
       // Save boxart locally for library thumbnails
       await saveBoxart(entry, outputDir).catch(() => {});
 
-      if (profile.postActions?.writeManifest ?? true) {
-        const artifacts = await Promise.all(
-          outputPaths.map(async (p) => {
-            const s = await fs.stat(p);
-            return { path: path.basename(p), size: s.size };
-          })
-        );
-        const manifest: Manifest = {
-          schema: 1,
-          crocdb: {
-            slug: entry.slug,
-            title: entry.title,
-            platform: entry.platform,
-            regions: entry.regions
-          },
-          artifacts,
-          profileId: profile.id,
-          createdAt: new Date().toISOString()
-        };
-        await writeManifest(outputDir, manifest);
-      }
+      const artifacts = await Promise.all(
+        outputPaths.map(async (p) => {
+          const s = await fs.stat(p);
+          return { path: path.basename(p), size: s.size };
+        })
+      );
+      const manifest: Manifest = {
+        schema: 1,
+        crocdb: {
+          slug: entry.slug,
+          title: entry.title,
+          platform: entry.platform,
+          regions: entry.regions
+        },
+        artifacts,
+        createdAt: new Date().toISOString()
+      };
+      await writeManifest(outputDir, manifest);
 
       reportProgress(1, "Complete");
       return { entry, outputPaths };
@@ -105,16 +100,14 @@ export async function runDownloadAndInstall(
   }
 
   reportProgress(0.8, "Finalizing layout");
-  const outputPath = await finalizeLayout(entry, downloadPath, profile, settings);
+  const outputPath = await finalizeLayout(entry, downloadPath, settings);
 
   // Save boxart locally for library thumbnails
   await saveBoxart(entry, path.dirname(outputPath)).catch(() => {});
 
-  if (profile.postActions?.writeManifest ?? true) {
-    const stats = await fs.stat(outputPath);
-    const manifest = buildManifest(entry, profile, outputPath, stats.size);
-    await writeManifest(path.dirname(outputPath), manifest);
-  }
+  const stats = await fs.stat(outputPath);
+  const manifest = buildManifest(entry, outputPath, stats.size);
+  await writeManifest(path.dirname(outputPath), manifest);
 
   reportProgress(1, "Complete");
   return { entry, outputPath };
@@ -221,16 +214,14 @@ async function downloadFile(
 async function finalizeLayout(
   entry: CrocdbEntry,
   sourcePath: string,
-  profile: Profile,
   settings: Settings
 ): Promise<string> {
-  const platformProfile = profile.platforms[entry.platform];
   // Use settings.downloadDir as source of truth; place files under console subfolder
-  const targetRoot = platformProfile?.root ?? path.join(path.resolve(settings.downloadDir || "./downloads"), entry.platform);
+  const targetRoot = path.join(path.resolve(settings.downloadDir || "./downloads"), entry.platform);
   await ensureDir(targetRoot);
 
   const ext = path.extname(sourcePath);
-  const fileName = formatName(entry, platformProfile?.naming) + ext;
+  const fileName = formatName(entry) + ext;
   const outputPath = path.join(targetRoot, fileName);
 
   if (sourcePath !== outputPath) {
@@ -243,12 +234,13 @@ async function finalizeLayout(
 async function finalizeLayoutMany(
   entry: CrocdbEntry,
   extractRoot: string,
-  profile: Profile
+  settings: Settings
 ): Promise<{ outputDir: string; outputPaths: string[] }> {
-  const platformProfile = profile.platforms[entry.platform];
-  const baseRoot = platformProfile?.root ?? extractRoot;
+  const downloadRoot = path.resolve(settings.downloadDir || "./downloads");
+  const platform = entry.platform || "unknown";
+  const baseRoot = path.join(downloadRoot, platform);
   // Create a dedicated folder for the game under the platform root
-  const folderName = formatName(entry, platformProfile?.naming);
+  const folderName = formatName(entry);
   // Avoid double-nesting if baseRoot already is the game folder
   const baseEndsWithFolder = path.basename(baseRoot) === folderName;
   const outputDir = baseEndsWithFolder ? baseRoot : path.join(baseRoot, folderName);
@@ -282,7 +274,6 @@ function sanitize(value: string): string {
 
 function buildManifest(
   entry: CrocdbEntry,
-  profile: Profile,
   outputPath: string,
   size: number
 ): Manifest {
@@ -301,7 +292,6 @@ function buildManifest(
         size
       }
     ],
-    profileId: profile.id,
     createdAt: new Date().toISOString()
   };
 }

@@ -20,8 +20,10 @@ CrocDesk is a desktop ROM library manager built as an Electron shell over an Exp
 - Manifest file: .crocdesk.json written in the target game folder
 
 ## Data storage (MVP)
-- SQLite tables: settings, profiles, crocdb_cache_search, crocdb_cache_entry, library_items, jobs, job_steps
+- SQLite tables: settings, crocdb_cache_search, crocdb_cache_entry, library_items, jobs, job_steps
 - Default data dir: ./data (override with CROCDESK_DATA_DIR)
+
+Profiles and per-platform roots have been removed in favor of a single `downloadDir` configured in settings. All scanning and library operations work from this root, and manifests no longer record a `profileId`.
 
 ## Dev commands
 - npm run dev (shared build watch + server + web + desktop)
