@@ -28,7 +28,7 @@ export async function runDownloadAndInstall(
   reportProgress?: (progress: number, message?: string, bytesDownloaded?: number, totalBytes?: number) => void,
   jobId?: string
 ): Promise<DownloadJobResult> {
-  const defaultReport = (progress: number, message?: string) => {};
+  const defaultReport = (_progress: number, _message?: string) => {};
   const progressReporter = reportProgress || defaultReport;
   if (abortSignal?.aborted) throw new Error("Cancelled by user");
   progressReporter(0.05, "Resolving entry");
@@ -119,7 +119,7 @@ export async function runDownloadAndInstall(
       if (abortSignal?.aborted) throw new Error("Cancelled by user");
       progressReporter(1, "Complete");
       return { entry, outputPaths };
-    } catch (e) {
+    } catch {
       // Fallback: if extraction fails, proceed with direct layout move
     }
   }

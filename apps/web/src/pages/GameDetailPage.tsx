@@ -10,7 +10,7 @@ import { spacing, radius } from "../lib/design-tokens";
 
 export default function GameDetailPage() {
   const { slug } = useParams();
-  const navigate = useNavigate();
+  const _navigate = useNavigate();
 
   const entryQuery = useQuery({
     queryKey: ["entry", slug],

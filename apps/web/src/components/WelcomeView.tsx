@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, Button } from "./ui";
 import { spacing, radius } from "../lib/design-tokens";

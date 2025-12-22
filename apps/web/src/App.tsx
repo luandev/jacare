@@ -82,16 +82,9 @@ function ModalOverlay({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  const [showWelcome, setShowWelcome] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(() => shouldShowWelcome());
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
     isActive ? "active" : undefined;
-
-  useEffect(() => {
-    // Check if we should show welcome on mount
-    if (shouldShowWelcome()) {
-      setShowWelcome(true);
-    }
-  }, []);
 
   return (
     <BrowserRouter>

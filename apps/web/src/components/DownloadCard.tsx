@@ -36,12 +36,15 @@ function DownloadCard({ job, speedHistory: propSpeedHistory, currentBytes: propC
   const progressByJobId = useDownloadProgressStore((state) => state.progressByJobId);
   
   // Use props if provided, otherwise fall back to store
-  const speedHistory = propSpeedHistory.length > 0 ? propSpeedHistory : (speedDataByJobId[job.id] || []);
+  const speedHistory = useMemo(() => 
+    propSpeedHistory.length > 0 ? propSpeedHistory : (speedDataByJobId[job.id] || []),
+    [propSpeedHistory, speedDataByJobId, job.id]
+  );
   const currentBytes = propCurrentBytes ?? bytesByJobId[job.id] ?? null;
   const currentProgress = propCurrentProgress ?? progressByJobId[job.id] ?? 0;
 
-  // Use shared hook for calculations
-  const { currentSpeed, eta } = useDownloadProgress(speedHistory, currentBytes, currentProgress);
+  // Use shared hook for calculations (values not used directly, but hook may be needed for side effects)
+  useDownloadProgress(speedHistory, currentBytes, currentProgress);
 
   // Calculate speeds array for chart (MB/s over time)
   const speeds = useMemo(() => {

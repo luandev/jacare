@@ -8,7 +8,7 @@ import { MediaGrid } from "../components/MediaGrid";
 export default function LibraryItemDetailPage() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const location = useLocation();
+  const _location = useLocation();
   const dir = params.get("dir") || "";
   const manifestPath = useMemo(() => (dir ? joinPath(dir, ".crocdesk.json") : ""), [dir]);
   const [manifest, setManifest] = useState<Manifest | null>(null);
@@ -20,7 +20,7 @@ export default function LibraryItemDetailPage() {
         if (!manifestPath) return;
         const m = await apiGet<Manifest>(`/file?path=${encodeURIComponent(manifestPath)}`);
         setManifest(m);
-      } catch (e) {
+      } catch {
         setManifest(null);
       }
     })();

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { SpeedDataPoint, DownloadProgressState } from "../types";
+import type { DownloadProgressState } from "../types";
 
 type DownloadProgressActions = {
   // Job-based updates

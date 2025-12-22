@@ -5,7 +5,6 @@ import type { ReadableStream as NodeReadableStream } from "stream/web";
 import type { LibraryItem, Manifest } from "@crocdesk/shared";
 import { writeManifest } from "./manifest";
 import { getEntry, searchEntries } from "./crocdb";
-import { logger } from "../utils/logger";
 
 const SCAN_EXTENSIONS = new Set([
   ".zip",

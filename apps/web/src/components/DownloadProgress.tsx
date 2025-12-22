@@ -1,6 +1,5 @@
-import { useMemo } from "react";
 import { useDownloadProgress, type SpeedDataPoint } from "../hooks/useDownloadProgress";
-import { spacing, radius } from "../lib/design-tokens";
+import { spacing } from "../lib/design-tokens";
 import { Button } from "./ui";
 
 const MB_TO_BYTES = 1048576;

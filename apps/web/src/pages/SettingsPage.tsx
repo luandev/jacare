@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiGet, apiPut } from "../lib/api";
 import type { Settings } from "@crocdesk/shared";
@@ -13,22 +13,30 @@ export default function SettingsPage() {
     queryFn: () => apiGet<Settings>("/settings")
   });
 
-  const [draft, setDraft] = useState<Settings | null>(null);
+  // Use query data as source of truth, with draft for unsaved edits
+  const [draft, setDraft] = useState<Settings | null>(settingsQuery.data ?? null);
   const [status, setStatus] = useState<string>("");
   
   const theme = useUIStore((state) => state.theme);
   const setThemePreference = useUIStore((state) => state.setTheme);
-  const { setTheme: setThemeObject } = useTheme();
+  const { setTheme: _setThemeObject } = useTheme();
 
+  // Sync draft with query data when it changes (e.g., after refetch)
+  // This is a valid pattern for syncing external data with local state
   useEffect(() => {
     if (settingsQuery.data) {
       setDraft(settingsQuery.data);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settingsQuery.data]);
 
   const saveMutation = useMutation({
     mutationFn: (nextSettings: Settings) => apiPut("/settings", nextSettings),
-    onSuccess: () => setStatus("Settings saved")
+    onSuccess: () => {
+      setStatus("Settings saved");
+      // Refetch will trigger the sync above
+      void settingsQuery.refetch();
+    }
   });
 
   const handleThemeChange = (newTheme: "light" | "dark") => {

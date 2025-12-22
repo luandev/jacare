@@ -7,7 +7,7 @@ import { useSSEStore } from "../slices/sseSlice";
  */
 export function useSSE() {
   const queryClient = useQueryClient();
-  const { connect, disconnect, lastEvent, isConnected } = useSSEStore();
+  const { connect, disconnect: _disconnect, lastEvent, isConnected } = useSSEStore();
   
   useEffect(() => {
     connect();

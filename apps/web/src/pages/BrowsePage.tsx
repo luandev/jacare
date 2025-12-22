@@ -15,8 +15,7 @@ import type {
   CrocdbPlatformsResponseData,
   CrocdbRegionsResponseData,
   CrocdbSearchResponseData,
-  LibraryItem,
-  JobEvent
+  LibraryItem
 } from "@crocdesk/shared";
 
 const RESULTS_PER_PAGE = 60;
@@ -315,7 +314,7 @@ function findLinkIndex(entry: CrocdbEntry, preferredFormat?: string): number | u
   return entry.links.findIndex((l) => l.url === chosen.url);
 }
 
-function toFileHref(p: string): string {
+function _toFileHref(p: string): string {
   const normalized = p.replace(/\\/g, "/");
   if (/^[A-Za-z]:\//.test(normalized)) {
     return `file:///${encodeURI(normalized)}`;

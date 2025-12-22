@@ -77,8 +77,8 @@ describe("cancelJob - Part File Cleanup", () => {
       data: { entry: baseEntry }
     }));
 
-    const abortController = new AbortController();
-    const task = Promise.resolve();
+    const _abortController = new AbortController();
+    const _task = Promise.resolve();
 
     vi.doMock("../db", () => ({
       getJob,
