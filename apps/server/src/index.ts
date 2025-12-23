@@ -108,14 +108,20 @@ export async function createServer(): Promise<ServerHandle> {
   let webDistPath: string | null = null;
   for (const testPath of possiblePaths) {
     try {
+      logger.debug("Testing web dist path", { testPath });
       const exists = await fs.promises.access(testPath).then(() => true).catch(() => false);
       if (exists) {
         webDistPath = testPath;
+        logger.info("Found web dist path", { webDistPath });
         break;
       }
     } catch {
       // Continue to next path
     }
+  }
+
+  if (!webDistPath) {
+    logger.warn("No valid web dist path found", { possiblePaths });
   }
 
   if (webDistPath) {
