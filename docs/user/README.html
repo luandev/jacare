@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>User Guide | Jacare</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="logo">
+          <span>🐊</span>
+          <span>Jacare</span>
+        </div>
+        <nav class="nav">
+          <a href="../index.html">Home</a>
+          <a href="../README.html">Developer Guide</a>
+          <a href="README.html" class="active">User Guide</a>
+          <a href="../TESTING_PACKAGING.html">Packaging Guide</a>
+          <a href="retro-handhelds.html">Retro Handhelds</a>
+        </nav>
+        <div class="sidebar-footer">
+          <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">
+            <span class="theme-icon">🌙</span>
+          </button>
+        </div>
+      </aside>
+
+      <main class="main">
+        <div class="markdown-content card">
+          <h1>Jacare Friendly Guide 😀🐊</h1>
+          
+          <p>This guide is for anyone who wants to use Jacare without digging into code. Follow the steps below to organize your ROM collection with minimal setup.</p>
+
+          <h2>What is Jacare?</h2>
+          <p>Jacare is a desktop app that helps you keep your game ROMs tidy. It finds details like cover art and descriptions using the Crocdb online database while storing your library on your computer.</p>
+
+          <h2>Quick start</h2>
+          <ol class="list">
+            <li><strong>Install the app</strong>
+              <ul class="list">
+                <li>Download the Jacare desktop package for your system (Windows/macOS/Linux) from the <a href="https://github.com/luandev/jacare/releases" class="link" target="_blank" rel="noopener">releases page</a>.</li>
+                <li>Install it like any other app.</li>
+              </ul>
+            </li>
+            <li><strong>Open Jacare</strong>
+              <ul class="list">
+                <li>Launch the app. The server and the visual interface start automatically.</li>
+              </ul>
+            </li>
+            <li><strong>Configure your library</strong>
+              <ul class="list">
+                <li>Go to <strong>Settings</strong> and set your <strong>Library Directory</strong> to the folder containing your ROM files.</li>
+                <li>Optionally set a <strong>Download Directory</strong> for temporary downloads (files are deleted after extraction).</li>
+              </ul>
+            </li>
+            <li><strong>Let Jacare scan</strong>
+              <ul class="list">
+                <li>Go to the <strong>Library</strong> page and click <strong>Scan</strong> to let Jacare discover the ROMs in your library directory. Progress appears in the app.</li>
+              </ul>
+            </li>
+            <li><strong>Search for game details</strong>
+              <ul class="list">
+                <li>Use <strong>Browse</strong> to search for matches from Crocdb. When you like a result, pick <strong>Download</strong> to pull the ROM and enrich your library with cover art and metadata.</li>
+              </ul>
+            </li>
+            <li><strong>Launch and enjoy</strong>
+              <ul class="list">
+                <li>Launch games directly from Jacare, or open the manifest to plug it into another launcher.</li>
+              </ul>
+            </li>
+          </ol>
+
+          <h2>Staying organized</h2>
+          <ul class="list">
+            <li>Keep your ROMs in clearly named folders organized by platform (e.g., <code>library/snes/</code>, <code>library/n64/</code>).</li>
+            <li>Re-run <strong>Scan</strong> after adding new games so Jacare can index them.</li>
+            <li>If you're offline, you can still browse what was already scanned, and Jacare will use cached results until you reconnect.</li>
+          </ul>
+
+          <h2>Settings explained</h2>
+          <ul class="list">
+            <li><strong>Library Directory:</strong> This is where your ROM files are stored. Jacare scans this directory recursively to find games. All library operations work from this root.</li>
+            <li><strong>Download Directory:</strong> Temporary directory for zip file downloads. Files are automatically deleted after extraction to your library directory.</li>
+            <li><strong>Theme:</strong> Choose between light and dark themes for the interface.</li>
+          </ul>
+
+          <h2>Common questions</h2>
+          <ul class="list">
+            <li><strong>Do I need an account?</strong> No—Jacare uses Crocdb without sign-in.</li>
+            <li><strong>Where does it store data?</strong> In a <code>data</code> folder next to the app (or in the location specified by <code>CROCDESK_DATA_DIR</code>), including SQLite databases and small <code>.crocdesk.json</code> manifest files in each ROM folder.</li>
+            <li><strong>Can I turn off downloads?</strong> Yes. Downloads are off by default; set <code>CROCDESK_ENABLE_DOWNLOADS=true</code> if you want Jacare to fetch assets.</li>
+            <li><strong>Is my collection safe?</strong> Jacare reads your ROMs and metadata but keeps everything on your device unless you choose to share it.</li>
+            <li><strong>What file formats are supported?</strong> Jacare supports common ROM formats including <code>.zip</code>, <code>.7z</code>, <code>.rar</code>, <code>.iso</code>, <code>.chd</code>, <code>.bin</code>, <code>.cue</code>, <code>.sfc</code>, <code>.smc</code>, <code>.nes</code>, <code>.gba</code>, <code>.gb</code>, <code>.gbc</code>, <code>.n64</code>, <code>.z64</code>, <code>.v64</code>, <code>.nds</code>, <code>.md</code>, <code>.gen</code>, <code>.sms</code>, <code>.gg</code>, <code>.pce</code>, <code>.img</code>, <code>.ccd</code>, <code>.sub</code>, <code>.m3u</code>, and more.</li>
+          </ul>
+
+          <h2>Need help?</h2>
+          <ul class="list">
+            <li>Check for updates on the <a href="https://github.com/luandev/jacare/releases" class="link" target="_blank" rel="noopener">GitHub releases page</a>.</li>
+            <li>Open an issue on <a href="https://github.com/luandev/jacare/issues" class="link" target="_blank" rel="noopener">GitHub</a> with details about what went wrong and what you expected.</li>
+            <li>Planning to load ROMs onto a retro handheld like the R36S or RG40XXH? See the handheld-specific walkthrough in <a href="retro-handhelds.html" class="link">Retro Handhelds Guide</a>.</li>
+          </ul>
+        </div>
+      </main>
+    </div>
+
+    <script src="../theme.js"></script>
+  </body>
+</html>
+
