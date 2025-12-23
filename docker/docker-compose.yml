@@ -1,6 +1,6 @@
 
 services:
-  crocdesk:
+  jacare:
     # Use the pre-built image from GitHub Container Registry
     image: ghcr.io/luandev/jacare:latest
     # Or build from local repository (uncomment build section and comment image line above)
