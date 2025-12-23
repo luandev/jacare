@@ -11,9 +11,15 @@ This folder contains a starter `docker-compose.yml` for running Jacare with bind
    ```bash
    docker compose -f docker/docker-compose.yml up -d
    ```
-4. Visit the Jacare web UI at `http://localhost:5173` and API at `http://localhost:3333`.
+4. Visit the Jacare web UI and API at `http://localhost:3333`.
 
-The template sets `CROCDESK_DATA_DIR` to `/data` and assumes your ROM library is mounted at `/library`. You can also build the server image from the repository by uncommenting the `build` section on the `crocdesk` service.
+The Docker image includes both the server API and web UI, so everything is accessible on port 3333. The template sets `CROCDESK_DATA_DIR` to `/data` and assumes your ROM library is mounted at `/library`. 
+
+**Using pre-built images:**
+The `docker-compose.yml` is configured to use the pre-built image from GitHub Container Registry (`ghcr.io/luandev/jacare:latest`). Images are automatically built and pushed on every push to the `main` branch.
+
+**Building from source:**
+You can also build the server image from the repository by uncommenting the `build` section and commenting out the `image` line in the `jacare` service.
 
 ## Environment variables
 - `CROCDESK_PORT` – Server port (default: 3333)

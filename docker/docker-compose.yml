@@ -1,42 +1,40 @@
-version: "3.9"
 
 services:
-  crocdesk:
-    image: ghcr.io/your-org/crocdesk:latest
+  jacare:
+    # Use the pre-built image from GitHub Container Registry
+    image: ghcr.io/luandev/jacare:latest
+    # Or build from local repository (uncomment build section and comment image line above)
+    # build:
+    #   context: ..
+    #   dockerfile: apps/server/Dockerfile
     restart: unless-stopped
     ports:
-      - "3333:3333" # CrocDesk server/API
-      - "5173:5173" # Web UI (when served separately)
+      - "3333:3333" # Jacare server/API and web UI
     environment:
       CROCDESK_DATA_DIR: /data
-      VITE_API_URL: http://localhost:3333
       CROCDESK_ENABLE_DOWNLOADS: "false"
     volumes:
       # Windows default: bind your data and library folders into the container.
       - type: bind
-        source: C:/Users/<you>/crocdesk/data
+        source: C:/Users/<you>/jacare/data
         target: /data
       - type: bind
-        source: C:/Users/<you>/crocdesk/library
+        source: C:/Users/<you>/jacare/library
         target: /library
       # macOS example paths:
       # - type: bind
-      #   source: /Users/<you>/crocdesk/data
+      #   source: /Users/<you>/jacare/data
       #   target: /data
       # - type: bind
-      #   source: /Users/<you>/crocdesk/library
+      #   source: /Users/<you>/jacare/library
       #   target: /library
       # Linux example paths:
       # - type: bind
-      #   source: /home/<you>/crocdesk/data
+      #   source: /home/<you>/jacare/data
       #   target: /data
       # - type: bind
-      #   source: /home/<you>/crocdesk/library
+      #   source: /home/<you>/jacare/library
       #   target: /library
-    # Uncomment this block to build from the local repository instead of pulling an image.
-    # build:
-    #   context: ..
-    #   dockerfile: apps/server/Dockerfile
 
   # Emulator examples (disabled by default). These services expect ROMs under /library
   # and can be linked via Jacare's launcher settings. Uncomment the services you need
