@@ -162,8 +162,6 @@ Standalone server binaries are available for Windows, macOS, and Linux. These ca
 ## Running in production 🏭
 - Use `npm run build` to compile all workspaces, then start the server with the compiled artifacts.
 - For Docker deployments, use the pre-built images from GitHub Container Registry or build from source.
-- Desktop bundles are produced from `apps/desktop` and ship with the server and web assets included.
-- CI builds on the `main` branch automatically publish release archives to GitHub with the latest changelog and README so you can download ready-to-run packages.
 
 ## License 📜
 
