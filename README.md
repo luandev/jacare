@@ -108,8 +108,60 @@ Data is stored in SQLite tables for settings, Crocdb caches, library items, jobs
   - `GET /health` – Health check endpoint.
 - **Responses:** Wrapped as `{ info, data }` objects for consistency across the UI and API.
 
+## Distribution & Deployment 📦
+
+### Docker
+
+Jacare is available as a Docker image and can be run with Docker Compose:
+
+**Quick start with Docker Compose:**
+```bash
+# Clone the repository
+git clone https://github.com/luandev/jacare.git
+cd jacare
+
+# Edit docker/docker-compose.yml to set your data and library paths
+# Then start the service
+docker compose -f docker/docker-compose.yml up -d
+```
+
+**Using the pre-built image:**
+```bash
+docker run -d \
+  --name jacare \
+  -p 3333:3333 \
+  -v /path/to/your/data:/data \
+  -v /path/to/your/library:/library \
+  ghcr.io/luandev/jacare:latest
+```
+
+The web UI will be available at `http://localhost:3333`. The Docker image includes both the server API and the web UI, so no separate web server is needed.
+
+**Building from source:**
+```bash
+# Build the Docker image locally
+docker build -f apps/server/Dockerfile -t jacare:local .
+
+# Run the built image
+docker run -d --name jacare -p 3333:3333 \
+  -v /path/to/data:/data \
+  -v /path/to/library:/library \
+  jacare:local
+```
+
+See [`docker/README.md`](docker/README.md) for more details and configuration options.
+
+### Desktop Applications
+
+Desktop bundles are produced from `apps/desktop` and ship with the server and web assets included. CI builds on the `main` branch automatically publish release archives to GitHub with the latest changelog and README so you can download ready-to-run packages.
+
+### Server Binaries
+
+Standalone server binaries are available for Windows, macOS, and Linux. These can be run headless and accessed via the web UI in a browser.
+
 ## Running in production 🏭
 - Use `npm run build` to compile all workspaces, then start the server with the compiled artifacts.
+- For Docker deployments, use the pre-built images from GitHub Container Registry or build from source.
 - Desktop bundles are produced from `apps/desktop` and ship with the server and web assets included.
 - CI builds on the `main` branch automatically publish release archives to GitHub with the latest changelog and README so you can download ready-to-run packages.
 

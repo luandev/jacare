@@ -1,0 +1,63 @@
+# Multi-stage build for Jacare server
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY packages/shared/package.json ./packages/shared/
+COPY apps/server/package.json ./apps/server/
+COPY apps/web/package.json ./apps/web/
+
+# Install dependencies
+RUN npm ci
+
+# Copy source files
+COPY packages/shared ./packages/shared
+COPY apps/server ./apps/server
+COPY apps/web ./apps/web
+COPY tsconfig.base.json ./
+
+# Build only the workspaces needed for the server (shared, server, web)
+# Desktop is not needed for the Docker server image
+RUN npm run build -w @crocdesk/shared && \
+    npm run build -w @crocdesk/server && \
+    npm run build -w @crocdesk/web
+
+# Production stage
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copy package files for workspace resolution
+COPY package*.json ./
+COPY packages/shared/package.json ./packages/shared/
+COPY apps/server/package.json ./apps/server/
+
+# Install production dependencies only
+RUN npm ci --omit=dev
+
+# Copy built artifacts
+COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
+COPY --from=builder /app/apps/server/dist ./apps/server/dist
+COPY --from=builder /app/apps/web/dist ./apps/web/dist
+
+# Create data directory
+RUN mkdir -p /data
+
+# Expose port
+EXPOSE 3333
+
+# Set environment variables
+ENV NODE_ENV=production
+ENV CROCDESK_PORT=3333
+ENV CROCDESK_DATA_DIR=/data
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3333/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+
+# Start server
+WORKDIR /app/apps/server
+CMD ["node", "dist/index.js"]
+
