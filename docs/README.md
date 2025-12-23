@@ -19,10 +19,18 @@ Welcome to the full technical README for **Jacare**, the Brazilian-inspired desk
 Jacare helps you browse, enrich, and launch ROMs from one place. It keeps your library on disk while pulling metadata from [Crocdb](https://crocdb.net) and reporting long-running work through jobs and SSE streams.
 
 ## Architecture
-- **Electron shell** boots the server and ships the React UI for a native desktop experience.
-- **Express API** powers Crocdb searches, manifest writing, and job orchestration.
-- **React + Vite UI** calls the API over REST + SSE for real-time job updates.
-- **SQLite backing store** keeps settings, cached Crocdb responses, library items, and job tracking tables.
+
+Jacare uses a **unified Electron architecture** with an embedded server:
+
+- **Electron main process** embeds the Express server directly (no separate process)
+- **Express API** runs in-process, powering Crocdb searches, manifest writing, and job orchestration
+- **React + Vite UI** is served as static files in production, or via Vite dev server in development
+- **SQLite backing store** keeps settings, cached Crocdb responses, library items, and job tracking tables
+- **Native modules** (better-sqlite3) are properly bundled for cross-platform support
+
+**Development vs Production:**
+- **Development**: Server and web run as separate processes with hot reload (`npm run dev`)
+- **Production**: Server embedded in Electron, web UI served as static files (packaged app)
 
 ## Repository layout
 - `apps/server` – Express API, jobs, local scanning, and Crocdb client.
@@ -41,15 +49,23 @@ npm ci
 ```
 
 ## Development scripts
-- `npm run dev` – Run shared build watch + server + web + desktop together.
-- `npm run dev:shared` – Start the shared package in watch mode.
-- `npm run dev:server` – Start the Express API and job runners.
-- `npm run dev:web` – Start the React UI via Vite.
-- `npm run dev:desktop` – Start the Electron shell pointing at the dev server.
-- `npm run build` – Build all workspaces.
-- `npm run typecheck` – Type-check the monorepo.
-- `npm run lint` – Lint all TypeScript and React code.
-- `npm run test:unit` – Run unit tests with Vitest.
+
+**Standard development (separate processes with hot reload):**
+- `npm run dev` – Run shared build watch + server + web + desktop together
+- `npm run dev:shared` – Start the shared package in watch mode
+- `npm run dev:server` – Start the Express API and job runners
+- `npm run dev:web` – Start the React UI via Vite
+- `npm run dev:desktop` – Start the Electron shell pointing at the dev server
+
+**Testing embedded server mode (production-like):**
+- `npm run dev:desktop:embedded` – Build everything and run desktop with embedded server
+
+**Build and quality:**
+- `npm run build` – Build all workspaces
+- `npm run typecheck` – Type-check the monorepo
+- `npm run lint` – Lint all TypeScript and React code
+- `npm run test:unit` – Run unit tests with Vitest
+- `npm run package:desktop` – Build and package the desktop application
 
 ## Configuration
 - `CROCDESK_PORT` (default `3333`) – Server port
@@ -114,9 +130,30 @@ Settings stored in the database:
 **Responses:** Wrapped as `{ info, data }` objects for consistency.
 
 ## Production build
-- Run `npm run build` to compile all workspaces.
-- Package the Electron app from `apps/desktop`; it bundles the server and web assets.
-- CI on `main` can publish release archives with the latest changelog and README.
+
+**Desktop application:**
+```bash
+npm run build              # Build all workspaces
+npm run package:desktop    # Package Electron app for current platform
+```
+
+The packaged application includes:
+- Embedded Express server (runs in Electron main process)
+- Static web UI files
+- All dependencies including native modules (better-sqlite3)
+- Cross-platform binaries (Windows, macOS, Linux)
+
+**Platform-specific packaging:**
+```bash
+npm run package:win -w @crocdesk/desktop    # Windows (NSIS, portable)
+npm run package:mac -w @crocdesk/desktop    # macOS (DMG, ZIP)
+npm run package:linux -w @crocdesk/desktop  # Linux (AppImage, DEB, RPM)
+```
+
+**CI/CD:**
+- Automated builds on `main` branch publish release archives to GitHub
+- Includes latest changelog and README
+- Desktop binaries built for all platforms
 
 ## Support
 - Issues & roadmap: [GitHub Issues](https://github.com/luandev/jacare/issues)

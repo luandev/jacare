@@ -1,4 +1,3 @@
-import PQueue from "p-queue";
 import crypto from "crypto";
 import { promises as fs } from "fs";
 import path from "path";
@@ -22,7 +21,25 @@ import { runDownloadAndInstall, type DownloadJobPayload } from "./pipeline";
 import { getEntry } from "./crocdb";
 import { logger } from "../utils/logger";
 
-const queue = new PQueue({ concurrency: 2 });
+// Lazy-load p-queue as it's an ES module
+// Use Function constructor to prevent TypeScript from transforming dynamic import to require()
+type PQueueInstance = {
+  concurrency: number;
+  add: <T>(fn: () => Promise<T> | T) => Promise<T>;
+};
+
+let queueInstance: PQueueInstance | null = null;
+
+async function getQueue(): Promise<PQueueInstance> {
+  if (!queueInstance) {
+    // Use Function constructor to ensure true dynamic import (not transformed to require)
+    const dynamicImport = new Function("specifier", "return import(specifier)");
+    const pQueueModule = await dynamicImport("p-queue");
+    const PQueue = pQueueModule.default;
+    queueInstance = new PQueue({ concurrency: 2 }) as PQueueInstance;
+  }
+  return queueInstance;
+}
 
 // Track active job tasks for cancellation
 const activeJobTasks = new Map<string, { abortController: AbortController; task: Promise<void> }>();
@@ -43,6 +60,7 @@ export async function enqueueScanLocal(): Promise<JobRecord> {
   const job = createJobRecord("scan_local", {});
   logger.info("Scan job enqueued", { jobId: job.id });
   const settings = getSettings() ?? DEFAULT_SETTINGS;
+  const queue = await getQueue();
   queue.concurrency = settings.queue?.concurrency ?? 2;
   queue.add(() => runScanJob(job));
   return job;
@@ -54,6 +72,7 @@ export async function enqueueDownloadAndInstall(
   const job = createJobRecord("download_and_install", payload);
   logger.info("Download job enqueued", { jobId: job.id, slug: payload.slug, linkIndex: payload.linkIndex });
   const settings = getSettings() ?? DEFAULT_SETTINGS;
+  const queue = await getQueue();
   queue.concurrency = settings.queue?.concurrency ?? 2;
   
   const abortController = new AbortController();
@@ -193,6 +212,7 @@ export async function resumeJob(jobId: string): Promise<boolean> {
   if (job.type === "download_and_install") {
     const payload = job.payload as DownloadJobPayload;
     const abortController = new AbortController();
+    const queue = await getQueue();
     const task = queue.add(() => runDownloadJob(job, payload, abortController.signal));
     activeJobTasks.set(job.id, { abortController, task });
     

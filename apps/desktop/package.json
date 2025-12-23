@@ -14,39 +14,68 @@
     },
     "files": [
       "dist/**/*",
-      "../../web/dist/**/*",
-      "../../server/dist/**/*",
       "package.json"
     ],
     "extraResources": [
       {
+        "from": "../../web/dist",
+        "to": "web/dist",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
         "from": "../../server/dist",
-        "to": "server",
-        "filter": ["**/*"]
+        "to": "server/dist",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "../../packages/shared/dist",
+        "to": "packages/shared/dist",
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "win": {
-      "target": ["nsis", "portable"],
+      "target": [
+        "nsis",
+        "portable"
+      ],
       "icon": "build/icon.ico"
     },
     "mac": {
-      "target": ["dmg", "zip"],
+      "target": [
+        "dmg",
+        "zip"
+      ],
       "icon": "build/icon.icns",
       "category": "public.app-category.games"
     },
     "linux": {
-      "target": ["AppImage", "deb", "rpm"],
+      "target": [
+        "AppImage",
+        "deb",
+        "rpm"
+      ],
       "icon": "build/icon.png",
       "category": "Game"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true
-    }
+    },
+    "asarUnpack": [
+      "**/better-sqlite3/**/*"
+    ]
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "rebuild": "electron-rebuild -f -w better-sqlite3",
     "dev": "npm run build && cross-env CROCDESK_DEV_URL=http://localhost:5173 electron .",
+    "dev:embedded": "npm run rebuild && npm run build && electron .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "package": "electron-builder",
     "package:win": "electron-builder --win",
@@ -54,9 +83,17 @@
     "package:linux": "electron-builder --linux"
   },
   "dependencies": {
-    "electron": "^29.1.0"
+    "@crocdesk/server": "*",
+    "@crocdesk/shared": "*",
+    "better-sqlite3": "^9.4.1",
+    "cors": "^2.8.5",
+    "electron": "^29.1.0",
+    "express": "^4.19.2",
+    "p-queue": "^8.0.1",
+    "unzipper": "^0.10.11"
   },
   "devDependencies": {
+    "@electron/rebuild": "^3.7.2",
     "@types/node": "^20.11.19",
     "cross-env": "^7.0.3",
     "electron-builder": "^24.9.1",

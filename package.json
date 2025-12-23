@@ -11,13 +11,13 @@
     "dev:server": "npm run dev -w @crocdesk/server",
     "dev:web": "npm run dev -w @crocdesk/web",
     "dev:desktop": "npm run dev -w @crocdesk/desktop",
+    "dev:desktop:embedded": "npm run build -w @crocdesk/shared && npm run build -w @crocdesk/server && npm run build -w @crocdesk/web && npm run rebuild -w @crocdesk/desktop && npm run build -w @crocdesk/desktop && npm run dev:embedded -w @crocdesk/desktop",
     "build": "npm run build -w @crocdesk/shared && npm run build -w @crocdesk/server && npm run build -w @crocdesk/web && npm run build -w @crocdesk/desktop",
     "typecheck": "npm run typecheck -w @crocdesk/shared && npm run typecheck -w @crocdesk/server && npm run typecheck -w @crocdesk/web && npm run typecheck -w @crocdesk/desktop",
     "lint": "eslint . --ext .ts,.tsx",
     "test:unit": "vitest --run",
     "test": "npm run test:unit",
-    "package:desktop": "npm run build && npm run package -w @crocdesk/desktop",
-    "package:server": "npm run build && npm run package -w @crocdesk/server"
+    "package:desktop": "npm run build && npm run package -w @crocdesk/desktop"
   },
   "devDependencies": {
     "@playwright/test": "^1.48.2",

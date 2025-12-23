@@ -30,13 +30,33 @@
 
 ## Getting started 🚀
 
-### Option: Run with Docker 
+### Option 1: Native Desktop Application (Recommended)
 
-If you’re familiar with Docker, check **[`docker/README.md`](docker/README.md)** for a Docker Compose template, including platform-specific volume/mount examples.
+Jacare is now distributed as a **single, unified Electron application** with the server embedded directly in the main process. This provides:
 
-### Option: Run locally (Node.js)
+- **Single executable** per platform (Windows, macOS, Linux)
+- **No separate server process** to manage
+- **Simplified distribution** - just download and run
+- **Native binaries** for all desktop platforms
 
-If you’d rather run it locally, make sure you have **[Node.js](https://nodejs.org/en)** (includes npm) installed, then:
+**Download pre-built binaries:**
+- Check the [Releases](https://github.com/luandev/jacare/releases) page for the latest builds
+- Available formats: Windows (NSIS installer, portable), macOS (DMG, ZIP), Linux (AppImage, DEB, RPM)
+
+**Build from source:**
+```bash
+npm ci
+npm run package:desktop
+```
+The built application will be in `release/desktop/` for your platform.
+
+### Option 2: Run with Docker 
+
+If you prefer Docker, check **[`docker/README.md`](docker/README.md)** for a Docker Compose template, including platform-specific volume/mount examples.
+
+### Option 3: Development Mode (Node.js)
+
+For development, make sure you have **[Node.js](https://nodejs.org/en)** (includes npm) installed, then:
  
 1. **Install dependencies** 📦
    ```bash
@@ -46,14 +66,28 @@ If you’d rather run it locally, make sure you have **[Node.js](https://nodejs.
    ```bash
    npm run dev
    ```
-3. **Start an individual workspace** if you want to isolate debugging 🛠️
+   This runs all components separately with hot reload enabled.
+
+3. **Test embedded server mode** (production-like) 🧪
+   ```bash
+   npm run dev:desktop:embedded
+   ```
+   This builds everything, rebuilds native modules for Electron, and runs the desktop app with the embedded server (no hot reload).
+   
+   **Note:** The first time you run this, or after updating Electron or `better-sqlite3`, you may need to rebuild native modules:
+   ```bash
+   npm run rebuild -w @crocdesk/desktop
+   ```
+
+4. **Start an individual workspace** if you want to isolate debugging 🛠️
    ```bash
    npm run dev:shared  # Shared package watch mode
    npm run dev:server  # Express API + jobs
    npm run dev:web     # React UI with Vite
-   npm run dev:desktop # Electron shell
+   npm run dev:desktop # Electron shell (connects to dev server)
    ```
-4. **Build, type-check, lint, or test** when you are ready to ship 📦✅
+
+5. **Build, type-check, lint, or test** when you are ready to ship 📦✅
    ```bash
    npm run build      # Build all workspaces
    npm run typecheck  # Type-check the monorepo
@@ -61,13 +95,25 @@ If you’d rather run it locally, make sure you have **[Node.js](https://nodejs.
    npm run test:unit  # Run unit tests
    ```
 
-> Tip: The desktop app expects the web dev server at `http://localhost:5173` by default. Override with `CROCDESK_DEV_URL` if you change the Vite port.
+> **Development Tips:**
+> - Standard dev mode (`npm run dev`) runs server and web separately for hot reload
+> - Embedded mode (`npm run dev:desktop:embedded`) tests the production architecture
+> - The desktop app expects the web dev server at `http://localhost:5173` by default. Override with `CROCDESK_DEV_URL` if you change the Vite port.
 
 ## Project layout 🗂️
-- `apps/server` – Express API, job orchestration, local scanning, and Crocdb client.
-- `apps/web` – React UI (Vite) served by the server or opened directly in dev.
-- `apps/desktop` – Electron main process wrapping the server and web UI for a native experience.
+- `apps/server` – Express API, job orchestration, local scanning, and Crocdb client. Can run standalone or be embedded in Electron.
+- `apps/web` – React UI (Vite) served as static files in production or via dev server in development.
+- `apps/desktop` – Electron main process that embeds the server and serves the web UI for a native desktop experience.
 - `packages/shared` – Shared types, defaults, and the manifest schema used across workspaces.
+
+## Architecture 🏗️
+
+Jacare uses a **unified Electron architecture** where:
+
+- **Development mode**: Server and web run as separate processes with hot reload
+- **Production mode**: Server is embedded directly in the Electron main process, web UI is served as static files
+- **Single executable**: Everything is bundled into one application per platform
+- **Native modules**: SQLite (`better-sqlite3`) is properly bundled for cross-platform support
 
 ## Configuration & data ⚙️
 - **Default port:** `CROCDESK_PORT=3333`.
@@ -86,9 +132,34 @@ Data is stored in SQLite tables for settings, Crocdb caches, library items, jobs
 
 ## Distribution & Deployment 📦
 
-### Docker
+### Native Desktop Applications (Primary Distribution)
 
-Jacare is available as a Docker image and can be run with Docker Compose:
+**Pre-built binaries:**
+- Download from [GitHub Releases](https://github.com/luandev/jacare/releases)
+- Available for Windows (NSIS installer, portable), macOS (DMG, ZIP), Linux (AppImage, DEB, RPM)
+- Single executable per platform - no installation of Node.js or dependencies required
+- Server is embedded in the Electron main process
+- Web UI is bundled as static files
+
+**Build from source:**
+```bash
+npm ci
+npm run package:desktop
+```
+Outputs will be in `release/desktop/` for your platform.
+
+**Platform-specific builds:**
+```bash
+npm run package:desktop  # Builds for current platform
+# Or use workspace commands:
+npm run package:win -w @crocdesk/desktop    # Windows only
+npm run package:mac -w @crocdesk/desktop   # macOS only
+npm run package:linux -w @crocdesk/desktop  # Linux only
+```
+
+### Docker (Alternative Distribution)
+
+Jacare is also available as a Docker image for users who prefer containerized deployments:
 
 **Quick start with Docker Compose:**
 ```bash
@@ -111,35 +182,23 @@ docker run -d \
   ghcr.io/luandev/jacare:latest
 ```
 
-The web UI will be available at `http://localhost:3333`. The Docker image includes both the server API and the web UI, so no separate web server is needed.
-
-**Building from source:**
-```bash
-# Build the Docker image locally
-docker build -f apps/server/Dockerfile -t jacare:local .
-
-# Run the built image
-docker run -d --name jacare -p 3333:3333 \
-  -v /path/to/data:/data \
-  -v /path/to/library:/library \
-  jacare:local
-```
-
-See [`docker/README.md`](docker/README.md) for more details and configuration options.
-
-### Desktop Applications
-
-Desktop bundles are produced from `apps/desktop` and ship with the server and web assets included. CI builds on the `main` branch automatically publish release archives to GitHub with the latest changelog and README so you can download ready-to-run packages.
-
-### Server Binaries
-
-Standalone server binaries are available for Windows, macOS, and Linux. These can be run headless and accessed via the web UI in a browser.
+The web UI will be available at `http://localhost:3333`. See [`docker/README.md`](docker/README.md) for more details.
 
 ## Running in production 🏭
-- Use `npm run build` to compile all workspaces, then start the server with the compiled artifacts.
-- For Docker deployments, use the pre-built images from GitHub Container Registry or build from source.
-- Desktop bundles are produced from `apps/desktop` and ship with the server and web assets included.
-- CI builds on the `main` branch automatically publish release archives to GitHub with the latest changelog and README so you can download ready-to-run packages.
+
+**Desktop application:**
+- Download the pre-built binary for your platform from [Releases](https://github.com/luandev/jacare/releases)
+- Or build from source using `npm run package:desktop`
+- Run the executable - no additional setup required
+
+**Docker:**
+- Use pre-built images from GitHub Container Registry
+- Or build from source: `docker build -f apps/server/Dockerfile -t jacare:local .`
+
+**CI/CD:**
+- Automated builds on the `main` branch publish release archives to GitHub
+- Includes latest changelog and README
+- Desktop binaries are built for Windows, macOS, and Linux
 
 ## License 📜
 
