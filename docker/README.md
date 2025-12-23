@@ -19,7 +19,7 @@ The Docker image includes both the server API and web UI, so everything is acces
 The `docker-compose.yml` is configured to use the pre-built image from GitHub Container Registry (`ghcr.io/luandev/jacare:latest`). Images are automatically built and pushed on every push to the `main` branch.
 
 **Building from source:**
-You can also build the server image from the repository by uncommenting the `build` section and commenting out the `image` line in the `crocdesk` service.
+You can also build the server image from the repository by uncommenting the `build` section and commenting out the `image` line in the `jacare` service.
 
 ## Environment variables
 - `CROCDESK_PORT` – Server port (default: 3333)
