@@ -10,8 +10,36 @@ permissions:
   contents: write
 
 jobs:
-  release:
+  checks:
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Run tests
+        run: npm run test:unit
+
+  build:
+    needs: checks
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -28,21 +56,53 @@ jobs:
       - name: Build workspace artifacts
         run: npm run build
 
-      - name: Package distributables
+      - name: Package desktop app
         run: |
-          mkdir -p release
-          tar -czf release/crocdesk-server-dist.tar.gz -C apps/server dist
-          tar -czf release/crocdesk-web-dist.tar.gz -C apps/web dist
-          tar -czf release/crocdesk-desktop-dist.tar.gz -C apps/desktop dist
-          cp README.md release/README.md
-          cp CHANGELOG.md release/CHANGELOG.md
+          cd apps/desktop
+          npm run package
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Package server binary
+        run: |
+          cd apps/server
+          npm run package
+
+      - name: Upload desktop artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ matrix.os }}
+          path: release/desktop/*
+          retention-days: 30
+
+      - name: Upload server artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-${{ matrix.os }}
+          path: release/server/*
+          retention-days: 30
+
+  create-release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
 
       - name: Create GitHub release
-        uses: ncipollo/release-action@v1
+        uses: softprops/action-gh-release@v1
         with:
-          tag: v${{ github.run_number }}
-          name: CrocDesk release ${{ github.run_number }}
-          bodyFile: CHANGELOG.md
-          artifacts: release/*
-          artifactContentType: application/gzip
-          allowUpdates: true
+          tag_name: v${{ github.run_number }}
+          name: Jacare v${{ github.run_number }}
+          body_path: CHANGELOG.md
+          files: |
+            artifacts/**/*
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -133,6 +133,45 @@ export default function SettingsPage() {
           </div>
         </div>
       </Card>
+
+      <Card>
+        <h3>About</h3>
+        <div style={{ display: "flex", flexDirection: "column", gap: spacing.md }}>
+          <div>
+            <p style={{ margin: 0, marginBottom: spacing.sm, fontSize: "14px", lineHeight: 1.6 }}>
+              <strong>Jacare</strong> (Portuguese for "caiman") is an open-source desktop ROM library manager that brings your retro game collection to life.
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: spacing.xs, fontSize: "12px", color: "var(--muted)" }}>
+              <div>
+                <strong style={{ color: "var(--text)" }}>Copyright © 2024 Jacare Contributors</strong>
+              </div>
+              <div>
+                Licensed under the{" "}
+                <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener noreferrer" style={{ color: "var(--primary)" }}>
+                  MIT License
+                </a>
+              </div>
+              <div style={{ marginTop: spacing.xs }}>
+                <a href="https://github.com/luandev/jacare" target="_blank" rel="noopener noreferrer" style={{ color: "var(--primary)" }}>
+                  View on GitHub
+                </a>
+              </div>
+            </div>
+          </div>
+          <div style={{ paddingTop: spacing.sm, borderTop: "1px solid var(--border)" }}>
+            <p style={{ margin: 0, marginBottom: spacing.xs, fontSize: "12px", fontWeight: 600, color: "var(--muted)" }}>
+              Third-Party Attribution
+            </p>
+            <p style={{ margin: 0, fontSize: "12px", lineHeight: 1.6, color: "var(--muted)" }}>
+              This project utilizes metadata from{" "}
+              <a href="https://crocdb.net" target="_blank" rel="noopener noreferrer" style={{ color: "var(--primary)" }}>
+                Crocdb
+              </a>{" "}
+              (https://api.crocdb.net), a game metadata service. Crocdb-related code and packages are licensed under the ISC License. We acknowledge and thank the Crocdb project for providing this valuable service to the retro gaming community.
+            </p>
+          </div>
+        </div>
+      </Card>
     </div>
   );
 }

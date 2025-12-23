@@ -3,12 +3,15 @@
 [![CI](https://github.com/luandev/jacare/actions/workflows/ci.yml/badge.svg)](https://github.com/luandev/jacare/actions/workflows/ci.yml)
 [![Release](https://github.com/luandev/jacare/actions/workflows/release.yml/badge.svg)](https://github.com/luandev/jacare/actions/workflows/release.yml)
 
-**Jacare** (Portuguese for "caiman") is a powerful desktop ROM library manager that brings your retro game collection to life. Built with Electron, Express, and React, Jacare combines the best of local-first architecture with cloud-powered metadata—giving you a single, unified experience to discover, organize, and launch games from your personal library.
+**Jacare** (Portuguese for "caiman") is an open-source, web-based desktop ROM library manager that brings your retro game collection to life with an ultra-responsive UI, customizable themes, and intelligent download management—all in a portable, lightweight package that never loses your progress, even after closing and reopening the app.
 
 **What makes Jacare special:**
-- 🎮 **All-in-one solution** – Browse, search, download, and launch ROMs without switching between tools
+- 🎮 **All-in-one solution** – Browse, search, download ROMs without switching between tools
+- ⏸️ **Persistent download management** – Pause and resume downloads seamlessly, even after closing and reopening the application
+- 🎨 **Customizable themes** – Personalize your experience with a variety of themes to suit your preferences
+- ⚡ **Ultra-responsive web-based UI** – Enjoy a fast, smooth interface accessible through your browser or desktop app
+- 📦 **Portable and lightweight** – Minimalistic design that doesn't compromise on functionality
 - 🏠 **Your data, your control** – Everything stays on your machine; metadata is fetched from [Crocdb](https://crocdb.net) but cached locally for offline access
-- ⚡ **Built for performance** – Background job processing, real-time SSE updates, and intelligent caching keep things fast
 - 🔄 **Smart synchronization** – Automatic scanning, metadata enrichment, and library management keep your collection organized
 
 ![Demo](docs/demo.gif)
@@ -109,6 +112,14 @@ Data is stored in SQLite tables for settings, Crocdb caches, library items, jobs
 - Use `npm run build` to compile all workspaces, then start the server with the compiled artifacts.
 - Desktop bundles are produced from `apps/desktop` and ship with the server and web assets included.
 - CI builds on the `main` branch automatically publish release archives to GitHub with the latest changelog and README so you can download ready-to-run packages.
+
+## License 📜
+
+Jacare is open-source software licensed under the [MIT License](LICENSE). You are free to use, modify, and distribute this software in accordance with the license terms.
+
+### Third-Party Attribution
+
+This project utilizes metadata from [Crocdb](https://crocdb.net) (https://api.crocdb.net), a game metadata service. Crocdb-related code and packages are licensed under the ISC License. We acknowledge and thank the Crocdb project for providing this valuable service to the retro gaming community.
 
 ## Helpful links 🔗
 - Jacare issues & roadmap: [GitHub Issues](https://github.com/luandev/jacare/issues)
