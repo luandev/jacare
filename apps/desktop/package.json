@@ -54,7 +54,7 @@
     "package:linux": "electron-builder --linux"
   },
   "dependencies": {
-    "electron": "^29.1.0"
+    "electron": "^39.2.7"
   },
   "devDependencies": {
     "@types/node": "^20.11.19",
