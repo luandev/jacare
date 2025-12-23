@@ -42,10 +42,6 @@ COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
 COPY --from=builder /app/apps/server/dist ./apps/server/dist
 COPY --from=builder /app/apps/web/dist ./apps/web/dist
 
-# Copy package.json files for runtime (needed for workspace resolution)
-COPY packages/shared/package.json ./packages/shared/
-COPY apps/server/package.json ./apps/server/
-
 # Create data directory
 RUN mkdir -p /data
 
