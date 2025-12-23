@@ -17,7 +17,8 @@
     "lint": "eslint . --ext .ts,.tsx",
     "test:unit": "vitest --run",
     "test": "npm run test:unit",
-    "package:desktop": "npm run build && npm run package -w @crocdesk/desktop"
+    "package:desktop": "npm run build && npm run rebuild -w @crocdesk/desktop && npm run package -w @crocdesk/desktop",
+    "package:desktop:all": "npm run build && npm run rebuild -w @crocdesk/desktop && npm run package:win -w @crocdesk/desktop && npm run package:mac -w @crocdesk/desktop && npm run package:linux -w @crocdesk/desktop"
   },
   "devDependencies": {
     "@playwright/test": "^1.48.2",
