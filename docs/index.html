@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jacare | Retro Library Manager</title>
+    <meta
+      name="description"
+      content="Jacare is an open-source, desktop-first ROM library manager with persistent downloads, Crocdb enrichment, and an ultra-responsive UI."
+    />
+    <style>
+      :root {
+        --bg: #f8fafc;
+        --card: rgba(255, 255, 255, 0.9);
+        --text: #0f172a;
+        --muted: #475569;
+        --primary: #22c55e;
+        --primary-strong: #16a34a;
+        --border: rgba(15, 23, 42, 0.08);
+        --shadow: 0 20px 60px rgba(15, 23, 42, 0.12);
+        color-scheme: light;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0b1220;
+          --card: rgba(17, 24, 39, 0.9);
+          --text: #e2e8f0;
+          --muted: #94a3b8;
+          --primary: #34d399;
+          --primary-strong: #22c55e;
+          --border: rgba(226, 232, 240, 0.08);
+          --shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+          color-scheme: dark;
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.6;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        background-image: radial-gradient(circle at 20% 20%, rgba(52, 211, 153, 0.08), transparent 30%),
+          radial-gradient(circle at 80% 0%, rgba(34, 197, 94, 0.08), transparent 26%);
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      header {
+        padding: 24px 5vw;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        background: linear-gradient(to bottom, var(--bg) 70%, transparent);
+        z-index: 10;
+      }
+
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 700;
+        font-size: 20px;
+      }
+
+      nav {
+        display: flex;
+        gap: 18px;
+        font-weight: 600;
+        color: var(--muted);
+      }
+
+      nav a:hover {
+        color: var(--text);
+      }
+
+      .cta {
+        padding: 10px 16px;
+        border-radius: 12px;
+        background: var(--text);
+        color: var(--bg);
+        font-weight: 700;
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow);
+        transition: transform 120ms ease, box-shadow 120ms ease, opacity 120ms ease;
+      }
+
+      .cta:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
+        opacity: 0.95;
+      }
+
+      .hero {
+        padding: 48px 5vw 32px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 36px;
+        align-items: center;
+      }
+
+      .hero h1 {
+        font-size: clamp(38px, 5vw, 56px);
+        margin: 0 0 12px;
+        letter-spacing: -0.02em;
+      }
+
+      .hero p {
+        margin: 0 0 20px;
+        color: var(--muted);
+        font-size: 18px;
+      }
+
+      .badge-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+
+      .pill {
+        background: var(--card);
+        border: 1px solid var(--border);
+        padding: 8px 12px;
+        border-radius: 999px;
+        font-weight: 600;
+        color: var(--muted);
+      }
+
+      .button-row {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+      }
+
+      .button-row .cta.secondary {
+        background: var(--card);
+        color: var(--text);
+      }
+
+      .media-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 14px;
+        box-shadow: var(--shadow);
+      }
+
+      .media-card img {
+        width: 100%;
+        display: block;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+      }
+
+      section {
+        padding: 24px 5vw 8px;
+      }
+
+      h2 {
+        font-size: 28px;
+        margin-bottom: 12px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 18px;
+      }
+
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 16px;
+        box-shadow: var(--shadow);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .card h3 {
+        margin: 0;
+        font-size: 18px;
+      }
+
+      .card p {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      .list {
+        display: grid;
+        gap: 10px;
+        padding: 0;
+        margin: 0;
+        list-style: none;
+      }
+
+      .list li {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 12px 14px;
+        color: var(--muted);
+      }
+
+      .split {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 18px;
+      }
+
+      footer {
+        padding: 24px 5vw 48px;
+        color: var(--muted);
+      }
+
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      code, pre {
+        font-family: "SFMono-Regular", "Consolas", "Liberation Mono", monospace;
+        background: rgba(148, 163, 184, 0.12);
+        border-radius: 8px;
+        padding: 2px 6px;
+      }
+
+      pre {
+        padding: 10px;
+        overflow: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="logo">
+        <span aria-hidden="true">🐊</span>
+        <span id="nav-title">Jacare</span>
+      </div>
+      <nav>
+        <a href="#highlights">Highlights</a>
+        <a href="#getting-started">Get started</a>
+        <a href="#distribution">Downloads</a>
+        <a href="#docs">Docs</a>
+      </nav>
+      <a class="cta" id="nav-download" href="#distribution">Download</a>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div>
+          <div class="badge-row">
+            <span class="pill" id="badge-platform">Desktop + Web</span>
+            <span class="pill" id="badge-open-source">Open-source MIT</span>
+          </div>
+          <h1 id="hero-title">Jacare</h1>
+          <p id="hero-subtitle">
+            An open-source, web-based desktop ROM library manager that keeps downloads persistent, metadata enriched, and your
+            library ultra-responsive.
+          </p>
+          <div class="button-row">
+            <a class="cta" id="download-primary" href="#distribution">Download Jacare</a>
+            <a class="cta secondary" id="docs-link" href="docs/README.md">Developer docs</a>
+            <a class="cta secondary" id="user-link" href="docs/user/README.md">User guide</a>
+          </div>
+        </div>
+        <div class="media-card">
+          <img src="demo.gif" alt="Jacare demo" />
+        </div>
+      </section>
+
+      <section id="highlights">
+        <div class="section-header">
+          <h2>What makes Jacare special</h2>
+          <span class="muted">Filled automatically from README</span>
+        </div>
+        <div class="grid" id="highlight-grid"></div>
+      </section>
+
+      <section id="why">
+        <div class="section-header">
+          <h2>Why Jacare?</h2>
+          <span class="muted">Local-first, Crocdb-powered</span>
+        </div>
+        <ul class="list" id="why-list"></ul>
+      </section>
+
+      <section id="getting-started">
+        <div class="section-header">
+          <h2>Getting started</h2>
+          <span class="muted">Command examples pulled from README</span>
+        </div>
+        <div class="split">
+          <ol class="list" id="getting-started-list"></ol>
+          <div class="card">
+            <h3>Configuration basics</h3>
+            <ul class="list" id="config-list"></ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="distribution">
+        <div class="section-header">
+          <h2>Downloads & deployment</h2>
+          <span class="muted">Desktop bundles, Docker, and server binaries</span>
+        </div>
+        <div class="grid" id="distribution-grid"></div>
+      </section>
+
+      <section id="api">
+        <div class="section-header">
+          <h2>API quick reference</h2>
+          <span class="muted">REST + SSE endpoints</span>
+        </div>
+        <ul class="list" id="api-list"></ul>
+      </section>
+
+      <section id="docs">
+        <div class="section-header">
+          <h2>Documentation</h2>
+          <span class="muted">Links mirrored from README</span>
+        </div>
+        <div class="grid">
+          <div class="card">
+            <h3>Developer guide</h3>
+            <p>Technical walkthrough of the architecture, build commands, and code layout.</p>
+            <a class="cta secondary" id="docs-dev" href="docs/README.md">Open developer docs</a>
+          </div>
+          <div class="card">
+            <h3>User guide</h3>
+            <p>Friendly guide for configuring Jacare, scanning your library, and launching games.</p>
+            <a class="cta secondary" id="docs-user" href="docs/user/README.md">Open user guide</a>
+          </div>
+          <div class="card">
+            <h3>Roadmap & support</h3>
+            <p>Track releases and report issues directly on GitHub.</p>
+            <a class="cta secondary" id="docs-issues" href="https://github.com/luandev/jacare/issues">View GitHub issues</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      Built from README content. Ready for GitHub Pages.
+    </footer>
+
+    <script>
+      const defaultRepo = { owner: "luandev", name: "jacare", branch: "main" };
+      const badges = {
+        platform: document.getElementById("badge-platform"),
+        oss: document.getElementById("badge-open-source"),
+      };
+
+      const targets = {
+        title: document.getElementById("hero-title"),
+        subtitle: document.getElementById("hero-subtitle"),
+        highlights: document.getElementById("highlight-grid"),
+        why: document.getElementById("why-list"),
+        steps: document.getElementById("getting-started-list"),
+        config: document.getElementById("config-list"),
+        api: document.getElementById("api-list"),
+        distribution: document.getElementById("distribution-grid"),
+        docsLink: document.getElementById("docs-link"),
+        userLink: document.getElementById("user-link"),
+        navTitle: document.getElementById("nav-title"),
+        navDownload: document.getElementById("nav-download"),
+        downloadPrimary: document.getElementById("download-primary"),
+        docsDev: document.getElementById("docs-dev"),
+        docsUser: document.getElementById("docs-user"),
+        docsIssues: document.getElementById("docs-issues"),
+      };
+
+      const fallback = {
+        subtitle:
+          "An open-source, web-based desktop ROM library manager that keeps downloads persistent, metadata enriched, and your library ultra-responsive.",
+        highlights: [
+          "All-in-one solution – browse, search, and download ROMs without switching tools.",
+          "Persistent download management that survives restarts.",
+          "Crocdb-powered enrichment cached locally for offline access.",
+          "Customizable themes plus a lightweight, portable footprint.",
+        ],
+        why: [
+          "One app for everything: browse, enrich, and launch ROMs without juggling tools.",
+          "Local-first with cloud search: cache + Crocdb = fast metadata.",
+          "Built for speed: background jobs, SSE updates, and caching reduce churn.",
+          "Works online or offline with cached search + entry data.",
+        ],
+        steps: [
+          "Install dependencies: npm ci",
+          "Run everything in development: npm run dev",
+          "Start individual workspaces: npm run dev:web, dev:server, dev:desktop",
+          "Build, typecheck, lint, or test: npm run build / typecheck / lint / test:unit",
+        ],
+        config: [
+          "Default port CROCDESK_PORT=3333",
+          "Data directory CROCDESK_DATA_DIR=./data",
+          "Enable downloads with CROCDESK_ENABLE_DOWNLOADS=true",
+          "Web client base URL VITE_API_URL=http://localhost:3333",
+        ],
+        api: [
+          "POST /crocdb/search – Query Crocdb for matches",
+          "POST /crocdb/entry – Pull metadata and assets",
+          "GET /events – SSE stream for job progress",
+          "GET /library/items – List library items",
+        ],
+        distribution: [
+          {
+            title: "Desktop bundles",
+            body: "Packaged from apps/desktop with server + web assets included."
+          },
+          {
+            title: "Docker image",
+            body: "ghcr.io/luandev/jacare with docker/docker-compose.yml examples."
+          },
+          {
+            title: "Server binaries",
+            body: "Standalone builds for Windows, macOS, and Linux with the web UI."
+          },
+        ],
+      };
+
+      function listToCards(items = []) {
+        return items
+          .filter(Boolean)
+          .slice(0, 8)
+          .map((text) => {
+            const [title, ...rest] = text.split("–");
+            return { title: title.trim(), body: rest.join("–").trim() || title.trim() };
+          });
+      }
+
+      function renderHighlights(items) {
+        targets.highlights.innerHTML = listToCards(items).map(createCard).join("");
+      }
+
+      function renderList(element, items) {
+        element.innerHTML = items
+          .filter(Boolean)
+          .map((item) => `<li>${item}</li>`)
+          .join("");
+      }
+
+      function renderSteps(element, items) {
+        element.innerHTML = items
+          .filter(Boolean)
+          .map((item) => `<li><strong>${item.split(" ")[0]}</strong> ${item.substring(item.indexOf(" ") + 1)}</li>`)
+          .join("");
+      }
+
+      function createCard({ title, body, link }) {
+        const linkMarkup = link ? `<a class="cta secondary" href="${link}" target="_blank" rel="noopener">Learn more</a>` : "";
+        return `<div class="card"><h3>${title}</h3><p>${body}</p>${linkMarkup}</div>`;
+      }
+
+      function deriveRepoFromLocation() {
+        const { hostname, pathname } = window.location;
+        const repo = { ...defaultRepo };
+        if (hostname.endsWith("github.io")) {
+          repo.owner = hostname.split(".")[0];
+          const pathParts = pathname.split("/").filter(Boolean);
+          if (pathParts.length > 0) repo.name = pathParts[0];
+        }
+        return repo;
+      }
+
+      function candidateReadmeUrls() {
+        const repo = deriveRepoFromLocation();
+        const { owner, name, branch } = repo;
+        const baseRaw = `https://raw.githubusercontent.com/${owner}/${name}/${branch}/README.md`;
+        return ["../README.md", "./README.md", baseRaw, baseRaw.replace(branch, "master")];
+      }
+
+      function extractSection(md, heading) {
+        const regex = new RegExp(`^## ${heading}\\s*\\n([\\s\\S]*?)(?=\\n## |$)`, "m");
+        const match = md.match(regex);
+        return match ? match[1].trim() : "";
+      }
+
+      function extractBullets(block) {
+        return block
+          .split(/\n+/)
+          .map((line) => line.trim())
+          .filter((line) => /^[-*]\s+/.test(line))
+          .map((line) => line.replace(/^[-*]\s+/, ""));
+      }
+
+      function extractSteps(block) {
+        return block
+          .split(/\n+/)
+          .map((line) => line.trim())
+          .filter((line) => /^\d+\./.test(line))
+          .map((line) => line.replace(/^\d+\.\s+/, ""));
+      }
+
+      function extractFirstParagraph(md) {
+        const match = md.match(/\n\n([^#\n][\s\S]*?)\n\n/);
+        return match ? match[1].replace(/\n/g, " ").trim() : fallback.subtitle;
+      }
+
+      function buildDistributionCards(md, repoUrl) {
+        const block = extractSection(md, "Distribution & Deployment");
+        if (!block) return fallback.distribution;
+        const cards = [];
+        if (block.includes("Docker")) {
+          const dockerSnippet = (block.match(/```bash[\s\S]*?docker[\s\S]*?```/) || [""])[0]
+            .replace(/```bash|```/g, "")
+            .trim();
+          cards.push({
+            title: "Docker image",
+            body: dockerSnippet ? dockerSnippet.split("\n")[0] : "Run Jacare with docker compose or ghcr.io images.",
+            link: repoUrl + "/blob/main/docker/README.md",
+          });
+        }
+        if (block.includes("Desktop")) {
+          cards.push({
+            title: "Desktop bundles",
+            body: "Ready-to-run packages published from apps/desktop releases.",
+            link: repoUrl + "/releases",
+          });
+        }
+        if (block.includes("Server Binaries")) {
+          cards.push({
+            title: "Server binaries",
+            body: "Headless server builds for Windows, macOS, and Linux.",
+            link: repoUrl + "/releases",
+          });
+        }
+        return cards.length ? cards : fallback.distribution;
+      }
+
+      async function hydrateFromReadme() {
+        const urls = candidateReadmeUrls();
+        let md = "";
+
+        for (const url of urls) {
+          try {
+            const res = await fetch(url);
+            if (res.ok) {
+              md = await res.text();
+              break;
+            }
+          } catch (error) {
+            // Continue to next candidate
+          }
+        }
+
+        if (!md) {
+          renderHighlights(fallback.highlights);
+          renderList(targets.why, fallback.why);
+          renderSteps(targets.steps, fallback.steps);
+          renderList(targets.config, fallback.config);
+          renderList(targets.api, fallback.api);
+          targets.distribution.innerHTML = fallback.distribution.map(createCard).join("");
+          return;
+        }
+
+        const repo = deriveRepoFromLocation();
+        const repoUrl = `https://github.com/${repo.owner}/${repo.name}`;
+
+        const featureBlock = md.match(/\*\*What makes Jacare special:\*\*([\s\S]*?)(?=\n\n|!\[Demo\])/);
+        const highlights = featureBlock ? extractBullets(featureBlock[1]) : fallback.highlights;
+
+        const why = extractBullets(extractSection(md, "Why Jacare?")) || fallback.why;
+        const steps = extractSteps(extractSection(md, "Getting started")) || fallback.steps;
+        const config = extractBullets(extractSection(md, "Configuration & data")) || fallback.config;
+        const api = extractBullets(extractSection(md, "API quick reference")) || fallback.api;
+        const distributionCards = buildDistributionCards(md, repoUrl);
+
+        const subtitle = extractFirstParagraph(md);
+
+        targets.title.textContent = "Jacare";
+        targets.subtitle.textContent = subtitle;
+        renderHighlights(highlights);
+        renderList(targets.why, why.length ? why : fallback.why);
+        renderSteps(targets.steps, steps.length ? steps : fallback.steps);
+        renderList(targets.config, config.length ? config : fallback.config);
+        renderList(targets.api, api.length ? api : fallback.api);
+        targets.distribution.innerHTML = (distributionCards.length ? distributionCards : fallback.distribution)
+          .map(createCard)
+          .join("");
+
+        badges.platform.textContent = "Desktop + Web";
+        badges.oss.textContent = "Open-source MIT";
+
+        const docsMatch = md.match(/docs\/README\.md/);
+        if (docsMatch) {
+          targets.docsLink.href = "docs/README.md";
+          targets.docsDev.href = "docs/README.md";
+        }
+        const userMatch = md.match(/docs\/user\/README\.md/);
+        if (userMatch) {
+          targets.userLink.href = "docs/user/README.md";
+          targets.docsUser.href = "docs/user/README.md";
+        }
+        targets.navTitle.textContent = "Jacare";
+        targets.navDownload.href = repoUrl + "/releases";
+        targets.downloadPrimary.href = repoUrl + "/releases";
+        targets.docsIssues.href = repoUrl + "/issues";
+      }
+
+      renderHighlights(fallback.highlights);
+      renderList(targets.why, fallback.why);
+      renderSteps(targets.steps, fallback.steps);
+      renderList(targets.config, fallback.config);
+      renderList(targets.api, fallback.api);
+      targets.distribution.innerHTML = fallback.distribution.map(createCard).join("");
+
+      hydrateFromReadme();
+    </script>
+  </body>
+</html>
