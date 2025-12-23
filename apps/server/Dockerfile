@@ -18,8 +18,11 @@ COPY apps/server ./apps/server
 COPY apps/web ./apps/web
 COPY tsconfig.base.json ./
 
-# Build all workspaces
-RUN npm run build
+# Build only the workspaces needed for the server (shared, server, web)
+# Desktop is not needed for the Docker server image
+RUN npm run build -w @crocdesk/shared && \
+    npm run build -w @crocdesk/server && \
+    npm run build -w @crocdesk/web
 
 # Production stage
 FROM node:20-alpine
