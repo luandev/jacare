@@ -1,0 +1,63 @@
+# Dependencies
+node_modules
+npm-debug.log
+yarn-error.log
+package-lock.json
+
+# Build outputs
+dist
+build
+release
+*.tsbuildinfo
+
+# Development files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# CI/CD
+.github
+.gitlab-ci.yml
+
+# Documentation
+docs
+*.md
+!README.md
+
+# Tests
+coverage
+.nyc_output
+test-results
+playwright-report
+
+# Docker
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# Data and downloads (user data, not part of image)
+data
+downloads
+library
+
+# Temporary files
+*.log
+*.tmp
+*.temp
+
