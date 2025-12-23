@@ -3,10 +3,55 @@
   "version": "0.1.0",
   "private": true,
   "main": "dist/main.js",
+  "author": "Jacare Contributors",
+  "description": "Jacare - Desktop ROM library manager",
+  "build": {
+    "appId": "com.jacare.app",
+    "productName": "Jacare",
+    "electronVersion": "29.1.0",
+    "directories": {
+      "output": "../../release/desktop"
+    },
+    "files": [
+      "dist/**/*",
+      "../../web/dist/**/*",
+      "../../server/dist/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../../server/dist",
+        "to": "server",
+        "filter": ["**/*"]
+      }
+    ],
+    "win": {
+      "target": ["nsis", "portable"],
+      "icon": "build/icon.ico"
+    },
+    "mac": {
+      "target": ["dmg", "zip"],
+      "icon": "build/icon.icns",
+      "category": "public.app-category.games"
+    },
+    "linux": {
+      "target": ["AppImage", "deb", "rpm"],
+      "icon": "build/icon.png",
+      "category": "Game"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "npm run build && cross-env CROCDESK_DEV_URL=http://localhost:5173 electron .",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "package": "electron-builder",
+    "package:win": "electron-builder --win",
+    "package:mac": "electron-builder --mac",
+    "package:linux": "electron-builder --linux"
   },
   "dependencies": {
     "electron": "^29.1.0"
@@ -14,6 +59,7 @@
   "devDependencies": {
     "@types/node": "^20.11.19",
     "cross-env": "^7.0.3",
+    "electron-builder": "^24.9.1",
     "typescript": "^5.4.5"
   }
 }
