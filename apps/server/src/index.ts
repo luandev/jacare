@@ -11,8 +11,17 @@ import libraryRouter from "./routes/library";
 import jobsRouter from "./routes/jobs";
 import { logger } from "./utils/logger";
 import { resumeAllJobs } from "./services/jobs";
+import type { Server } from "http";
 
-async function start(): Promise<void> {
+let serverInstance: Server | null = null;
+
+export interface ServerHandle {
+  app: express.Application;
+  server: Server;
+  stop: () => Promise<void>;
+}
+
+export async function createServer(): Promise<ServerHandle> {
   logger.info("Starting CrocDesk server");
   await initDb();
   logger.info("Database initialized");
@@ -84,29 +93,47 @@ async function start(): Promise<void> {
   });
 
   // Serve static web assets in production (when bundled with desktop app)
-  const webDistPath = path.resolve(__dirname, "../../web/dist");
-  try {
-    const fs = await import("fs");
-    const webDistExists = await fs.promises.access(webDistPath).then(() => true).catch(() => false);
-    if (webDistExists) {
-      app.use(express.static(webDistPath));
-      // SPA fallback: serve index.html for all non-API routes
-      app.get("*", (req, res, next) => {
-        // Skip API routes
-        if (req.path.startsWith("/crocdb") || 
-            req.path.startsWith("/settings") || 
-            req.path.startsWith("/library") || 
-            req.path.startsWith("/jobs") || 
-            req.path.startsWith("/events") || 
-            req.path.startsWith("/file") || 
-            req.path.startsWith("/health")) {
-          return next();
-        }
-        res.sendFile(path.join(webDistPath, "index.html"));
-      });
+  // Try multiple possible locations for web dist
+  const fs = await import("fs");
+  const resourcesPath = (process as unknown as { resourcesPath?: string }).resourcesPath;
+  const possiblePaths = [
+    // Packaged Electron app (extraResources)
+    resourcesPath ? path.join(resourcesPath, "web", "dist") : null,
+    // Development (relative to server dist)
+    path.resolve(__dirname, "../../web/dist"),
+    // Alternative development path
+    path.resolve(process.cwd(), "apps", "web", "dist")
+  ].filter((p): p is string => p !== null);
+
+  let webDistPath: string | null = null;
+  for (const testPath of possiblePaths) {
+    try {
+      const exists = await fs.promises.access(testPath).then(() => true).catch(() => false);
+      if (exists) {
+        webDistPath = testPath;
+        break;
+      }
+    } catch {
+      // Continue to next path
     }
-  } catch {
-    // Web dist not available, skip static serving
+  }
+
+  if (webDistPath) {
+    app.use(express.static(webDistPath));
+    // SPA fallback: serve index.html for all non-API routes
+    app.get("*", (req, res, next) => {
+      // Skip API routes
+      if (req.path.startsWith("/crocdb") || 
+          req.path.startsWith("/settings") || 
+          req.path.startsWith("/library") || 
+          req.path.startsWith("/jobs") || 
+          req.path.startsWith("/events") || 
+          req.path.startsWith("/file") || 
+          req.path.startsWith("/health")) {
+        return next();
+      }
+      res.sendFile(path.join(webDistPath!, "index.html"));
+    });
   }
 
   app.get("/health", (_req, res) => {
@@ -120,12 +147,57 @@ async function start(): Promise<void> {
   app.use("/library", libraryRouter);
   app.use("/jobs", jobsRouter);
 
-  app.listen(PORT, () => {
-    logger.info(`CrocDesk server listening on port ${PORT}`);
+  return new Promise((resolve, reject) => {
+    try {
+      const server = app.listen(PORT, () => {
+        logger.info(`CrocDesk server listening on port ${PORT}`);
+        serverInstance = server;
+        resolve({
+          app,
+          server,
+          stop: async () => {
+            return new Promise<void>((resolveStop) => {
+              if (serverInstance) {
+                serverInstance.close(() => {
+                  logger.info("Server stopped");
+                  serverInstance = null;
+                  resolveStop();
+                });
+              } else {
+                resolveStop();
+              }
+            });
+          }
+        });
+      });
+
+      server.on("error", (error) => {
+        logger.error("Server error", error);
+        reject(error);
+      });
+    } catch (error) {
+      logger.error("Failed to start server", error);
+      reject(error);
+    }
   });
 }
 
-start().catch((error) => {
-  logger.error("Failed to start server", error);
-  process.exit(1);
-});
+export async function stopServer(): Promise<void> {
+  if (serverInstance) {
+    return new Promise<void>((resolve) => {
+      serverInstance!.close(() => {
+        logger.info("Server stopped");
+        serverInstance = null;
+        resolve();
+      });
+    });
+  }
+}
+
+// Auto-start if running as standalone (for development/testing)
+if (require.main === module) {
+  createServer().catch((error) => {
+    logger.error("Failed to start server", error);
+    process.exit(1);
+  });
+}

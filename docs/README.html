@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Developer Guide | Jacare</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="logo">
+          <span>🐊</span>
+          <span>Jacare</span>
+        </div>
+        <nav class="nav">
+          <a href="index.html">Home</a>
+          <a href="README.html" class="active">Developer Guide</a>
+          <a href="user/README.html">User Guide</a>
+          <a href="TESTING_PACKAGING.html">Packaging Guide</a>
+          <a href="user/retro-handhelds.html">Retro Handhelds</a>
+        </nav>
+        <div class="sidebar-footer">
+          <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">
+            <span class="theme-icon">🌙</span>
+          </button>
+        </div>
+      </aside>
+
+      <main class="main">
+        <div class="markdown-content card">
+          <h1>Jacare Developer Guide 🧑‍💻🐊</h1>
+          
+          <p>Welcome to the full technical README for <strong>Jacare</strong>, the Brazilian-inspired desktop ROM library manager that wraps the Crocdb API with an Electron + Express + React stack.</p>
+
+          <h2>Table of contents</h2>
+          <ul class="list">
+            <li><a href="#project-overview" class="link">Project overview</a></li>
+            <li><a href="#architecture" class="link">Architecture</a></li>
+            <li><a href="#repository-layout" class="link">Repository layout</a></li>
+            <li><a href="#prerequisites" class="link">Prerequisites</a></li>
+            <li><a href="#installation" class="link">Installation</a></li>
+            <li><a href="#development-scripts" class="link">Development scripts</a></li>
+            <li><a href="#configuration" class="link">Configuration</a></li>
+            <li><a href="#data-storage" class="link">Data & storage</a></li>
+            <li><a href="#api-reference" class="link">API reference</a></li>
+            <li><a href="#production-build" class="link">Production build</a></li>
+            <li><a href="#support" class="link">Support</a></li>
+          </ul>
+
+          <h2 id="project-overview">Project overview</h2>
+          <p>Jacare helps you browse, enrich, and launch ROMs from one place. It keeps your library on disk while pulling metadata from <a href="https://crocdb.net" class="link" target="_blank" rel="noopener">Crocdb</a> and reporting long-running work through jobs and SSE streams.</p>
+
+          <h2 id="architecture">Architecture</h2>
+          <p>Jacare uses a <strong>unified Electron architecture</strong> with an embedded server:</p>
+          <ul class="list">
+            <li><strong>Electron main process</strong> embeds the Express server directly (no separate process)</li>
+            <li><strong>Express API</strong> runs in-process, powering Crocdb searches, manifest writing, and job orchestration</li>
+            <li><strong>React + Vite UI</strong> is served as static files in production, or via Vite dev server in development</li>
+            <li><strong>SQLite backing store</strong> keeps settings, cached Crocdb responses, library items, and job tracking tables</li>
+            <li><strong>Native modules</strong> (better-sqlite3) are properly bundled for cross-platform support</li>
+          </ul>
+
+          <p><strong>Development vs Production:</strong></p>
+          <ul class="list">
+            <li><strong>Development:</strong> Server and web run as separate processes with hot reload (<code>npm run dev</code>)</li>
+            <li><strong>Production:</strong> Server embedded in Electron, web UI served as static files (packaged app)</li>
+          </ul>
+
+          <h2 id="repository-layout">Repository layout</h2>
+          <ul class="list">
+            <li><code>apps/server</code> – Express API, jobs, local scanning, and Crocdb client.</li>
+            <li><code>apps/web</code> – React UI (Vite) served by the server or opened directly in dev.</li>
+            <li><code>apps/desktop</code> – Electron main process that wraps the server and UI.</li>
+            <li><code>packages/shared</code> – Shared types, defaults, and the manifest schema used across workspaces.</li>
+          </ul>
+
+          <h2 id="prerequisites">Prerequisites</h2>
+          <ul class="list">
+            <li>Node.js 20+</li>
+            <li>npm</li>
+            <li>Optional: Git LFS if you store binaries or media in the repo.</li>
+          </ul>
+
+          <h2 id="installation">Installation</h2>
+          <pre><code>npm ci</code></pre>
+
+          <h2 id="development-scripts">Development scripts</h2>
+          <p><strong>Standard development (separate processes with hot reload):</strong></p>
+          <ul class="list">
+            <li><code>npm run dev</code> – Run shared build watch + server + web + desktop together</li>
+            <li><code>npm run dev:shared</code> – Start the shared package in watch mode</li>
+            <li><code>npm run dev:server</code> – Start the Express API and job runners</li>
+            <li><code>npm run dev:web</code> – Start the React UI via Vite</li>
+            <li><code>npm run dev:desktop</code> – Start the Electron shell pointing at the dev server</li>
+          </ul>
+
+          <p><strong>Testing embedded server mode (production-like):</strong></p>
+          <ul class="list">
+            <li><code>npm run dev:desktop:embedded</code> – Build everything and run desktop with embedded server</li>
+          </ul>
+
+          <p><strong>Build and quality:</strong></p>
+          <ul class="list">
+            <li><code>npm run build</code> – Build all workspaces</li>
+            <li><code>npm run typecheck</code> – Type-check the monorepo</li>
+            <li><code>npm run lint</code> – Lint all TypeScript and React code</li>
+            <li><code>npm run test:unit</code> – Run unit tests with Vitest</li>
+            <li><code>npm run package:desktop</code> – Build and package the desktop application</li>
+          </ul>
+
+          <h2 id="configuration">Configuration</h2>
+          <ul class="list">
+            <li><code>CROCDESK_PORT</code> (default <code>3333</code>) – Server port</li>
+            <li><code>CROCDESK_DATA_DIR</code> (default <code>./data</code>) – Directory for SQLite databases and cache</li>
+            <li><code>CROCDESK_ENABLE_DOWNLOADS</code> (default <code>false</code>) – Enable download functionality</li>
+            <li><code>CROCDB_BASE_URL</code> (default <code>https://api.crocdb.net</code>) – Crocdb API base URL</li>
+            <li><code>CROCDB_CACHE_TTL_MS</code> (default <code>86400000</code>) – Cache TTL in milliseconds (24 hours)</li>
+            <li><code>VITE_API_URL</code> (default <code>http://localhost:3333</code>) – API URL for web client</li>
+            <li><code>CROCDESK_DEV_URL</code> (default <code>http://localhost:5173</code>) – Dev server URL for Electron</li>
+          </ul>
+
+          <p>Settings stored in the database:</p>
+          <ul class="list">
+            <li><code>downloadDir</code> – Temporary directory for zip file downloads (deleted after extraction)</li>
+            <li><code>libraryDir</code> – Root directory where extracted game files are stored. All scanning and library operations work from this root.</li>
+            <li><code>queue.concurrency</code> (optional) – Maximum concurrent jobs</li>
+          </ul>
+
+          <h2 id="data-storage">Data & storage</h2>
+          <p><strong>SQLite tables:</strong></p>
+          <ul class="list">
+            <li><code>settings</code> – Application settings (downloadDir, libraryDir, queue config)</li>
+            <li><code>crocdb_cache_search</code> – Cached search results from Crocdb</li>
+            <li><code>crocdb_cache_entry</code> – Cached entry data from Crocdb</li>
+            <li><code>library_items</code> – Indexed ROM files with metadata</li>
+            <li><code>jobs</code> – Job records (scan_local, download_and_install)</li>
+            <li><code>job_steps</code> – Individual step progress for jobs</li>
+          </ul>
+          <p><strong>Manifests:</strong> Each scanned ROM folder receives a <code>.crocdesk.json</code> manifest describing the game entry.</p>
+          <p><strong>Data directory:</strong> Defaults to <code>./data</code>; point it to a faster disk or network share as needed.</p>
+
+          <h2 id="api-reference">API reference</h2>
+          <p><strong>Base URL:</strong> <code>http://localhost:&lt;CROCDESK_PORT&gt;</code> (3333 by default) or the packaged server inside Electron.</p>
+
+          <h3>Crocdb endpoints</h3>
+          <ul class="list">
+            <li><code>POST /crocdb/search</code> – Query Crocdb for matches. Request body: <code>{ search_key?, platforms?, regions?, rom_id?, max_results?, page? }</code></li>
+            <li><code>POST /crocdb/entry</code> – Pull metadata and assets for a specific result. Request body: <code>{ slug }</code></li>
+            <li><code>GET /crocdb/platforms</code> – Get available platforms</li>
+            <li><code>GET /crocdb/regions</code> – Get available regions</li>
+            <li><code>GET /crocdb/info</code> – Get Crocdb service info</li>
+          </ul>
+
+          <h3>Library endpoints</h3>
+          <ul class="list">
+            <li><code>GET /library/items?platform=&lt;platform&gt;</code> – List library items (optionally filtered by platform)</li>
+            <li><code>GET /library/games?platform=&lt;platform&gt;</code> – List library games (optionally filtered by platform)</li>
+            <li><code>POST /library/scan/local</code> – Trigger a local scan job</li>
+            <li><code>DELETE /library/item?dir=&lt;path&gt;</code> – Delete a library item and its directory</li>
+          </ul>
+
+          <h3>Jobs endpoints</h3>
+          <ul class="list">
+            <li><code>GET /jobs</code> – List all jobs with preview data</li>
+            <li><code>GET /jobs/:id</code> – Get job details and steps</li>
+            <li><code>POST /jobs/download</code> – Enqueue a download and install job. Request body: <code>{ slug, linkIndex? }</code></li>
+            <li><code>POST /jobs/:id/cancel</code> – Cancel a job</li>
+            <li><code>POST /jobs/:id/pause</code> – Pause a job</li>
+            <li><code>POST /jobs/:id/resume</code> – Resume a paused job</li>
+            <li><code>POST /jobs/pause-all</code> – Pause all jobs</li>
+            <li><code>POST /jobs/resume-all</code> – Resume all paused jobs</li>
+          </ul>
+
+          <h3>Settings endpoints</h3>
+          <ul class="list">
+            <li><code>GET /settings</code> – Get current settings</li>
+            <li><code>PUT /settings</code> – Update settings. Request body: Settings object</li>
+          </ul>
+
+          <h3>Other endpoints</h3>
+          <ul class="list">
+            <li><code>GET /events</code> – SSE stream for job progress (scans, downloads, cache refreshes)</li>
+            <li><code>GET /file?path=&lt;path&gt;</code> – Serve files from the library directory (JSON files are parsed, others are streamed)</li>
+            <li><code>GET /health</code> – Health check endpoint</li>
+          </ul>
+
+          <p><strong>Responses:</strong> Wrapped as <code>{ info, data }</code> objects for consistency.</p>
+
+          <h2 id="production-build">Production build</h2>
+          <p><strong>Desktop application:</strong></p>
+          <pre><code>npm run build              # Build all workspaces
+npm run package:desktop    # Package Electron app for current platform</code></pre>
+
+          <p>The packaged application includes:</p>
+          <ul class="list">
+            <li>Embedded Express server (runs in Electron main process)</li>
+            <li>Static web UI files</li>
+            <li>All dependencies including native modules (better-sqlite3)</li>
+            <li>Cross-platform binaries (Windows, macOS, Linux)</li>
+          </ul>
+
+          <p><strong>Platform-specific packaging:</strong></p>
+          <pre><code>npm run package:win -w @crocdesk/desktop    # Windows (NSIS, portable)
+npm run package:mac -w @crocdesk/desktop    # macOS (DMG, ZIP)
+npm run package:linux -w @crocdesk/desktop  # Linux (AppImage, DEB, RPM)</code></pre>
+
+          <p><strong>CI/CD:</strong></p>
+          <ul class="list">
+            <li>Automated builds on <code>main</code> branch publish release archives to GitHub</li>
+            <li>Includes latest changelog and README</li>
+            <li>Desktop binaries built for all platforms</li>
+          </ul>
+
+          <h2 id="support">Support</h2>
+          <ul class="list">
+            <li>Issues & roadmap: <a href="https://github.com/luandev/jacare/issues" class="link" target="_blank" rel="noopener">GitHub Issues</a></li>
+            <li>Crocdb service: <a href="https://crocdb.net" class="link" target="_blank" rel="noopener">https://crocdb.net</a> and <a href="https://api.crocdb.net" class="link" target="_blank" rel="noopener">https://api.crocdb.net</a></li>
+            <li>Tech stack docs: <a href="https://www.electronjs.org/" class="link" target="_blank" rel="noopener">Electron</a>, <a href="https://expressjs.com/" class="link" target="_blank" rel="noopener">Express</a>, <a href="https://vitejs.dev/" class="link" target="_blank" rel="noopener">Vite</a>, <a href="https://react.dev/" class="link" target="_blank" rel="noopener">React</a></li>
+          </ul>
+        </div>
+      </main>
+    </div>
+
+    <script src="theme.js"></script>
+  </body>
+</html>
+

@@ -56,6 +56,9 @@ jobs:
       - name: Build workspace artifacts
         run: npm run build
 
+      - name: Rebuild native modules
+        run: npm run rebuild -w @crocdesk/desktop
+
       - name: Package desktop app
         run: |
           cd apps/desktop
@@ -63,23 +66,25 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Package server binary
+      - name: Determine platform name
+        id: platform
         run: |
-          cd apps/server
-          npm run package
+          if [ "${{ matrix.os }}" == "windows-latest" ]; then
+            echo "name=windows" >> $GITHUB_OUTPUT
+          elif [ "${{ matrix.os }}" == "macos-latest" ]; then
+            echo "name=macos" >> $GITHUB_OUTPUT
+          elif [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+            echo "name=linux" >> $GITHUB_OUTPUT
+          else
+            echo "name=linux" >> $GITHUB_OUTPUT
+          fi
+        shell: bash
 
       - name: Upload desktop artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: desktop-${{ matrix.os }}
+          name: desktop-${{ steps.platform.outputs.name }}
           path: release/desktop/*
-          retention-days: 30
-
-      - name: Upload server artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: server-${{ matrix.os }}
-          path: release/server/*
           retention-days: 30
 
   create-release:
@@ -94,6 +99,26 @@ jobs:
         with:
           path: artifacts
 
+      - name: Organize artifacts by platform
+        shell: bash
+        run: |
+          mkdir -p release/windows release/macos release/linux
+          
+          # Move Windows artifacts
+          if [ -d "artifacts/desktop-windows" ]; then
+            mv artifacts/desktop-windows/* release/windows/ 2>/dev/null || true
+          fi
+          
+          # Move macOS artifacts
+          if [ -d "artifacts/desktop-macos" ]; then
+            mv artifacts/desktop-macos/* release/macos/ 2>/dev/null || true
+          fi
+          
+          # Move Linux artifacts
+          if [ -d "artifacts/desktop-linux" ]; then
+            mv artifacts/desktop-linux/* release/linux/ 2>/dev/null || true
+          fi
+
       - name: Create GitHub release
         uses: softprops/action-gh-release@v1
         with:
@@ -101,7 +126,9 @@ jobs:
           name: Jacare v${{ github.run_number }}
           body_path: CHANGELOG.md
           files: |
-            artifacts/**/*
+            release/windows/*
+            release/macos/*
+            release/linux/*
           draft: false
           prerelease: false
         env:

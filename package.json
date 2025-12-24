@@ -11,13 +11,16 @@
     "dev:server": "npm run dev -w @crocdesk/server",
     "dev:web": "npm run dev -w @crocdesk/web",
     "dev:desktop": "npm run dev -w @crocdesk/desktop",
+    "dev:desktop:embedded": "npm run build -w @crocdesk/shared && npm run build -w @crocdesk/server && npm run build -w @crocdesk/web && npm run rebuild -w @crocdesk/desktop && npm run build -w @crocdesk/desktop && npm run dev:embedded -w @crocdesk/desktop",
     "build": "npm run build -w @crocdesk/shared && npm run build -w @crocdesk/server && npm run build -w @crocdesk/web && npm run build -w @crocdesk/desktop",
     "typecheck": "npm run typecheck -w @crocdesk/shared && npm run typecheck -w @crocdesk/server && npm run typecheck -w @crocdesk/web && npm run typecheck -w @crocdesk/desktop",
     "lint": "eslint . --ext .ts,.tsx",
     "test:unit": "vitest --run",
     "test": "npm run test:unit",
-    "package:desktop": "npm run build && npm run package -w @crocdesk/desktop",
-    "package:server": "npm run build && npm run package -w @crocdesk/server"
+    "ci:install": "npm ci --ignore-scripts --workspace @crocdesk/shared --workspace @crocdesk/server --workspace @crocdesk/web",
+    "ci:test": "npm run test -w @crocdesk/server",
+    "package:desktop": "npm run build && npm run rebuild -w @crocdesk/desktop && npm run package -w @crocdesk/desktop",
+    "package:desktop:all": "npm run build && npm run rebuild -w @crocdesk/desktop && npm run package:win -w @crocdesk/desktop && npm run package:mac -w @crocdesk/desktop && npm run package:linux -w @crocdesk/desktop"
   },
   "devDependencies": {
     "@playwright/test": "^1.48.2",
@@ -26,13 +29,12 @@
     "@typescript-eslint/eslint-plugin": "^8.50.1",
     "@typescript-eslint/parser": "^8.50.1",
     "concurrently": "^8.2.2",
-    "cross-env": "^7.0.3",
+    "vitest": "^2.1.9",
     "eslint": "^8.57.0",
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
     "jsdom": "^24.0.0",
-    "typescript": "^5.4.5",
-    "vitest": "^1.6.0"
+    "typescript": "^5.4.5"
   }
 }

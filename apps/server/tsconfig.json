@@ -5,7 +5,9 @@
     "outDir": "dist",
     "module": "CommonJS",
     "lib": ["ES2020", "DOM"],
-    "types": ["node"]
+    "types": ["node"],
+    "declaration": true,
+    "declarationMap": true
   },
   "include": [
     "src"
