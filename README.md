@@ -131,15 +131,64 @@ See [`docker/README.md`](docker/README.md) for more details and configuration op
 
 Desktop bundles are produced from `apps/desktop` and ship with the server and web assets included. CI builds on the `main` branch automatically publish release archives to GitHub with the latest changelog and README so you can download ready-to-run packages.
 
+### Standalone Bundle (Recommended)
+
+A single standalone binary is available that includes both the server and web UI. This is the easiest way to run Jacare—no Node.js installation required!
+
+**Download from releases:**
+- Windows: `jacare-win.exe`
+- macOS: `jacare-macos`
+- Linux: `jacare-linux`
+
+Simply download the binary for your platform, make it executable (Linux/macOS), and run it. The server will start automatically and the web UI will be available at `http://localhost:3333`.
+
+**Building from source:**
+```bash
+npm run package:bundle
+```
+
+The binaries will be created in `release/bundle/`.
+
 ### Server Binaries
 
 Standalone server binaries are available for Windows, macOS, and Linux. These can be run headless and accessed via the web UI in a browser.
 
 ## Running in production 🏭
-- Use `npm run build` to compile all workspaces, then start the server with the compiled artifacts.
-- For Docker deployments, use the pre-built images from GitHub Container Registry or build from source.
-- Desktop bundles are produced from `apps/desktop` and ship with the server and web assets included.
-- CI builds on the `main` branch automatically publish release archives to GitHub with the latest changelog and README so you can download ready-to-run packages.
+
+### Standalone Bundle (Easiest)
+
+Download the standalone binary from the [releases page](https://github.com/luandev/jacare/releases) and run it directly. No Node.js or installation required!
+
+```bash
+# Windows
+jacare-win.exe
+
+# macOS/Linux
+chmod +x jacare-macos  # or jacare-linux
+./jacare-macos
+```
+
+The server starts automatically and the web UI is available at `http://localhost:3333`.
+
+### Docker
+
+For Docker deployments, use the pre-built images from GitHub Container Registry or build from source. See the [Docker section](#docker) above.
+
+### Desktop App
+
+Desktop bundles are produced from `apps/desktop` and ship with the server and web assets included. Download from the [releases page](https://github.com/luandev/jacare/releases).
+
+### From Source
+
+Use `npm run build` to compile all workspaces, then start the server with the compiled artifacts.
+
+### CI/CD
+
+CI builds on the `main` branch automatically publish release archives to GitHub with:
+- Standalone bundle binaries (Windows, macOS, Linux)
+- Desktop app packages
+- Server-only binaries
+- Latest changelog and README
 
 ## License 📜
 
