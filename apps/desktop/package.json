@@ -85,7 +85,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "rebuild": "electron-rebuild -f -w better-sqlite3",
-    "postinstall": "electron-builder install-app-deps",
+    "postinstall": "node -e \"if(!process.env.CI){require('child_process').execSync('electron-builder install-app-deps',{stdio:'inherit'})}\"",
     "dev": "npm run build && cross-env CROCDESK_DEV_URL=http://localhost:5173 electron .",
     "dev:embedded": "npm run rebuild && npm run build && electron .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
