@@ -3,13 +3,26 @@
   "version": "0.1.0",
   "private": true,
   "main": "dist/index.js",
+  "pkg": {
+    "assets": [
+      "../../web/dist/**/*"
+    ],
+    "scripts": [
+      "dist/**/*.js"
+    ],
+    "targets": [
+      "node18-win-x64",
+      "node18-macos-x64",
+      "node18-linux-x64"
+    ]
+  },
   "scripts": {
     "dev": "cross-env NODE_ENV=development tsx watch src/index.ts",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "pretest": "npm run build -w @crocdesk/shared",
     "test": "vitest run",
-    "package": "pkg dist/index.js --targets node20-win-x64,node20-macos-x64,node20-linux-x64 --output-path ../../release/server/jacare-server"
+    "package": "npm run build -w @crocdesk/shared && npm run build -w @crocdesk/web && npm run build && node scripts/pkg-platform.js"
   },
   "dependencies": {
     "@crocdesk/shared": "*",
