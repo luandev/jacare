@@ -25,7 +25,6 @@ function useIsMobile(): boolean {
       setIsMobile(e.matches);
     };
 
-    setIsMobile(mediaQuery.matches);
     mediaQuery.addEventListener("change", handleChange);
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
