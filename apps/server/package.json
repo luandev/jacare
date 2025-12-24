@@ -22,7 +22,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "pretest": "npm run build -w @crocdesk/shared",
     "test": "vitest run",
-    "package": "npm run build -w @crocdesk/shared && npm run build -w @crocdesk/web && npm run build && pkg dist/index.js --targets node18-win-x64,node18-macos-x64,node18-linux-x64 --output-path ../../release/bundle/jacare"
+    "package": "npm run build -w @crocdesk/shared && npm run build -w @crocdesk/web && npm run build && node scripts/pkg-platform.js"
   },
   "dependencies": {
     "@crocdesk/shared": "*",
