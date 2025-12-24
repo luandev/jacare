@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { spacing, radius, transitions } from "../../lib/design-tokens";
 
 export type ButtonVariant = "primary" | "secondary" | "tertiary";
@@ -10,6 +10,28 @@ export type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   children: React.ReactNode;
 };
 
+// Hook to detect mobile screen size
+function useIsMobile(): boolean {
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.innerWidth <= 600;
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    
+    const mediaQuery = window.matchMedia("(max-width: 600px)");
+    const handleChange = (e: MediaQueryListEvent) => {
+      setIsMobile(e.matches);
+    };
+
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
+
+  return isMobile;
+}
+
 export function Button({
   variant = "primary",
   size = "md",
@@ -18,6 +40,8 @@ export function Button({
   children,
   ...props
 }: ButtonProps) {
+  const isMobile = useIsMobile();
+  
   const baseStyle: React.CSSProperties = {
     fontFamily: "inherit",
     borderRadius: radius.md,
@@ -32,19 +56,25 @@ export function Button({
     ...style
   };
 
-  // Size styles
+  // Size styles - compact on mobile
   const sizeStyles: Record<ButtonSize, React.CSSProperties> = {
     sm: {
-      padding: `${spacing.sm} ${spacing.md}`,
-      fontSize: "12px"
+      padding: isMobile ? `${spacing.xs} ${spacing.sm}` : `${spacing.sm} ${spacing.md}`,
+      fontSize: isMobile ? "11px" : "12px",
+      minHeight: isMobile ? "44px" : undefined,
+      minWidth: isMobile ? "44px" : undefined
     },
     md: {
-      padding: `${spacing.md} ${spacing.lg}`,
-      fontSize: "14px"
+      padding: isMobile ? `${spacing.sm} ${spacing.md}` : `${spacing.md} ${spacing.lg}`,
+      fontSize: isMobile ? "12px" : "14px",
+      minHeight: isMobile ? "44px" : undefined,
+      minWidth: isMobile ? "44px" : undefined
     },
     lg: {
-      padding: `${spacing.lg} ${spacing.xl}`,
-      fontSize: "16px"
+      padding: isMobile ? `${spacing.md} ${spacing.lg}` : `${spacing.lg} ${spacing.xl}`,
+      fontSize: isMobile ? "13px" : "16px",
+      minHeight: isMobile ? "44px" : undefined,
+      minWidth: isMobile ? "44px" : undefined
     }
   };
 
