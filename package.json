@@ -17,6 +17,8 @@
     "lint": "eslint . --ext .ts,.tsx",
     "test:unit": "vitest --run",
     "test": "npm run test:unit",
+    "ci:install": "npm ci --ignore-scripts --workspace @crocdesk/shared --workspace @crocdesk/server --workspace @crocdesk/web",
+    "ci:test": "npm run test -w @crocdesk/server",
     "package:desktop": "npm run build && npm run rebuild -w @crocdesk/desktop && npm run package -w @crocdesk/desktop",
     "package:desktop:all": "npm run build && npm run rebuild -w @crocdesk/desktop && npm run package:win -w @crocdesk/desktop && npm run package:mac -w @crocdesk/desktop && npm run package:linux -w @crocdesk/desktop"
   },
