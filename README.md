@@ -5,6 +5,8 @@
 
 **Jacare** (Portuguese for "caiman") is an open-source, web-based desktop ROM library manager that brings your retro game collection to life with an ultra-responsive UI, customizable themes, and intelligent download management—all in a portable, lightweight package that never loses your progress, even after closing and reopening the app.
 
+![Demo](docs/demo.gif)
+
 **What makes Jacare special:**
 - 🎮 **All-in-one solution** – Browse, search, download ROMs without switching between tools
 - ⏸️ **Persistent download management** – Pause and resume downloads seamlessly, even after closing and reopening the application
@@ -14,28 +16,28 @@
 - 🏠 **Your data, your control** – Everything stays on your machine; metadata is fetched from [Crocdb](https://crocdb.net) but cached locally for offline access
 - 🔄 **Smart synchronization** – Automatic scanning, metadata enrichment, and library management keep your collection organized
 
-![Demo](docs/demo.gif)
-
-> Want details? Pick your path:
+> Want details?
 > - 📚 **Developer guide:** Head to [`docs/README.md`](docs/README.md) for the full technical rundown.
 > - 😀 **Friendly guide:** Open [`docs/user/README.md`](docs/user/README.md) for a non-technical walkthrough.
 
-## Why Jacare? 🪗🌴
+## Why Jacare? 🐊
 - **One app for everything:** Browse, enrich, and launch ROMs without juggling separate tools.
 - **Local-first with cloud search:** Metadata is pulled from [Crocdb](https://api.crocdb.net) while your collection, cache, and settings remain on disk.
 - **Built for speed:** Background jobs, SSE updates, and caching cut down on repetitive scraping.
 - **Works online or offline:** Cached search and entry data keep your library usable even when you lose connectivity.
 - **Amazonian attitude:** The Jacare name nods to caimans—lean, mean, and ready to snap up your metadata.
 
-## Project layout 🗂️
-- `apps/server` – Express API, job orchestration, local scanning, and Crocdb client.
-- `apps/web` – React UI (Vite) served by the server or opened directly in dev.
-- `apps/desktop` – Electron main process wrapping the server and web UI for a native experience.
-- `packages/shared` – Shared types, defaults, and the manifest schema used across workspaces.
-
-See [`docker/README.md`](docker/README.md) for a Docker Compose template with platform-specific mount examples.
 
 ## Getting started 🚀
+
+### Option: Run with Docker 
+
+If you’re familiar with Docker, check **[`docker/README.md`](docker/README.md)** for a Docker Compose template, including platform-specific volume/mount examples.
+
+### Option: Run locally (Node.js)
+
+If you’d rather run it locally, make sure you have **[Node.js](https://nodejs.org/en)** (includes npm) installed, then:
+ 
 1. **Install dependencies** 📦
    ```bash
    npm ci
@@ -61,6 +63,12 @@ See [`docker/README.md`](docker/README.md) for a Docker Compose template with pl
 
 > Tip: The desktop app expects the web dev server at `http://localhost:5173` by default. Override with `CROCDESK_DEV_URL` if you change the Vite port.
 
+## Project layout 🗂️
+- `apps/server` – Express API, job orchestration, local scanning, and Crocdb client.
+- `apps/web` – React UI (Vite) served by the server or opened directly in dev.
+- `apps/desktop` – Electron main process wrapping the server and web UI for a native experience.
+- `packages/shared` – Shared types, defaults, and the manifest schema used across workspaces.
+
 ## Configuration & data ⚙️
 - **Default port:** `CROCDESK_PORT=3333`.
 - **Data directory:** `CROCDESK_DATA_DIR=./data` holds SQLite databases, cache tables, and manifest files. Customize it to point Jacare at a shared drive or fast SSD.
@@ -75,38 +83,6 @@ Settings are stored in SQLite and include:
 - `libraryDir` – Root directory where extracted game files are stored. All scanning and library operations work from this root.
 
 Data is stored in SQLite tables for settings, Crocdb caches, library items, jobs, and job steps. Each scanned folder receives a `.crocdesk.json` manifest describing the game entry.
-
-## Using Jacare 🎮
-1. Launch the server (or the desktop app, which starts it for you).
-2. Configure your `libraryDir` in Settings to point to your ROM collection.
-3. Trigger a **Scan** job to discover new files. Progress streams through **Server-Sent Events (SSE)** from `GET /events`.
-4. Use **Search** (POST `/crocdb/search`) to find metadata via Crocdb, then **Entry** (POST `/crocdb/entry`) to enrich your local manifest.
-5. Launch games directly from the UI or open the manifest to integrate with other launchers.
-
-## API quick reference 📡
-- **Base URL:** `http://localhost:<CROCDESK_PORT>` (3333 by default) when running locally, or the packaged server inside Electron.
-- **Endpoints:**
-  - `POST /crocdb/search` – Query Crocdb for matches.
-  - `POST /crocdb/entry` – Pull metadata and assets for a specific result.
-  - `GET /crocdb/platforms` / `GET /crocdb/regions` / `GET /crocdb/info` – Reference data for the UI.
-  - `GET /events` – SSE stream for job progress (scans, downloads, cache refreshes).
-  - `GET /library/items` – List library items (optionally filtered by platform).
-  - `GET /library/games` – List library games (optionally filtered by platform).
-  - `POST /library/scan/local` – Trigger a local scan job.
-  - `DELETE /library/item?dir=<path>` – Delete a library item and its directory.
-  - `GET /jobs` – List all jobs.
-  - `GET /jobs/:id` – Get job details and steps.
-  - `POST /jobs/download` – Enqueue a download and install job.
-  - `POST /jobs/:id/cancel` – Cancel a job.
-  - `POST /jobs/:id/pause` – Pause a job.
-  - `POST /jobs/:id/resume` – Resume a paused job.
-  - `POST /jobs/pause-all` – Pause all jobs.
-  - `POST /jobs/resume-all` – Resume all paused jobs.
-  - `GET /settings` – Get current settings.
-  - `PUT /settings` – Update settings.
-  - `GET /file?path=<path>` – Serve files from the library directory.
-  - `GET /health` – Health check endpoint.
-- **Responses:** Wrapped as `{ info, data }` objects for consistency across the UI and API.
 
 ## Distribution & Deployment 📦
 

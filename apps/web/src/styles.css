@@ -91,7 +91,6 @@ h3 {
   gap: 24px;
   position: sticky;
   top: 0;
-  height: 100vh;
   overflow-y: auto;
   z-index: 10;
   box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
@@ -401,7 +400,13 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
+  [data-theme="dark"] .sidebar {
+    background-color: #151b18;
+  }
+
   .sidebar {
+    background-color: #d0f0dd;
+    max-height: 10vh;
     flex-direction: row;
     align-items: center;
     gap: 16px;
@@ -424,5 +429,65 @@ button:disabled {
     position: static !important;
     max-width: 300px;
     margin: 0 auto;
+  }
+}
+
+@media (max-width: 600px) {
+  /* Hide logo and "Jacare" text on mobile */
+  .logo {
+    display: none !important;
+  }
+
+  /* Make buttons more compact on mobile */
+  button {
+    padding: 8px 10px !important;
+    font-size: 12px !important;
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Ensure Button component buttons are also compact */
+  button[class*="Button"],
+  .controls button {
+    padding: 8px 10px !important;
+    font-size: 12px !important;
+    min-height: 44px;
+  }
+
+  /* Compact navigation links */
+  .nav a {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  /* Reduce sidebar padding and gap for more space */
+  .sidebar {
+    padding: 16px 12px;
+    gap: 12px;
+  }
+
+  /* Reduce main content padding */
+  .main {
+    padding: 16px 12px;
+  }
+
+  /* Compact card padding */
+  .card {
+    padding: 12px;
+  }
+
+  /* Reduce grid gaps */
+  .grid {
+    gap: 12px;
+  }
+
+  /* Compact controls spacing */
+  .controls {
+    gap: 8px;
+  }
+
+  /* Ensure touch-friendly spacing */
+  .nav {
+    gap: 8px;
   }
 }

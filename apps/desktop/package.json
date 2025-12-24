@@ -22,20 +22,32 @@
       {
         "from": "../../server/dist",
         "to": "server",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "win": {
-      "target": ["nsis", "portable"],
+      "target": [
+        "nsis",
+        "portable"
+      ],
       "icon": "build/icon.ico"
     },
     "mac": {
-      "target": ["dmg", "zip"],
+      "target": [
+        "dmg",
+        "zip"
+      ],
       "icon": "build/icon.icns",
       "category": "public.app-category.games"
     },
     "linux": {
-      "target": ["AppImage", "deb", "rpm"],
+      "target": [
+        "AppImage",
+        "deb",
+        "rpm"
+      ],
       "icon": "build/icon.png",
       "category": "Game"
     },
@@ -53,12 +65,10 @@
     "package:mac": "electron-builder --mac",
     "package:linux": "electron-builder --linux"
   },
-  "dependencies": {
-    "electron": "^29.1.0"
-  },
   "devDependencies": {
     "@types/node": "^20.11.19",
     "cross-env": "^7.0.3",
+    "electron": "^35.7.5",
     "electron-builder": "^24.9.1",
     "typescript": "^5.4.5"
   }
