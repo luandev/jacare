@@ -8,29 +8,42 @@
       name="description"
       content="Jacare is an open-source, desktop-first ROM library manager with persistent downloads, Crocdb enrichment, and an ultra-responsive UI."
     />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
       :root {
-        --bg: #f8fafc;
-        --card: rgba(255, 255, 255, 0.9);
-        --text: #0f172a;
-        --muted: #475569;
-        --primary: #22c55e;
-        --primary-strong: #16a34a;
-        --border: rgba(15, 23, 42, 0.08);
-        --shadow: 0 20px 60px rgba(15, 23, 42, 0.12);
+        --bg: #f6f2ea;
+        --bg-alt: #efe7da;
+        --card: #fffaf2;
+        --text: #1b1a16;
+        --muted: #6c665f;
+        --primary: #2d8659;
+        --primary-strong: #1f6b47;
+        --primary-hover: #259965;
+        --border: #e0d6c6;
+        --border-strong: #d4c5b0;
+        --shadow: 0 12px 32px rgba(27, 26, 22, 0.12);
+        --shadow-sm: 0 2px 8px rgba(27, 26, 22, 0.08);
+        --shadow-md: 0 4px 12px rgba(27, 26, 22, 0.12);
         color-scheme: light;
       }
 
       @media (prefers-color-scheme: dark) {
         :root {
-          --bg: #0b1220;
-          --card: rgba(17, 24, 39, 0.9);
-          --text: #e2e8f0;
-          --muted: #94a3b8;
-          --primary: #34d399;
-          --primary-strong: #22c55e;
-          --border: rgba(226, 232, 240, 0.08);
-          --shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+          --bg: #1a1a1a;
+          --bg-alt: #0f0f0f;
+          --card: #252525;
+          --text: #e0e0e0;
+          --muted: #9b9b9b;
+          --primary: #3db875;
+          --primary-strong: #2d8659;
+          --primary-hover: #4dc885;
+          --border: #3a3a3a;
+          --border-strong: #4a4a4a;
+          --shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+          --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+          --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
           color-scheme: dark;
         }
       }
@@ -41,15 +54,36 @@
 
       body {
         margin: 0;
-        font-family: "Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        background: var(--bg);
+        font-family: "IBM Plex Sans", "Space Grotesk", system-ui, sans-serif;
+        background: 
+          radial-gradient(circle at top, var(--card) 0%, var(--bg) 55%, var(--bg-alt) 100%),
+          repeating-linear-gradient(
+            45deg,
+            transparent,
+            transparent 10px,
+            rgba(45, 134, 89, 0.02) 10px,
+            rgba(45, 134, 89, 0.02) 20px
+          );
+        background-attachment: fixed;
         color: var(--text);
         line-height: 1.6;
         min-height: 100vh;
         display: flex;
         flex-direction: column;
-        background-image: radial-gradient(circle at 20% 20%, rgba(52, 211, 153, 0.08), transparent 30%),
-          radial-gradient(circle at 80% 0%, rgba(34, 197, 94, 0.08), transparent 26%);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        body {
+          background: 
+            radial-gradient(circle at top, var(--card) 0%, var(--bg) 55%, var(--bg-alt) 100%),
+            repeating-linear-gradient(
+              45deg,
+              transparent,
+              transparent 10px,
+              rgba(61, 184, 117, 0.03) 10px,
+              rgba(61, 184, 117, 0.03) 20px
+            );
+        }
       }
 
       a {
@@ -89,19 +123,24 @@
 
       .cta {
         padding: 10px 16px;
-        border-radius: 12px;
-        background: var(--text);
-        color: var(--bg);
-        font-weight: 700;
-        border: 1px solid var(--border);
-        box-shadow: var(--shadow);
-        transition: transform 120ms ease, box-shadow 120ms ease, opacity 120ms ease;
+        border-radius: 10px;
+        background: var(--primary);
+        color: #ffffff;
+        font-weight: 600;
+        border: 1px solid var(--primary-strong);
+        box-shadow: var(--shadow-sm);
+        transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
       }
 
       .cta:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
-        opacity: 0.95;
+        background: var(--primary-hover);
+        transform: translateY(1px);
+        box-shadow: var(--shadow-md);
+      }
+
+      .cta:active {
+        transform: translateY(1px);
+        box-shadow: none;
       }
 
       .hero {
@@ -168,6 +207,12 @@
 
       section {
         padding: 24px 5vw 8px;
+      }
+
+      h1,
+      h2,
+      h3 {
+        font-family: "Space Grotesk", sans-serif;
       }
 
       h2 {
@@ -288,7 +333,10 @@
           </div>
         </div>
         <div class="media-card">
-          <img src="demo.gif" alt="Jacare demo" />
+          <video autoplay loop muted playsinline style="width: 100%; display: block; border-radius: 12px; border: 1px solid var(--border);">
+            <source src="demo.mp4" type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
         </div>
       </section>
 
@@ -428,16 +476,24 @@
         ],
         distribution: [
           {
+            title: "Standalone Bundle",
+            body: "Single executable for Windows, macOS, and Linux. No Node.js required!",
+            link: "https://github.com/luandev/jacare/releases/latest"
+          },
+          {
             title: "Desktop bundles",
-            body: "Packaged from apps/desktop with server + web assets included."
+            body: "Packaged from apps/desktop with server + web assets included.",
+            link: "https://github.com/luandev/jacare/releases/latest"
           },
           {
             title: "Docker image",
-            body: "ghcr.io/luandev/jacare with docker/docker-compose.yml examples."
+            body: "ghcr.io/luandev/jacare with docker/docker-compose.yml examples.",
+            link: "https://github.com/luandev/jacare/blob/main/docker/README.md"
           },
           {
             title: "Server binaries",
-            body: "Standalone builds for Windows, macOS, and Linux with the web UI."
+            body: "Standalone builds for Windows, macOS, and Linux with the web UI.",
+            link: "https://github.com/luandev/jacare/releases/latest"
           },
         ],
       };
@@ -524,6 +580,16 @@
         const block = extractSection(md, "Distribution & Deployment");
         if (!block) return fallback.distribution;
         const cards = [];
+        
+        // Standalone Bundle (Recommended)
+        if (block.includes("Standalone Bundle") || block.includes("standalone binary")) {
+          cards.push({
+            title: "Standalone Bundle",
+            body: "Single executable for Windows, macOS, and Linux. No Node.js required!",
+            link: repoUrl + "/releases/latest",
+          });
+        }
+        
         if (block.includes("Docker")) {
           const dockerSnippet = (block.match(/```bash[\s\S]*?docker[\s\S]*?```/) || [""])[0]
             .replace(/```bash|```/g, "")
@@ -538,14 +604,14 @@
           cards.push({
             title: "Desktop bundles",
             body: "Ready-to-run packages published from apps/desktop releases.",
-            link: repoUrl + "/releases",
+            link: repoUrl + "/releases/latest",
           });
         }
         if (block.includes("Server Binaries")) {
           cards.push({
             title: "Server binaries",
             body: "Headless server builds for Windows, macOS, and Linux.",
-            link: repoUrl + "/releases",
+            link: repoUrl + "/releases/latest",
           });
         }
         return cards.length ? cards : fallback.distribution;
@@ -616,8 +682,8 @@
           targets.docsUser.href = "docs/user/README.md";
         }
         targets.navTitle.textContent = "Jacare";
-        targets.navDownload.href = repoUrl + "/releases";
-        targets.downloadPrimary.href = repoUrl + "/releases";
+        targets.navDownload.href = repoUrl + "/releases/latest";
+        targets.downloadPrimary.href = repoUrl + "/releases/latest";
         targets.docsIssues.href = repoUrl + "/issues";
       }
 
