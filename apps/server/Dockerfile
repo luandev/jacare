@@ -27,6 +27,10 @@ RUN npm run build -w @crocdesk/shared && \
 # Production stage
 FROM node:20-alpine
 
+# Create non-root user
+RUN addgroup -g 1001 -S jacare && \
+    adduser -u 1001 -S jacare -G jacare
+
 WORKDIR /app
 
 # Copy package files for workspace resolution
@@ -42,8 +46,13 @@ COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
 COPY --from=builder /app/apps/server/dist ./apps/server/dist
 COPY --from=builder /app/apps/web/dist ./apps/web/dist
 
-# Create data directory
-RUN mkdir -p /data
+# Copy package.json files for runtime (needed for workspace resolution)
+COPY packages/shared/package.json ./packages/shared/
+COPY apps/server/package.json ./apps/server/
+
+# Create data directory and set ownership
+RUN mkdir -p /data && \
+    chown -R jacare:jacare /app /data
 
 # Expose port
 EXPOSE 3333
@@ -56,6 +65,9 @@ ENV CROCDESK_DATA_DIR=/data
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3333/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+
+# Switch to non-root user
+USER jacare
 
 # Start server
 WORKDIR /app/apps/server
