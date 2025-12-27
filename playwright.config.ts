@@ -40,9 +40,11 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'npm run dev',
+    command: 'npm run build -w @crocdesk/web && npm run dev:server',
     url: 'http://localhost:3333',
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
+    stdout: 'pipe',
+    stderr: 'pipe',
   },
 });
