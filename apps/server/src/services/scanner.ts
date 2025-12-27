@@ -8,6 +8,8 @@ import { getEntry, searchEntries } from "./crocdb";
 import { ensureDir, moveFile } from "../utils/fs";
 import { logger } from "../utils/logger";
 
+const UNKNOWN_PLATFORM = "Unknown";
+
 const SCAN_EXTENSIONS = new Set([
   ".zip",
   ".7z",
@@ -303,7 +305,8 @@ export async function reorganizeItems(
           const sourceDir = path.dirname(item.filePath);
           try {
             const remaining = await fs.readdir(sourceDir);
-            if (remaining.length === 0 || remaining.every(f => f.startsWith('.'))) {
+            // Only remove if truly empty or only contains hidden files
+            if (remaining.length === 0 || (remaining.length > 0 && remaining.every(f => f.startsWith('.')))) {
               await fs.rmdir(sourceDir).catch(() => {});
               logger.debug("Removed empty directory", { dir: sourceDir });
             }
@@ -349,7 +352,7 @@ async function detectPlatform(filePath: string): Promise<string> {
     '.pce': 'NEC - PC Engine - TurboGrafx 16'
   };
   
-  return platformMap[ext] || 'Unknown';
+  return platformMap[ext] || UNKNOWN_PLATFORM;
 }
 
 function formatGameName(title: string, region?: string): string {

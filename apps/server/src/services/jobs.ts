@@ -284,7 +284,7 @@ async function runScanJob(job: JobRecord): Promise<void> {
   logger.info("Starting scan job", { jobId: job.id });
   await runJob(job, async (report) => {
     const settings = getSettings() ?? DEFAULT_SETTINGS;
-    const libraryDir = path.resolve(settings.libraryDir || "./library");
+    const libraryDir = path.resolve(settings.libraryDir);
     
     // Phase 1: Scan for unorganized items
     report.step("scan_analysis", 0.05, `Analyzing library structure at ${libraryDir}`);
