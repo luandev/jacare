@@ -58,7 +58,14 @@ function createWindow(): void {
 }
 
 app.whenReady().then(async () => {
-  await startServer();
+  try {
+    await startServer();
+  } catch (error) {
+    console.error("Failed to start server, exiting application:", error);
+    // Exit the app if server fails to start
+    app.quit();
+    return;
+  }
   
   // Wait a bit for server to start before creating window
   setTimeout(() => {
@@ -85,5 +92,7 @@ app.on("window-all-closed", () => {
 });
 
 app.on("before-quit", () => {
-  // Server cleanup is handled by Node.js process exit
+  // Server cleanup is handled automatically by Node.js process exit
+  // The Express server's close() method and database connections are cleaned up
+  // when the process exits
 });
