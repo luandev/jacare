@@ -5,6 +5,8 @@ import type { ReadableStream as NodeReadableStream } from "stream/web";
 import type { LibraryItem, Manifest } from "@crocdesk/shared";
 import { writeManifest } from "./manifest";
 import { getEntry, searchEntries } from "./crocdb";
+import { ensureDir, moveFile } from "../utils/fs";
+import { logger } from "../utils/logger";
 
 const SCAN_EXTENSIONS = new Set([
   ".zip",
@@ -37,6 +39,22 @@ const SCAN_EXTENSIONS = new Set([
 
 export type ScanRoot = { id: string; path: string };
 
+export type UnorganizedItem = {
+  filePath: string;
+  size: number;
+  mtime: number;
+  platform?: string;
+  folderName: string;
+  hasManifest: boolean;
+};
+
+export type ReorganizeResult = {
+  totalFiles: number;
+  reorganizedFiles: number;
+  skippedFiles: number;
+  errors: string[];
+};
+
 export async function scanLocal(roots: ScanRoot[]): Promise<LibraryItem[]> {
   const items: LibraryItem[] = [];
   const manifestCache = new Map<string, Manifest | null>();
@@ -46,13 +64,308 @@ export async function scanLocal(roots: ScanRoot[]): Promise<LibraryItem[]> {
     try {
       await walk(rootPath, undefined, items, manifestCache);
     } catch (error) {
-      // Import logger at top if not already imported
-      const { logger } = await import("../utils/logger");
       logger.warn(`Scan skipped for ${rootPath}`, { error: error instanceof Error ? error.message : String(error) });
     }
   }
 
   return items;
+}
+
+/**
+ * Scan for unorganized ROMs that need to be reorganized into the expected structure.
+ * Expected structure: libraryRoot/platform/gameName/files
+ * Unorganized: files directly in platform folders or loose in library root
+ */
+export async function scanForUnorganizedItems(
+  libraryRoot: string,
+  reportProgress?: (progress: number, message: string) => void
+): Promise<UnorganizedItem[]> {
+  const unorganized: UnorganizedItem[] = [];
+  const report = reportProgress || (() => {});
+  
+  report(0.1, "Scanning library for unorganized items...");
+  logger.info("Starting scan for unorganized items", { libraryRoot });
+  
+  try {
+    const entries = await fs.readdir(libraryRoot, { withFileTypes: true });
+    let processed = 0;
+    const total = entries.length;
+    
+    for (const entry of entries) {
+      if (entry.name.startsWith(".")) {
+        continue;
+      }
+      
+      const fullPath = path.join(libraryRoot, entry.name);
+      
+      if (entry.isDirectory()) {
+        // Check if this is a platform folder or a game folder
+        await scanPlatformFolder(fullPath, entry.name, unorganized);
+      } else if (entry.isFile() && shouldIncludeFile(entry.name)) {
+        // Loose ROM file in library root - needs organization
+        const stat = await fs.stat(fullPath);
+        unorganized.push({
+          filePath: fullPath,
+          size: stat.size,
+          mtime: stat.mtimeMs,
+          folderName: path.basename(fullPath, path.extname(fullPath)),
+          hasManifest: false
+        });
+      }
+      
+      processed++;
+      report(0.1 + (0.4 * processed / total), `Scanning... (${processed}/${total})`);
+    }
+    
+    report(0.5, `Found ${unorganized.length} unorganized items`);
+    logger.info("Scan for unorganized items completed", { count: unorganized.length });
+  } catch (error) {
+    logger.error("Error scanning for unorganized items", error);
+    throw error;
+  }
+  
+  return unorganized;
+}
+
+async function scanPlatformFolder(
+  platformPath: string,
+  platformName: string,
+  unorganized: UnorganizedItem[]
+): Promise<void> {
+  try {
+    const entries = await fs.readdir(platformPath, { withFileTypes: true });
+    
+    for (const entry of entries) {
+      if (entry.name.startsWith(".")) {
+        continue;
+      }
+      
+      const fullPath = path.join(platformPath, entry.name);
+      
+      if (entry.isDirectory()) {
+        // This is a game folder - check if it's properly organized
+        const manifestPath = path.join(fullPath, ".crocdesk.json");
+        const hasManifest = await fs.access(manifestPath).then(() => true).catch(() => false);
+        
+        if (!hasManifest) {
+          // Check if there are ROM files in this folder
+          const gameEntries = await fs.readdir(fullPath, { withFileTypes: true });
+          const romFiles = gameEntries.filter(e => e.isFile() && shouldIncludeFile(e.name));
+          
+          if (romFiles.length > 0) {
+            // Game folder without manifest - needs reorganization
+            for (const romFile of romFiles) {
+              const romPath = path.join(fullPath, romFile.name);
+              const stat = await fs.stat(romPath);
+              unorganized.push({
+                filePath: romPath,
+                size: stat.size,
+                mtime: stat.mtimeMs,
+                platform: platformName,
+                folderName: entry.name,
+                hasManifest: false
+              });
+            }
+          }
+        }
+      } else if (entry.isFile() && shouldIncludeFile(entry.name)) {
+        // ROM file directly in platform folder - needs organization
+        const stat = await fs.stat(fullPath);
+        unorganized.push({
+          filePath: fullPath,
+          size: stat.size,
+          mtime: stat.mtimeMs,
+          platform: platformName,
+          folderName: path.basename(fullPath, path.extname(fullPath)),
+          hasManifest: false
+        });
+      }
+    }
+  } catch (error) {
+    logger.warn(`Error scanning platform folder ${platformPath}`, { error });
+  }
+}
+
+/**
+ * Reorganize unorganized items into the expected structure
+ */
+export async function reorganizeItems(
+  items: UnorganizedItem[],
+  libraryRoot: string,
+  reportProgress?: (progress: number, message: string) => void
+): Promise<ReorganizeResult> {
+  const report = reportProgress || (() => {});
+  const result: ReorganizeResult = {
+    totalFiles: items.length,
+    reorganizedFiles: 0,
+    skippedFiles: 0,
+    errors: []
+  };
+  
+  if (items.length === 0) {
+    report(1, "No items to reorganize");
+    return result;
+  }
+  
+  logger.info("Starting reorganization", { itemCount: items.length });
+  
+  // Group items by folder name to handle multi-file games
+  const groupedItems = new Map<string, UnorganizedItem[]>();
+  for (const item of items) {
+    const key = `${item.platform || 'unknown'}/${item.folderName}`;
+    if (!groupedItems.has(key)) {
+      groupedItems.set(key, []);
+    }
+    groupedItems.get(key)!.push(item);
+  }
+  
+  const groups = Array.from(groupedItems.entries());
+  let processed = 0;
+  
+  for (const [key, groupItems] of groups) {
+    try {
+      const firstItem = groupItems[0];
+      const platform = firstItem.platform || await detectPlatform(firstItem.filePath);
+      const folderName = firstItem.folderName;
+      
+      report(0.5 + (0.45 * processed / groups.length), `Reorganizing ${folderName}...`);
+      
+      // Try to match with Crocdb
+      const match = await findCrocdbMatch(folderName, platform);
+      const gameName = match ? formatGameName(match.title, match.regions[0]) : sanitizeFolderName(folderName);
+      
+      // Create target directory
+      const targetDir = path.join(libraryRoot, platform, gameName);
+      await ensureDir(targetDir);
+      
+      // Move all files in the group
+      const movedFiles: string[] = [];
+      for (const item of groupItems) {
+        const fileName = path.basename(item.filePath);
+        const targetPath = path.join(targetDir, fileName);
+        
+        // Skip if file already exists at target
+        if (item.filePath === targetPath) {
+          result.skippedFiles++;
+          continue;
+        }
+        
+        try {
+          await moveFile(item.filePath, targetPath);
+          movedFiles.push(targetPath);
+          result.reorganizedFiles++;
+          logger.debug("File reorganized", { from: item.filePath, to: targetPath });
+        } catch (error) {
+          const errorMsg = `Failed to move ${item.filePath}: ${error instanceof Error ? error.message : String(error)}`;
+          logger.warn(errorMsg);
+          result.errors.push(errorMsg);
+        }
+      }
+      
+      // Create manifest if we successfully moved files
+      if (movedFiles.length > 0) {
+        const artifacts = await Promise.all(
+          movedFiles.map(async (p) => {
+            const s = await fs.stat(p);
+            return { path: path.basename(p), size: s.size };
+          })
+        );
+        
+        const manifest: Manifest = {
+          schema: 1,
+          crocdb: {
+            slug: match?.slug ?? slugify(folderName),
+            title: match?.title ?? folderName,
+            platform: match?.platform ?? platform,
+            regions: match?.regions ?? []
+          },
+          artifacts,
+          createdAt: new Date().toISOString()
+        };
+        
+        await writeManifest(targetDir, manifest);
+        
+        // Try to fetch cover art
+        if (match?.slug) {
+          await ensureCoverExists(targetDir, manifest).catch(() => {});
+        }
+        
+        logger.info("Game reorganized successfully", { 
+          gameName, 
+          platform, 
+          fileCount: movedFiles.length 
+        });
+      }
+      
+      // Clean up empty source directories
+      if (movedFiles.length > 0) {
+        for (const item of groupItems) {
+          const sourceDir = path.dirname(item.filePath);
+          try {
+            const remaining = await fs.readdir(sourceDir);
+            if (remaining.length === 0 || remaining.every(f => f.startsWith('.'))) {
+              await fs.rmdir(sourceDir).catch(() => {});
+              logger.debug("Removed empty directory", { dir: sourceDir });
+            }
+          } catch {
+            // Ignore cleanup errors
+          }
+        }
+      }
+      
+    } catch (error) {
+      const errorMsg = `Failed to reorganize group ${key}: ${error instanceof Error ? error.message : String(error)}`;
+      logger.error(errorMsg, error);
+      result.errors.push(errorMsg);
+      result.skippedFiles += groupItems.length;
+    }
+    
+    processed++;
+  }
+  
+  report(1, `Reorganization complete: ${result.reorganizedFiles} files reorganized, ${result.skippedFiles} skipped`);
+  logger.info("Reorganization completed", { result });
+  
+  return result;
+}
+
+async function detectPlatform(filePath: string): Promise<string> {
+  const ext = path.extname(filePath).toLowerCase();
+  const platformMap: Record<string, string> = {
+    '.gb': 'Nintendo - Game Boy',
+    '.gbc': 'Nintendo - Game Boy Color',
+    '.gba': 'Nintendo - Game Boy Advance',
+    '.nes': 'Nintendo - Nintendo Entertainment System',
+    '.sfc': 'Nintendo - Super Nintendo Entertainment System',
+    '.smc': 'Nintendo - Super Nintendo Entertainment System',
+    '.n64': 'Nintendo - Nintendo 64',
+    '.z64': 'Nintendo - Nintendo 64',
+    '.v64': 'Nintendo - Nintendo 64',
+    '.nds': 'Nintendo - Nintendo DS',
+    '.md': 'Sega - Mega Drive - Genesis',
+    '.gen': 'Sega - Mega Drive - Genesis',
+    '.sms': 'Sega - Master System - Mark III',
+    '.gg': 'Sega - Game Gear',
+    '.pce': 'NEC - PC Engine - TurboGrafx 16'
+  };
+  
+  return platformMap[ext] || 'Unknown';
+}
+
+function formatGameName(title: string, region?: string): string {
+  const sanitized = sanitize(title);
+  if (region) {
+    return `${sanitized} (${sanitize(region)})`;
+  }
+  return sanitized;
+}
+
+function sanitizeFolderName(name: string): string {
+  return name.replace(/[<>:"/\\|?*]/g, "").trim();
+}
+
+function sanitize(value: string): string {
+  return value.replace(/[<>:"/\\|?*]/g, "").trim();
 }
 
 async function walk(

@@ -1,11 +1,11 @@
 import { useEffect, useState, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { apiGet, apiPost } from "../lib/api";
-import type { LibraryItem, Manifest } from "@crocdesk/shared";
+import type { LibraryItem, Manifest, JobEvent } from "@crocdesk/shared";
 import GameCard from "../components/GameCard";
 import PaginationBar from "../components/PaginationBar";
 import { DownloadingGhostCard } from "../components/DownloadingGhostCard";
-import { useDownloadProgressStore } from "../store";
+import { useDownloadProgressStore, useSSEStore } from "../store";
 import { useSSE } from "../store/hooks/useSSE";
 
 export default function LibraryPage() {
@@ -15,12 +15,47 @@ export default function LibraryPage() {
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string>("");
   const [gridColumns, setGridColumns] = useState(3);
+  const [scanJobId, setScanJobId] = useState<string | null>(null);
+  const [scanProgress, setScanProgress] = useState<number>(0);
+  const [scanMessage, setScanMessage] = useState<string>("");
+  const [isScanning, setIsScanning] = useState(false);
   
   // Ensure SSE connection is active
   useSSE();
   
   // Get downloading slugs from store
   const downloadingSlugs = useDownloadProgressStore((state) => state.downloadingSlugs);
+  const lastEvent = useSSEStore((state) => state.lastEvent);
+  
+  // Listen for scan job events
+  useEffect(() => {
+    if (!lastEvent || !scanJobId) return;
+    
+    const event = lastEvent as JobEvent;
+    if (event.jobId !== scanJobId) return;
+    
+    if (event.type === "STEP_PROGRESS") {
+      setScanProgress(event.progress ?? 0);
+      setScanMessage(event.message ?? "");
+    } else if (event.type === "JOB_DONE") {
+      setIsScanning(false);
+      setScanProgress(1);
+      setScanMessage("Scan complete!");
+      setStatus("Scan completed successfully");
+      setScanJobId(null);
+      
+      // Reload library items
+      setTimeout(() => {
+        reloadLibrary();
+      }, 1000);
+    } else if (event.type === "JOB_FAILED") {
+      setIsScanning(false);
+      setScanProgress(0);
+      setScanMessage("");
+      setStatus(`Scan failed: ${event.message || "Unknown error"}`);
+      setScanJobId(null);
+    }
+  }, [lastEvent, scanJobId]);
   
   // Filter out downloading slugs that are already in the library
   const downloadingSlugsArray = useMemo(() => {
@@ -34,6 +69,10 @@ export default function LibraryPage() {
   }, [downloadingSlugs, items, manifests]);
 
   useEffect(() => {
+    reloadLibrary();
+  }, []);
+  
+  async function reloadLibrary() {
     let cancelled = false;
     const load = async () => {
       try {
@@ -66,14 +105,18 @@ export default function LibraryPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }
 
   async function handleScan() {
-    setStatus("Scanning...");
+    setStatus("");
+    setIsScanning(true);
+    setScanProgress(0);
+    setScanMessage("Initializing scan...");
     try {
-      await apiPost("/library/scan/local", {});
-      setStatus("Scan job queued");
+      const response = await apiPost<{ id: string }>("/library/scan/local", {});
+      setScanJobId(response.id);
     } catch (e) {
+      setIsScanning(false);
       setStatus(e instanceof Error ? e.message : "Scan failed");
     }
   }
@@ -95,10 +138,22 @@ export default function LibraryPage() {
           <div className="row">
             <h3>Library</h3>
             <div className="row" style={{ gap: 8 }}>
-              <button className="secondary" type="button" onClick={handleScan}>Scan Local Library</button>
+              <button className="secondary" type="button" onClick={handleScan} disabled={isScanning}>
+                {isScanning ? "Scanning..." : "Scan Local Library"}
+              </button>
               {status && <span className="status">{status}</span>}
             </div>
           </div>
+          {isScanning && (
+            <div style={{ marginTop: 16 }}>
+              <div className="progress" style={{ marginBottom: 8 }}>
+                <span style={{ width: `${scanProgress * 100}%` }} />
+              </div>
+              <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
+                {scanMessage || "Processing..."}
+              </div>
+            </div>
+          )}
         </section>
         <div className="card">No items found in library.</div>
       </div>
@@ -114,10 +169,22 @@ export default function LibraryPage() {
       <section className="card">
         <div className="row">
           <div className="row" style={{ gap: 8 }}>
-              <button className="secondary" type="button" onClick={handleScan}>Scan Local Library</button>
+            <button className="secondary" type="button" onClick={handleScan} disabled={isScanning}>
+              {isScanning ? "Scanning..." : "Scan Local Library"}
+            </button>
             {status && <span className="status">{status}</span>}
           </div>
         </div>
+        {isScanning && (
+          <div style={{ marginTop: 16 }}>
+            <div className="progress" style={{ marginBottom: 8 }}>
+              <span style={{ width: `${scanProgress * 100}%` }} />
+            </div>
+            <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
+              {scanMessage || "Processing..."}
+            </div>
+          </div>
+        )}
       </section>
       <div className={`grid cols-${gridColumns}`} style={{ gridTemplateColumns: `repeat(auto-fit, minmax(${Math.max(140, 320 - (gridColumns - 3) * 40)}px, 1fr))` }}>
         {/* Ghost cards for downloading items */}
