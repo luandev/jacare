@@ -9,6 +9,10 @@ async function startServer(): Promise<void> {
     return;
   }
 
+  // Set environment variables for in-process server
+  process.env.CROCDESK_PORT = process.env.CROCDESK_PORT || "3333";
+  process.env.NODE_ENV = process.env.NODE_ENV || "production";
+
   // In production, import and run the server in-process
   try {
     // Import the server module
@@ -19,7 +23,7 @@ async function startServer(): Promise<void> {
     if (serverModule.startServer) {
       await serverModule.startServer();
     } else {
-      console.error("Server module does not export startServer function");
+      throw new Error("Server module does not export startServer function");
     }
   } catch (error) {
     console.error("Failed to start server:", error);
