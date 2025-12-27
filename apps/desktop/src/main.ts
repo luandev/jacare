@@ -13,11 +13,15 @@ async function startServer(): Promise<void> {
   process.env.CROCDESK_PORT = process.env.CROCDESK_PORT || "3333";
   process.env.NODE_ENV = process.env.NODE_ENV || "production";
 
+  // Resolve the server module path based on packaging state
+  const serverPath = app.isPackaged
+    ? path.join(process.resourcesPath, "server", "index.js")
+    : path.resolve(__dirname, "../../server/dist/index.js");
+
   // In production, import and run the server in-process
   try {
-    // Import the server module
-    // @ts-expect-error - Dynamic import of server module built separately
-    const serverModule = await import("../../server/dist/index.js") as { startServer?: () => Promise<void> };
+    // Dynamic import of server module
+    const serverModule = await import(serverPath) as { startServer?: () => Promise<void> };
     
     // Call the exported startServer function
     if (serverModule.startServer) {
