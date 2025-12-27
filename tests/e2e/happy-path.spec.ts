@@ -15,9 +15,12 @@ test.describe('Happy Path E2E', () => {
     
     // Dismiss the welcome view if it appears
     const welcomeSkipButton = page.getByRole('button', { name: /Skip|Get Started/i });
-    if (await welcomeSkipButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+    try {
+      await welcomeSkipButton.waitFor({ state: 'visible', timeout: 2000 });
       await welcomeSkipButton.click();
       await page.waitForTimeout(500);
+    } catch {
+      // Welcome view not shown, continue
     }
     
     // Step 1: Browse view - Perform a search
@@ -36,7 +39,8 @@ test.describe('Happy Path E2E', () => {
       await platformSelect.waitFor({ state: 'visible' });
       await regionSelect.waitFor({ state: 'visible' });
       
-      // Wait a bit for the options to potentially load
+      // Wait for platform/region options to potentially load from API
+      // Note: Using timeout here as the API may fail (external dependency)
       await page.waitForTimeout(1000);
       
       // Try to get the options count
@@ -56,6 +60,7 @@ test.describe('Happy Path E2E', () => {
       await page.click('button[type="submit"]');
       
       // Wait for search to process
+      // Note: Using timeout as search may fail (external API dependency)
       await page.waitForTimeout(2000);
       
       // Verify search was attempted (check for status or results)
@@ -95,7 +100,9 @@ test.describe('Happy Path E2E', () => {
         await expect(lightThemeRadio).toBeChecked();
       }
       
-      // Verify theme changed by checking the document's data-theme attribute
+      // Verify theme changed
+      // Note: Using a short timeout to allow theme to apply
+      // Future: Could check for data-theme attribute or CSS changes
       await page.waitForTimeout(500);
     });
     
