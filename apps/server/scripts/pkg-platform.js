@@ -47,6 +47,40 @@ const command = `pkg dist/index.js --targets ${targets} --output ${path.join(out
 
 try {
   execSync(command, { stdio: 'inherit', cwd: __dirname + '/..' });
+  
+  // pkg sometimes creates files without platform suffix on single-platform builds
+  // Ensure consistent naming by renaming if needed
+  if (!isCI || platform !== 'linux') {
+    // We're building for a single platform
+    const expectedName = platform === 'win32' ? 'jacare-win.exe' :
+                         platform === 'darwin' ? 'jacare-macos' :
+                         'jacare-linux';
+    const expectedPath = path.join(outputDir, expectedName);
+    
+    // Check what pkg actually created
+    const possibleNames = [
+      'jacare',
+      'jacare.exe',
+      'jacare-macos',
+      'jacare-linux',
+      'jacare-win.exe'
+    ];
+    
+    let foundFile = null;
+    for (const name of possibleNames) {
+      const filePath = path.join(outputDir, name);
+      if (fs.existsSync(filePath)) {
+        foundFile = filePath;
+        break;
+      }
+    }
+    
+    if (foundFile && foundFile !== expectedPath) {
+      console.log(`Renaming ${path.basename(foundFile)} to ${expectedName}`);
+      fs.renameSync(foundFile, expectedPath);
+    }
+  }
+  
   console.log('\nBuild completed successfully!');
   console.log(`Artifacts saved to: ${outputDir}`);
 } catch (error) {
