@@ -11,13 +11,17 @@ import libraryRouter from "./routes/library";
 import jobsRouter from "./routes/jobs";
 import { logger } from "./utils/logger";
 import { resumeAllJobs } from "./services/jobs";
+import type { Server } from "http";
+
+// Export logger for use by desktop app
+export { logger };
 
 // Type guard to check if running as pkg bundle
 function isPkgBundle(): boolean {
   return 'pkg' in process && !!(process as any).pkg;
 }
 
-export async function startServer(): Promise<void> {
+export async function startServer(): Promise<Server> {
   logger.info("Starting CrocDesk server");
   await initDb();
   logger.info("Database initialized");
@@ -134,8 +138,11 @@ export async function startServer(): Promise<void> {
   app.use("/library", libraryRouter);
   app.use("/jobs", jobsRouter);
 
-  app.listen(PORT, () => {
-    logger.info(`CrocDesk server listening on port ${PORT}`);
+  return new Promise((resolve) => {
+    const server = app.listen(PORT, () => {
+      logger.info(`CrocDesk server listening on port ${PORT}`);
+      resolve(server);
+    });
   });
 }
 
