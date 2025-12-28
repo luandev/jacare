@@ -22,6 +22,29 @@ describe('SimpleQueue', () => {
     expect(queue.concurrencyLimit).toBe(5);
   });
 
+  it('should reject invalid concurrency values', () => {
+    expect(() => {
+      queue.concurrencyLimit = NaN;
+    }).toThrow('Concurrency limit must be a finite number');
+
+    expect(() => {
+      queue.concurrencyLimit = Infinity;
+    }).toThrow('Concurrency limit must be a finite number');
+
+    expect(() => {
+      queue.concurrencyLimit = -1;
+    }).toThrow('Concurrency limit must be at least 1');
+
+    expect(() => {
+      queue.concurrencyLimit = 0;
+    }).toThrow('Concurrency limit must be at least 1');
+  });
+
+  it('should floor fractional concurrency values', () => {
+    queue.concurrencyLimit = 3.7;
+    expect(queue.concurrencyLimit).toBe(3);
+  });
+
   it('should execute a single task', async () => {
     let executed = false;
     await queue.add(async () => {

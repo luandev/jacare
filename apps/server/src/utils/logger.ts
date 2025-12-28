@@ -40,7 +40,15 @@ function rotateOldLogs(): void {
     const now = Date.now();
     const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
     
+    // Only process files matching the log pattern
+    const logPattern = /^crocdesk-\d{4}-\d{2}-\d{2}\.log$/;
+    
     files.forEach(file => {
+      // Only delete files matching the log pattern
+      if (!logPattern.test(file)) {
+        return;
+      }
+      
       const filePath = path.join(logsDir, file);
       const stats = fs.statSync(filePath);
       
@@ -78,6 +86,8 @@ function formatLog(entry: LogEntry): string {
 function writeToFile(logLine: string): void {
   try {
     const logFile = getLogFilePath();
+    // Use synchronous write to ensure logs are persisted even during crashes
+    // Async operations may not complete before process termination
     fs.appendFileSync(logFile, logLine + '\n', 'utf8');
   } catch (error) {
     // If file logging fails, at least log to console

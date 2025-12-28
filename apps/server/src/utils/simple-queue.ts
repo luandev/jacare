@@ -35,7 +35,13 @@ export class SimpleQueue {
    * Update concurrency limit
    */
   set concurrencyLimit(value: number) {
-    this.concurrency = Math.max(1, value);
+    if (typeof value !== 'number' || isNaN(value) || !isFinite(value)) {
+      throw new Error('Concurrency limit must be a finite number');
+    }
+    if (value < 1) {
+      throw new Error('Concurrency limit must be at least 1');
+    }
+    this.concurrency = Math.floor(value);
     this.process();
   }
 
@@ -98,9 +104,23 @@ export class SimpleQueue {
    * Wait for all running tasks to complete
    */
   async onIdle(): Promise<void> {
-    while (this.running > 0 || this.queue.length > 0) {
-      await new Promise(resolve => setTimeout(resolve, 10));
+    // If already idle, return immediately
+    if (this.running === 0 && this.queue.length === 0) {
+      return;
     }
+
+    // Create a promise that resolves when idle
+    return new Promise((resolve) => {
+      const checkIdle = () => {
+        if (this.running === 0 && this.queue.length === 0) {
+          resolve();
+        } else {
+          // Use setTimeout for next check to avoid tight loop
+          setTimeout(checkIdle, 10);
+        }
+      };
+      checkIdle();
+    });
   }
 }
 
