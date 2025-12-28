@@ -40,8 +40,23 @@ test.describe('Happy Path E2E', () => {
       await regionSelect.waitFor({ state: 'visible' });
       
       // Wait for platform/region options to potentially load from API
-      // Note: Using timeout here as the API may fail (external dependency)
-      await page.waitForTimeout(1000);
+      // Instead of a fixed timeout, wait until at least one select has more than 1 option,
+      // but continue defensively if this does not happen within the timeout.
+      await page
+        .waitForFunction(
+          ([platformSelector, regionSelector]) => {
+            const platform = document.querySelector(platformSelector) as HTMLSelectElement | null;
+            const region = document.querySelector(regionSelector) as HTMLSelectElement | null;
+            const platformOptions = platform?.options.length ?? 0;
+            const regionOptions = region?.options.length ?? 0;
+            return platformOptions > 1 || regionOptions > 1;
+          },
+          ['select[name="platform"]', 'select[name="region"]'],
+          { timeout: 1000 }
+        )
+        .catch(() => {
+          // Options did not load in time; proceed with existing defensive checks below.
+        });
       
       // Try to get the options count
       const platformOptions = await platformSelect.locator('option').count();
