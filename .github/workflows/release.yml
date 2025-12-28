@@ -55,6 +55,11 @@ jobs:
         env:
           CI: true
 
+      # TODO: Add code signing here
+      # Windows: Use signtool with certificate from secrets
+      # macOS: Use codesign and notarytool with Apple Developer credentials
+      # See docs/RELEASE.md for details
+
       - name: Generate checksums
         run: |
           cd release/bundle
