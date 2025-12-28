@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { apiGet } from "../lib/api";
 import { useUIStore } from "../store";
@@ -9,8 +9,12 @@ import "../styles/big-picture.css";
 
 type NavSection = "home" | "library" | "search" | "downloads" | "settings" | "exit";
 
+// Grid configuration
+const ITEMS_PER_ROW = 4; // Matches the CSS grid-template-columns for Big Picture
+
 export default function BigPicturePage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const setBigPictureMode = useUIStore((state) => state.setBigPictureMode);
   const [activeSection, setActiveSection] = useState<NavSection>("home");
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -65,7 +69,7 @@ export default function BigPicturePage() {
       }
     } else {
       // Navigate content grid
-      const itemsPerRow = 4;
+      const itemsPerRow = ITEMS_PER_ROW;
       const totalItems = libraryItems.length;
 
       if (direction === "left") {

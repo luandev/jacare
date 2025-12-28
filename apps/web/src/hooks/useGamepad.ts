@@ -8,6 +8,10 @@ export type GamepadState = {
   axes: { leftX: number; leftY: number; rightX: number; rightY: number };
 };
 
+// Constants
+const AXIS_THRESHOLD = 0.5;
+const NAVIGATE_COOLDOWN_MS = 200; // Cooldown between navigation events to prevent double-input
+
 const BUTTON_MAP: Record<number, GamepadButton> = {
   0: "A",        // Cross (PS) / A (Xbox)
   1: "B",        // Circle (PS) / B (Xbox)
@@ -26,8 +30,6 @@ const BUTTON_MAP: Record<number, GamepadButton> = {
   14: "DPAD_LEFT",
   15: "DPAD_RIGHT"
 };
-
-const AXIS_THRESHOLD = 0.5;
 
 export function useGamepad() {
   const [gamepadState, setGamepadState] = useState<GamepadState>({
@@ -125,7 +127,6 @@ export function useGamepadNavigation(onNavigate: (direction: "up" | "down" | "le
   const gamepadState = useGamepad();
   const prevButtonsRef = useRef<Record<GamepadButton, boolean>>({} as Record<GamepadButton, boolean>);
   const lastNavigateTimeRef = useRef<number>(0);
-  const NAVIGATE_COOLDOWN = 200; // ms between navigation events
 
   useEffect(() => {
     const now = Date.now();
@@ -137,7 +138,7 @@ export function useGamepadNavigation(onNavigate: (direction: "up" | "down" | "le
     };
 
     // Navigation with cooldown
-    if (now - lastNavigateTimeRef.current > NAVIGATE_COOLDOWN) {
+    if (now - lastNavigateTimeRef.current > NAVIGATE_COOLDOWN_MS) {
       if (buttons.DPAD_UP) {
         onNavigate("up");
         lastNavigateTimeRef.current = now;
