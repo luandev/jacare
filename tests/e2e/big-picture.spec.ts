@@ -54,20 +54,20 @@ test.describe('Big Picture Mode E2E', () => {
     // Step 3: Test keyboard navigation
     await test.step('Navigate with keyboard', async () => {
       // Verify we're on Home (Welcome screen)
-      await expect(page.getByRole('heading', { name: 'Welcome' })).toBeVisible();
+      await expect(page.locator('.bp-title', { hasText: 'Welcome' })).toBeVisible();
       await expect(page.getByText('Welcome to Big Picture Mode')).toBeVisible();
       
       // Press ArrowDown to navigate to Library
       await page.keyboard.press('ArrowDown');
-      await expect(page.getByRole('heading', { name: 'Library' })).toBeVisible({ timeout: 1000 });
+      await expect(page.locator('.bp-title', { hasText: 'Library' })).toBeVisible({ timeout: 1000 });
       
       // Press ArrowDown to navigate to Search
       await page.keyboard.press('ArrowDown');
-      await expect(page.getByRole('heading', { name: 'Search' })).toBeVisible({ timeout: 1000 });
+      await expect(page.locator('.bp-title', { hasText: 'Search' })).toBeVisible({ timeout: 1000 });
       
       // Press ArrowUp to go back to Library
       await page.keyboard.press('ArrowUp');
-      await expect(page.getByRole('heading', { name: 'Library' })).toBeVisible({ timeout: 1000 });
+      await expect(page.locator('.bp-title', { hasText: 'Library' })).toBeVisible({ timeout: 1000 });
     });
     
     // Step 4: Test Library section
@@ -83,7 +83,7 @@ test.describe('Big Picture Mode E2E', () => {
     await test.step('Navigate to Downloads section', async () => {
       await page.keyboard.press('ArrowDown');
       await page.keyboard.press('ArrowDown');
-      await expect(page.getByRole('heading', { name: 'Downloads' })).toBeVisible({ timeout: 1000 });
+      await expect(page.locator('.bp-title', { hasText: 'Downloads' })).toBeVisible({ timeout: 1000 });
     });
     
     // Step 6: Exit Big Picture Mode
@@ -121,13 +121,13 @@ test.describe('Big Picture Mode E2E', () => {
     await test.step('Click Library navigation', async () => {
       const libraryButton = page.locator('.bp-nav-item', { hasText: 'Library' });
       await libraryButton.click();
-      await expect(page.getByRole('heading', { name: 'Library' })).toBeVisible();
+      await expect(page.locator('.bp-title', { hasText: 'Library' })).toBeVisible();
     });
     
     await test.step('Click Search navigation', async () => {
       const searchButton = page.locator('.bp-nav-item', { hasText: 'Search' });
       await searchButton.click();
-      await expect(page.getByRole('heading', { name: 'Search' })).toBeVisible();
+      await expect(page.locator('.bp-title', { hasText: 'Search' })).toBeVisible();
     });
     
     await test.step('Click Exit to leave Big Picture', async () => {
