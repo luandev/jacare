@@ -135,9 +135,9 @@ export default function SettingsPage() {
         </div>
       </Card>
 
-      {draft && (
+      {settingsQuery.data && (
         <PlatformSettings
-          settings={draft}
+          settings={draft || settingsQuery.data}
           onUpdate={(updated) => {
             setDraft(updated);
             // Auto-save platform settings
