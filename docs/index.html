@@ -143,6 +143,17 @@
         box-shadow: none;
       }
 
+      .cta:focus-visible {
+        outline: 3px solid var(--primary);
+        outline-offset: 2px;
+      }
+
+      a:focus-visible {
+        outline: 2px solid var(--primary);
+        outline-offset: 2px;
+        border-radius: 4px;
+      }
+
       .hero {
         padding: 48px 5vw 32px;
         display: grid;
@@ -168,6 +179,13 @@
         flex-wrap: wrap;
         gap: 12px;
         margin-bottom: 18px;
+        align-items: center;
+      }
+
+      .badge-row img {
+        height: 20px;
+        display: inline-block;
+        vertical-align: middle;
       }
 
       .pill {
@@ -188,6 +206,33 @@
       .button-row .cta.secondary {
         background: var(--card);
         color: var(--text);
+      }
+
+      .button-row .cta.github {
+        background: #24292e;
+        color: #ffffff;
+        border: 1px solid #1b1f23;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .button-row .cta.github {
+          background: #f0f6fc;
+          color: #24292e;
+          border: 1px solid #d0d7de;
+        }
+      }
+
+      .button-row .cta.github:hover {
+        background: #2f363d;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .button-row .cta.github:hover {
+          background: #dce5f0;
+        }
       }
 
       .media-card {
@@ -272,6 +317,36 @@
       footer {
         padding: 24px 5vw 48px;
         color: var(--muted);
+        border-top: 1px solid var(--border);
+        margin-top: 48px;
+      }
+
+      footer .footer-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 24px;
+      }
+
+      footer h4 {
+        margin: 0 0 12px;
+        color: var(--text);
+        font-size: 16px;
+      }
+
+      footer ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      footer ul li {
+        margin: 8px 0;
+      }
+
+      footer a:hover {
+        color: var(--primary);
       }
 
       .section-header {
@@ -307,17 +382,20 @@
       </div>
       <nav>
         <a href="#highlights">Highlights</a>
+        <a href="#architecture">How it works</a>
         <a href="#getting-started">Get started</a>
         <a href="#distribution">Downloads</a>
         <a href="#docs">Docs</a>
       </nav>
-      <a class="cta" id="nav-download" href="#distribution">Download</a>
+      <a class="cta" id="nav-download" href="https://github.com/luandev/jacare/releases/latest">Download</a>
     </header>
 
     <main>
       <section class="hero">
         <div>
           <div class="badge-row">
+            <img src="https://github.com/luandev/jacare/actions/workflows/ci.yml/badge.svg" alt="CI Status" />
+            <img src="https://github.com/luandev/jacare/actions/workflows/docker.yml/badge.svg" alt="Docker Build Status" />
             <span class="pill" id="badge-platform">Desktop + Web</span>
             <span class="pill" id="badge-open-source">Open-source MIT</span>
           </div>
@@ -327,13 +405,19 @@
             library ultra-responsive.
           </p>
           <div class="button-row">
-            <a class="cta" id="download-primary" href="#distribution">Download Jacare</a>
+            <a class="cta" id="download-primary" href="https://github.com/luandev/jacare/releases/latest">Download Jacare</a>
+            <a class="cta github" href="https://github.com/luandev/jacare" target="_blank" rel="noopener">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+              </svg>
+              Star on GitHub
+            </a>
             <a class="cta secondary" id="docs-link" href="docs/README.md">Developer docs</a>
             <a class="cta secondary" id="user-link" href="docs/user/README.md">User guide</a>
           </div>
         </div>
         <div class="media-card">
-          <video autoplay loop muted playsinline style="width: 100%; display: block; border-radius: 12px; border: 1px solid var(--border);">
+          <video autoplay loop muted playsinline style="width: 100%; display: block; border-radius: 12px; border: 1px solid var(--border);" aria-label="Jacare application demo">
             <source src="demo.mp4" type="video/mp4" />
             Your browser does not support the video tag.
           </video>
@@ -354,6 +438,39 @@
           <span class="muted">Local-first, Crocdb-powered</span>
         </div>
         <ul class="list" id="why-list"></ul>
+      </section>
+
+      <section id="architecture">
+        <div class="section-header">
+          <h2>How it works</h2>
+          <span class="muted">Modern tech stack for a seamless experience</span>
+        </div>
+        <div class="grid">
+          <div class="card">
+            <h3>⚡ Electron Desktop</h3>
+            <p>Native desktop app wrapper providing OS integration, system tray support, and a native feel on Windows, macOS, and Linux.</p>
+          </div>
+          <div class="card">
+            <h3>🚀 Express Server</h3>
+            <p>RESTful API backend handling job orchestration, file operations, Crocdb integration, and serving the web UI.</p>
+          </div>
+          <div class="card">
+            <h3>⚛️ React UI</h3>
+            <p>Ultra-responsive web interface built with Vite, TanStack Query for state management, and real-time updates via SSE.</p>
+          </div>
+          <div class="card">
+            <h3>💾 SQLite Storage</h3>
+            <p>Local database for settings, cached metadata, library items, and job history—fast, reliable, and portable.</p>
+          </div>
+          <div class="card">
+            <h3>📡 Server-Sent Events</h3>
+            <p>Real-time progress updates for downloads, scanning, and background jobs without polling overhead.</p>
+          </div>
+          <div class="card">
+            <h3>🗂️ Background Jobs</h3>
+            <p>Long-running operations execute as pausable, resumable jobs with step-by-step progress tracking.</p>
+          </div>
+        </div>
       </section>
 
       <section id="getting-started">
@@ -412,7 +529,50 @@
     </main>
 
     <footer>
-      Built from README content. Ready for GitHub Pages.
+      <div class="footer-content">
+        <div>
+          <h4>🐊 Jacare</h4>
+          <p>Open-source ROM library manager for retro gaming enthusiasts.</p>
+          <p style="margin-top: 12px;">
+            <a href="https://github.com/luandev/jacare" target="_blank" rel="noopener" style="display: inline-flex; align-items: center; gap: 6px;">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+              </svg>
+              GitHub Repository
+            </a>
+          </p>
+        </div>
+        <div>
+          <h4>Resources</h4>
+          <ul>
+            <li><a href="docs/README.md">Developer Guide</a></li>
+            <li><a href="docs/user/README.md">User Guide</a></li>
+            <li><a href="https://github.com/luandev/jacare/issues" target="_blank" rel="noopener">Issues & Roadmap</a></li>
+            <li><a href="https://github.com/luandev/jacare/releases" target="_blank" rel="noopener">Releases</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Community</h4>
+          <ul>
+            <li><a href="https://crocdb.net" target="_blank" rel="noopener">Crocdb Metadata Service</a></li>
+            <li><a href="https://api.crocdb.net" target="_blank" rel="noopener">Crocdb API Docs</a></li>
+            <li><a href="https://github.com/luandev/jacare/blob/main/docker/README.md" target="_blank" rel="noopener">Docker Guide</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Legal</h4>
+          <ul>
+            <li><a href="https://github.com/luandev/jacare/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a></li>
+          </ul>
+          <p style="margin-top: 12px; font-size: 14px;">
+            Metadata provided by <a href="https://crocdb.net" target="_blank" rel="noopener">Crocdb</a> (ISC License). 
+            We acknowledge and thank the Crocdb project for their valuable service to the retro gaming community.
+          </p>
+        </div>
+      </div>
+      <div style="text-align: center; margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border);">
+        <p>&copy; 2024 Jacare. Open-source software under the MIT License.</p>
+      </div>
     </footer>
 
     <script>
@@ -475,23 +635,23 @@
         ],
         distribution: [
           {
-            title: "Standalone Bundle",
-            body: "Single executable for Windows, macOS, and Linux. No Node.js required!",
+            title: "🚀 Standalone Bundle (Recommended)",
+            body: "Single executable for Windows, macOS, and Linux. No Node.js required! Download jacare-win.exe, jacare-macos, or jacare-linux from releases.",
             link: "https://github.com/luandev/jacare/releases/latest"
           },
           {
-            title: "Desktop bundles",
-            body: "Packaged from apps/desktop with server + web assets included.",
-            link: "https://github.com/luandev/jacare/releases/latest"
-          },
-          {
-            title: "Docker image",
-            body: "ghcr.io/luandev/jacare with docker/docker-compose.yml examples.",
+            title: "🐳 Docker Image",
+            body: "Run with docker compose or pull ghcr.io/luandev/jacare:latest. Perfect for server deployments with persistent volumes.",
             link: "https://github.com/luandev/jacare/blob/main/docker/README.md"
           },
           {
-            title: "Server binaries",
-            body: "Standalone builds for Windows, macOS, and Linux with the web UI.",
+            title: "🖥️ Desktop Applications",
+            body: "Native Electron packages for Windows, macOS, and Linux. Includes server and web assets for a complete desktop experience.",
+            link: "https://github.com/luandev/jacare/releases/latest"
+          },
+          {
+            title: "⚙️ Server Binaries",
+            body: "Headless server builds for Windows, macOS, and Linux. Run standalone and access via browser at localhost:3333.",
             link: "https://github.com/luandev/jacare/releases/latest"
           },
         ],
@@ -583,33 +743,30 @@
         // Standalone Bundle (Recommended)
         if (block.includes("Standalone Bundle") || block.includes("standalone binary")) {
           cards.push({
-            title: "Standalone Bundle",
-            body: "Single executable for Windows, macOS, and Linux. No Node.js required!",
+            title: "🚀 Standalone Bundle (Recommended)",
+            body: "Single executable for Windows, macOS, and Linux. No Node.js required! Download jacare-win.exe, jacare-macos, or jacare-linux.",
             link: repoUrl + "/releases/latest",
           });
         }
         
         if (block.includes("Docker")) {
-          const dockerSnippet = (block.match(/```bash[\s\S]*?docker[\s\S]*?```/) || [""])[0]
-            .replace(/```bash|```/g, "")
-            .trim();
           cards.push({
-            title: "Docker image",
-            body: dockerSnippet ? dockerSnippet.split("\n")[0] : "Run Jacare with docker compose or ghcr.io images.",
+            title: "🐳 Docker Image",
+            body: "Run with docker compose or pull ghcr.io/luandev/jacare:latest. Perfect for server deployments.",
             link: repoUrl + "/blob/main/docker/README.md",
           });
         }
         if (block.includes("Desktop")) {
           cards.push({
-            title: "Desktop bundles",
-            body: "Ready-to-run packages published from apps/desktop releases.",
+            title: "🖥️ Desktop Applications",
+            body: "Native Electron packages with server and web assets for a complete desktop experience.",
             link: repoUrl + "/releases/latest",
           });
         }
         if (block.includes("Server Binaries")) {
           cards.push({
-            title: "Server binaries",
-            body: "Headless server builds for Windows, macOS, and Linux.",
+            title: "⚙️ Server Binaries",
+            body: "Headless server builds. Run standalone and access via browser at localhost:3333.",
             link: repoUrl + "/releases/latest",
           });
         }
@@ -684,6 +841,16 @@
         targets.navDownload.href = repoUrl + "/releases/latest";
         targets.downloadPrimary.href = repoUrl + "/releases/latest";
         targets.docsIssues.href = repoUrl + "/issues";
+
+        // Update badge images
+        const ciBadge = document.querySelector('.badge-row img[alt="CI Status"]');
+        const dockerBadge = document.querySelector('.badge-row img[alt="Docker Build Status"]');
+        if (ciBadge) ciBadge.src = `${repoUrl}/actions/workflows/ci.yml/badge.svg`;
+        if (dockerBadge) dockerBadge.src = `${repoUrl}/actions/workflows/docker.yml/badge.svg`;
+
+        // Update GitHub star button
+        const githubBtn = document.querySelector('.cta.github');
+        if (githubBtn) githubBtn.href = repoUrl;
       }
 
       renderHighlights(fallback.highlights);
