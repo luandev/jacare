@@ -32,7 +32,24 @@
 
 ### Option: Run with Docker 
 
-If you’re familiar with Docker, check **[`docker/README.md`](docker/README.md)** for a Docker Compose template, including platform-specific volume/mount examples.
+
+If you’re familiar with [Docker](https://docs.docker.com/get-started/docker-overview/), here's a one-liner to run and test Jacare:
+```
+docker run --rm -p 3333:3333 -v jacare-data:/data -v jacare-library:/library -e CROCDESK_ENABLE_DOWNLOADS=false ghcr.io/luandev/jacare:latest
+```
+- What it does:
+  -  `--rm` - Automatically removes the container when it stops
+  - `-p 3333:3333` - Exposes port 3333 for the web UI
+  - `-v jacare-data:/data` - Creates a named volume for data (persists between runs)
+  - `-v jacare-library:/library` - Creates a named volume for library (persists between runs)
+  - `-e CROCDESK_ENABLE_DOWNLOADS=false` - Disables downloads (default)
+ Uses the pre-built image from GitHub Container Registry
+
+- Access the app:
+Open http://localhost:3333 in your browser.
+- To stop:
+Press Ctrl+C or run docker stop <container-id>.
+- Check **[`docker/README.md`](docker/README.md)** for a Docker Compose template, including platform-specific volume/mount examples.
 
 ### Option: Run locally (Node.js)
 
@@ -75,7 +92,6 @@ If you’d rather run it locally, make sure you have **[Node.js](https://nodejs.
 - **Downloads:** Disabled by default; enable with `CROCDESK_ENABLE_DOWNLOADS=true` to fetch assets or binaries.
 - **Crocdb base URL:** `CROCDB_BASE_URL=https://api.crocdb.net`.
 - **Cache TTL:** `CROCDB_CACHE_TTL_MS=86400000` (24 hours) for search and entry cache tables.
-- **Web client base URL:** `VITE_API_URL` (defaults to `http://localhost:3333`).
 - **Electron dev URL:** `CROCDESK_DEV_URL` (defaults to `http://localhost:5173`).
 
 Settings are stored in SQLite and include:

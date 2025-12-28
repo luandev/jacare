@@ -39,5 +39,4 @@ Profiles and per-platform roots have been removed in favor of separate `download
 - CROCDESK_ENABLE_DOWNLOADS (default false)
 - CROCDB_BASE_URL (default https://api.crocdb.net)
 - CROCDB_CACHE_TTL_MS (default 86400000)
-- VITE_API_URL (default http://localhost:3333)
 - CROCDESK_DEV_URL (Electron dev URL, default http://localhost:5173)

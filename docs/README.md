@@ -57,7 +57,6 @@ npm ci
 - `CROCDESK_ENABLE_DOWNLOADS` (default `false`) – Enable download functionality
 - `CROCDB_BASE_URL` (default `https://api.crocdb.net`) – Crocdb API base URL
 - `CROCDB_CACHE_TTL_MS` (default `86400000`) – Cache TTL in milliseconds (24 hours)
-- `VITE_API_URL` (default `http://localhost:3333`) – API URL for web client
 - `CROCDESK_DEV_URL` (default `http://localhost:5173`) – Dev server URL for Electron
 
 Settings stored in the database:
