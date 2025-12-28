@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { apiGet } from "../lib/api";
 import { useUIStore } from "../store";
 import { useGamepadNavigation } from "../hooks/useGamepad";
+import EmulatorPlayer, { getEmulatorCore, type EmulatorConfig } from "../components/EmulatorPlayer";
 import type { LibraryItem } from "@crocdesk/shared";
 import "../styles/big-picture.css";
 
@@ -19,6 +20,7 @@ export default function BigPicturePage() {
   const [activeSection, setActiveSection] = useState<NavSection>("home");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isSidebarFocused, setIsSidebarFocused] = useState(true);
+  const [emulatorConfig, setEmulatorConfig] = useState<EmulatorConfig | null>(null);
   const gridRef = useRef<HTMLDivElement>(null);
 
   // Fetch library items
@@ -98,11 +100,25 @@ export default function BigPicturePage() {
         setSelectedIndex(0);
       }
     } else {
-      // Open selected game
+      // Open selected game or launch emulator
       const item = libraryItems[selectedIndex];
       if (item) {
-        // Navigate to detail view or launch game
-        navigate(`/library/item?id=${item.id}`, { state: { backgroundLocation: location } });
+        // Try to launch with emulator if platform is supported
+        const core = item.platform ? getEmulatorCore(item.platform) : null;
+        
+        if (core) {
+          // Launch emulator (experimental)
+          const config: EmulatorConfig = {
+            core,
+            romUrl: `/library-files/${item.path}`, // Adjust based on your file serving
+            gameName: item.path.split("/").pop() || "Unknown Game",
+            gameId: item.id.toString()
+          };
+          setEmulatorConfig(config);
+        } else {
+          // Fallback: Navigate to detail view
+          navigate(`/library/item?id=${item.id}`, { state: { backgroundLocation: location } });
+        }
       }
     }
   }, [isSidebarFocused, activeSection, selectedIndex, libraryItems, exitBigPicture, navigate, location]);
@@ -164,6 +180,20 @@ export default function BigPicturePage() {
       }
     }
   }, [selectedIndex, isSidebarFocused]);
+
+  // If emulator is active, show emulator
+  if (emulatorConfig) {
+    return (
+      <EmulatorPlayer
+        config={emulatorConfig}
+        onExit={() => setEmulatorConfig(null)}
+        onError={(error) => {
+          console.error("Emulator error:", error);
+          setEmulatorConfig(null);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="big-picture-mode">
