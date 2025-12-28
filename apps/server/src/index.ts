@@ -17,7 +17,7 @@ function isPkgBundle(): boolean {
   return 'pkg' in process && !!(process as any).pkg;
 }
 
-async function start(): Promise<void> {
+export async function startServer(): Promise<void> {
   logger.info("Starting CrocDesk server");
   await initDb();
   logger.info("Database initialized");
@@ -139,7 +139,10 @@ async function start(): Promise<void> {
   });
 }
 
-start().catch((error) => {
-  logger.error("Failed to start server", error);
-  process.exit(1);
-});
+// Auto-start if run directly (not imported)
+if (require.main === module) {
+  startServer().catch((error) => {
+    logger.error("Failed to start server", error);
+    process.exit(1);
+  });
+}
