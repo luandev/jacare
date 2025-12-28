@@ -9,6 +9,13 @@ import { ensureDir, moveFile } from "../utils/fs";
 import { logger } from "../utils/logger";
 
 const UNKNOWN_PLATFORM = "Unknown";
+const NOT_FOUND_FOLDER = "Not Found";
+
+// Regex patterns for detecting version tags and hacks
+const VERSION_TAG_PATTERN = /\s*[\(\[].*?[\)\]]/g;
+const REGION_PATTERN = /\((?:USA|Europe|Japan|World|Asia|Korea|Australia|Brazil|Canada|China|France|Germany|Italy|Netherlands|Spain|Sweden|UK|Unknown)\)/gi;
+const REVISION_PATTERN = /\(Rev\s*[A-Z0-9]+\)/gi;
+const HACK_PATTERN = /\[(?:Hack|Translation|T\+|Trainer|Beta|Proto|Unl|!|\?|h[0-9]*C?|b[0-9]*|f[0-9]*|o[0-9]*|t[0-9]*|v[0-9.]+)\]/gi;
 
 const SCAN_EXTENSIONS = new Set([
   ".zip",
@@ -234,10 +241,26 @@ export async function reorganizeItems(
       
       // Try to match with Crocdb
       const match = await findCrocdbMatch(folderName, platform);
-      const gameName = match ? formatGameName(match.title, match.regions[0]) : sanitizeFolderName(folderName);
+      
+      let gameName: string;
+      let targetPlatform: string;
+      
+      if (match) {
+        // Found in Crocdb - use proper title and add version tags if present
+        const versionTags = extractVersionTags(folderName);
+        gameName = versionTags 
+          ? `${match.title} ${versionTags}`
+          : formatGameName(match.title, match.regions[0]);
+        targetPlatform = platform;
+      } else {
+        // Not found in Crocdb - put in "Not Found" subfolder
+        logger.info("Game not found in Crocdb, using fallback", { folderName, platform });
+        gameName = sanitizeFolderName(folderName);
+        targetPlatform = `${platform}/${NOT_FOUND_FOLDER}`;
+      }
       
       // Create target directory
-      const targetDir = path.join(libraryRoot, platform, gameName);
+      const targetDir = path.join(libraryRoot, targetPlatform, gameName);
       await ensureDir(targetDir);
       
       // Move all files in the group
@@ -540,22 +563,89 @@ function slugify(value: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+/**
+ * Normalize ROM name by stripping version tags for better Crocdb matching.
+ * Removes: region codes, revision info, hack tags, etc.
+ * Example: "Super Mario Bros (USA) (Rev 1) [!]" -> "Super Mario Bros"
+ */
+function normalizeRomNameForSearch(fileName: string): string {
+  // Remove extension
+  const nameWithoutExt = path.basename(fileName, path.extname(fileName));
+  
+  // Strip all version tags (parentheses and brackets)
+  let normalized = nameWithoutExt.replace(VERSION_TAG_PATTERN, "");
+  
+  // Clean up extra whitespace
+  normalized = normalized.trim().replace(/\s+/g, " ");
+  
+  return normalized;
+}
+
+/**
+ * Extract version tags from ROM name (regions, revisions, hacks).
+ * Returns the tags as a suffix string.
+ */
+function extractVersionTags(fileName: string): string {
+  const nameWithoutExt = path.basename(fileName, path.extname(fileName));
+  const tags: string[] = [];
+  
+  // Extract all bracketed content
+  const matches = nameWithoutExt.match(VERSION_TAG_PATTERN);
+  if (matches) {
+    return matches.join(" ").trim();
+  }
+  
+  return "";
+}
+
+/**
+ * Check if ROM is a hack or modified version based on tags.
+ */
+function isRomHack(fileName: string): boolean {
+  const nameWithoutExt = path.basename(fileName, path.extname(fileName));
+  return HACK_PATTERN.test(nameWithoutExt);
+}
+
 async function findCrocdbMatch(
   folderName: string,
   platform: string | undefined
 ): Promise<{ slug: string; title: string; platform: string; regions: string[] } | null> {
   try {
-    const resp = await searchEntries({
+    // First try with original name
+    let resp = await searchEntries({
       search_key: folderName,
       platforms: platform ? [platform] : undefined,
       max_results: 5,
       page: 1
     });
-    const results = resp.data.results ?? [];
+    
+    let results = resp.data.results ?? [];
+    
+    // If no results, try with normalized name (stripped of version tags)
+    if (results.length === 0) {
+      const normalizedName = normalizeRomNameForSearch(folderName);
+      if (normalizedName !== folderName) {
+        logger.debug("Retrying Crocdb search with normalized name", { 
+          original: folderName, 
+          normalized: normalizedName 
+        });
+        
+        resp = await searchEntries({
+          search_key: normalizedName,
+          platforms: platform ? [platform] : undefined,
+          max_results: 5,
+          page: 1
+        });
+        
+        results = resp.data.results ?? [];
+      }
+    }
+    
     if (results.length === 0) return null;
+    
     // Basic fuzzy: choose the first whose normalized title includes normalized folderName
     const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "");
-    const target = norm(folderName);
+    const target = norm(normalizeRomNameForSearch(folderName));
     const hit =
       results.find((r) => norm(r.title).includes(target)) || results[0];
     return {
