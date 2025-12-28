@@ -92,7 +92,6 @@ If you’d rather run it locally, make sure you have **[Node.js](https://nodejs.
 - **Downloads:** Disabled by default; enable with `CROCDESK_ENABLE_DOWNLOADS=true` to fetch assets or binaries.
 - **Crocdb base URL:** `CROCDB_BASE_URL=https://api.crocdb.net`.
 - **Cache TTL:** `CROCDB_CACHE_TTL_MS=86400000` (24 hours) for search and entry cache tables.
-- **Web client base URL:** `VITE_API_URL` (defaults to `http://localhost:3333`).
 - **Electron dev URL:** `CROCDESK_DEV_URL` (defaults to `http://localhost:5173`).
 
 Settings are stored in SQLite and include:
