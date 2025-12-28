@@ -97,35 +97,45 @@ jobs:
         id: release_notes
         run: |
           echo "Generating release notes..."
-          
+
           # Get the tag name
-          TAG_NAME=${GITHUB_REF#refs/tags/}
-          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
-          
+          TAG_NAME="${GITHUB_REF#refs/tags/}"
+          echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
+
           # Get previous tag
-          PREV_TAG=$(git describe --tags --abbrev=0 $TAG_NAME^ 2>/dev/null || echo "")
-          
+          PREV_TAG=$(git describe --tags --abbrev=0 \
+            "$TAG_NAME"^ 2>/dev/null || echo "")
+
           # Generate release notes
           if [ -n "$PREV_TAG" ]; then
-            echo "Changes since $PREV_TAG:" > release_notes.md
-            echo "" >> release_notes.md
-            git log $PREV_TAG..$TAG_NAME --pretty=format:"- %s (%h)" --no-merges >> release_notes.md
+            {
+              echo "Changes since $PREV_TAG:"
+              echo ""
+              git log "$PREV_TAG".."$TAG_NAME" \
+                --pretty=format:"- %s (%h)" --no-merges
+            } > release_notes.md
           else
-            echo "Initial release" > release_notes.md
-            echo "" >> release_notes.md
-            git log $TAG_NAME --pretty=format:"- %s (%h)" --no-merges --max-count=20 >> release_notes.md
+            {
+              echo "Initial release"
+              echo ""
+              git log "$TAG_NAME" --pretty=format:"- %s (%h)" \
+                --no-merges --max-count=20
+            } > release_notes.md
           fi
-          
-          echo "" >> release_notes.md
-          echo "" >> release_notes.md
-          echo "## Downloads" >> release_notes.md
-          echo "" >> release_notes.md
-          echo "- **Windows**: \`jacare-win.exe\`" >> release_notes.md
-          echo "- **macOS**: \`jacare-macos\`" >> release_notes.md
-          echo "- **Linux**: \`jacare-linux\`" >> release_notes.md
-          echo "" >> release_notes.md
-          echo "All binaries are standalone and include both frontend and backend." >> release_notes.md
-          echo "SHA256 checksums are provided for verification." >> release_notes.md
+
+          {
+            echo ""
+            echo ""
+            echo "## Downloads"
+            echo ""
+            echo "- **Windows**: \`jacare-win.exe\`"
+            echo "- **macOS**: \`jacare-macos\`"
+            echo "- **Linux**: \`jacare-linux\`"
+            echo ""
+            echo "All binaries are standalone and include both" \
+              "frontend and backend."
+            echo "SHA256 checksums are provided for verification."
+          } >> release_notes.md
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
