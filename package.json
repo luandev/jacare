@@ -12,6 +12,7 @@
     "dev:server": "npm run dev -w @crocdesk/server",
     "dev:web": "npm run dev -w @crocdesk/web",
     "dev:desktop": "npm run dev -w @crocdesk/desktop",
+    "dev:desktop:packed": "npm run build && npm run dev:packed -w @crocdesk/desktop",
     "build": "npm run build -w @crocdesk/shared && npm run build -w @crocdesk/server && npm run build -w @crocdesk/web && npm run build -w @crocdesk/desktop",
     "typecheck": "npm run typecheck -w @crocdesk/shared && npm run typecheck -w @crocdesk/server && npm run typecheck -w @crocdesk/web && npm run typecheck -w @crocdesk/desktop",
     "lint": "eslint . --ext .ts,.tsx",
