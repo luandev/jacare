@@ -59,6 +59,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "npm run build && cross-env CROCDESK_DEV_URL=http://localhost:5173 electron .",
+    "dev:packed": "npm run build && cross-env NODE_ENV=production electron .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "package": "electron-builder",
     "package:win": "electron-builder --win",
