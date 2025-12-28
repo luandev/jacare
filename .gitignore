@@ -11,3 +11,4 @@ apps/server/library
 .crocdesk/
 test-results
 playwright-report
+release/
