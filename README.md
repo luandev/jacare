@@ -69,6 +69,7 @@ If you’d rather run it locally, make sure you have **[Node.js](https://nodejs.
    npm run dev:server  # Express API + jobs
    npm run dev:web     # React UI with Vite
    npm run dev:desktop # Electron shell
+   npm run dev:desktop:packed # Electron with server running in-process (production mode)
    ```
 4. **Build, type-check, lint, or test** when you are ready to ship 📦✅
    ```bash
@@ -76,9 +77,12 @@ If you’d rather run it locally, make sure you have **[Node.js](https://nodejs.
    npm run typecheck  # Type-check the monorepo
    npm run lint       # Lint all code
    npm run test:unit  # Run unit tests
+   npm run test:e2e   # Run end-to-end tests (requires Playwright browsers)
    ```
 
-> Tip: The desktop app expects the web dev server at `http://localhost:5173` by default. Override with `CROCDESK_DEV_URL` if you change the Vite port.
+> **Tip:** 
+> - The desktop app expects the web dev server at `http://localhost:5173` by default. Override with `CROCDESK_DEV_URL` if you change the Vite port.
+> - Use `npm run dev:desktop:packed` to test the Electron app with the server running in-process (production mode) instead of connecting to a separate server.
 
 ## Project layout 🗂️
 - `apps/server` – Express API, job orchestration, local scanning, and Crocdb client.

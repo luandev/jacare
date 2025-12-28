@@ -1,10 +1,11 @@
 import { app, BrowserWindow, ipcMain, shell } from "electron";
 import path from "path";
-import { spawn, ChildProcess } from "child_process";
+import type { Server } from "http";
 
-let serverProcess: ChildProcess | null = null;
+// Store server instance for cleanup
+let serverInstance: Server | null = null;
 
-function startServer(): void {
+async function startServer(): Promise<void> {
   const isDev = process.env.NODE_ENV === "development" || process.env.CROCDESK_DEV_URL;
   
   if (isDev) {
@@ -12,32 +13,47 @@ function startServer(): void {
     return;
   }
 
-  // In production, start the bundled server
+  // Set environment variables BEFORE importing server module
+  // This ensures config.ts reads the correct values at module load time
+  process.env.CROCDESK_PORT = process.env.CROCDESK_PORT || "3333";
+  process.env.NODE_ENV = process.env.NODE_ENV || "production";
+
+  // Resolve the server module path based on packaging state
   const serverPath = app.isPackaged
     ? path.join(process.resourcesPath, "server", "index.js")
     : path.resolve(__dirname, "../../server/dist/index.js");
-  
-  const serverDir = app.isPackaged
-    ? path.join(process.resourcesPath, "server")
-    : path.resolve(__dirname, "../../server/dist");
-  
-  serverProcess = spawn("node", [serverPath], {
-    cwd: serverDir,
-    env: {
-      ...process.env,
-      CROCDESK_PORT: "3333",
-      NODE_ENV: "production"
-    },
-    stdio: "inherit"
-  });
 
-  serverProcess.on("error", (error) => {
-    console.error("Failed to start server:", error);
-  });
-
-  serverProcess.on("exit", (code) => {
-    console.log(`Server process exited with code ${code}`);
-  });
+  // In production, import and run the server in-process
+  try {
+    // Dynamic import of server module (after env vars are set)
+    const serverModule = await import(serverPath) as { 
+      startServer?: () => Promise<Server>;
+      logger?: { 
+        info: (msg: string, data?: Record<string, unknown>) => void;
+        error: (msg: string, error?: Error | unknown, data?: Record<string, unknown>) => void;
+      };
+    };
+    
+    // Use server's logger if available
+    const log = serverModule.logger || {
+      info: (msg: string) => console.log(`[INFO] ${msg}`),
+      error: (msg: string, error?: Error | unknown) => console.error(`[ERROR] ${msg}`, error)
+    };
+    
+    // Call the exported startServer function
+    if (serverModule.startServer) {
+      serverInstance = await serverModule.startServer();
+      log.info("Server started successfully in Electron process");
+    } else {
+      const errorMsg = "Server module does not export startServer function";
+      log.error(errorMsg);
+      throw new Error(errorMsg);
+    }
+  } catch (error) {
+    // Use basic logging if server logger not available
+    console.error("[ERROR] Failed to start server:", error);
+    throw error;
+  }
 }
 
 function createWindow(): void {
@@ -57,13 +73,21 @@ function createWindow(): void {
     window.loadURL(devUrl);
     window.webContents.openDevTools({ mode: "detach" });
   } else {
-    // In production, load from local server
-    window.loadURL("http://localhost:3333");
+    // In production, load from local server using configured port
+    const port = process.env.CROCDESK_PORT || "3333";
+    window.loadURL(`http://localhost:${port}`);
   }
 }
 
-app.whenReady().then(() => {
-  startServer();
+app.whenReady().then(async () => {
+  try {
+    await startServer();
+  } catch (error) {
+    console.error("[ERROR] Failed to start server, exiting application:", error);
+    // Exit the app if server fails to start
+    app.quit();
+    return;
+  }
   
   // Wait a bit for server to start before creating window
   setTimeout(() => {
@@ -84,16 +108,18 @@ app.whenReady().then(() => {
 });
 
 app.on("window-all-closed", () => {
-  if (serverProcess) {
-    serverProcess.kill();
-  }
   if (process.platform !== "darwin") {
     app.quit();
   }
 });
 
 app.on("before-quit", () => {
-  if (serverProcess) {
-    serverProcess.kill();
+  // Gracefully close the server to allow active connections to complete
+  if (serverInstance) {
+    serverInstance.close(() => {
+      console.log("[INFO] Server closed gracefully");
+    });
+    // Give the server a moment to close before process exits
+    // The process will exit anyway after this handler completes
   }
 });

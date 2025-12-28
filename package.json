@@ -6,16 +6,20 @@
     "packages/*"
   ],
   "scripts": {
+    "pretest:e2e": "npx playwright install --with-deps",
     "dev": "npm run build -w @crocdesk/shared && concurrently \"npm run dev:shared\" \"npm run dev:server\" \"npm run dev:web\" \"npm run dev:desktop\"",
     "dev:shared": "npm run dev -w @crocdesk/shared",
     "dev:server": "npm run dev -w @crocdesk/server",
     "dev:web": "npm run dev -w @crocdesk/web",
     "dev:desktop": "npm run dev -w @crocdesk/desktop",
+    "dev:desktop:packed": "npm run build && npm run dev:packed -w @crocdesk/desktop",
     "build": "npm run build -w @crocdesk/shared && npm run build -w @crocdesk/server && npm run build -w @crocdesk/web && npm run build -w @crocdesk/desktop",
     "typecheck": "npm run typecheck -w @crocdesk/shared && npm run typecheck -w @crocdesk/server && npm run typecheck -w @crocdesk/web && npm run typecheck -w @crocdesk/desktop",
     "lint": "eslint . --ext .ts,.tsx",
     "test:unit": "vitest --run",
-    "test": "npm run test:unit",
+    "test:e2e": "npx playwright test",
+    "test:e2e:ui": "npx playwright test --ui",
+    "test": "npm run test:unit && npm run test:e2e",
     "package:desktop": "npm run build && npm run package -w @crocdesk/desktop",
     "package:server": "npm run build && npm run package -w @crocdesk/server",
     "package:bundle": "npm run build -w @crocdesk/shared && npm run build -w @crocdesk/web && npm run build -w @crocdesk/server && npm run package -w @crocdesk/server"
