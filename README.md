@@ -210,6 +210,43 @@ CI builds on the `main` branch automatically publish release archives to GitHub 
 - Server-only binaries
 - Latest changelog and README
 
+All packaged executables are automatically tested on their target platforms before release to ensure reliability.
+
+## Troubleshooting 🔧
+
+### Application Issues
+
+If you encounter problems with Jacare, check the log files first:
+
+**Log Location:**
+- Standalone/Desktop: `data/logs/crocdesk-YYYY-MM-DD.log` (in the same directory as the executable)
+- Docker: `/data/logs/crocdesk-YYYY-MM-DD.log` (inside the container)
+- Source: `data/logs/crocdesk-YYYY-MM-DD.log` (in your project root)
+
+Logs are automatically rotated and kept for 7 days. They include:
+- Startup messages and configuration
+- API requests and responses
+- Job execution details
+- Error messages with stack traces
+- Uncaught exceptions and crashes
+
+**Common Issues:**
+
+1. **Server won't start**: Check the most recent log file for error messages
+2. **Downloads failing**: Ensure `CROCDESK_ENABLE_DOWNLOADS=true` is set
+3. **Library not showing games**: Run a library scan from the Library view
+4. **Port already in use**: Set `CROCDESK_PORT` to a different port number
+
+**Reporting Issues:**
+
+When reporting issues on [GitHub](https://github.com/luandev/jacare/issues), please include:
+- The relevant log file from `data/logs/`
+- Your operating system and version
+- How you're running Jacare (Docker, standalone, source)
+- Steps to reproduce the issue
+
+For more details on release improvements and testing, see [`docs/RELEASE_IMPROVEMENTS.md`](docs/RELEASE_IMPROVEMENTS.md).
+
 ## License 📜
 
 Jacare is open-source software licensed under the [MIT License](LICENSE). You are free to use, modify, and distribute this software in accordance with the license terms.
