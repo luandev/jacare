@@ -7,6 +7,8 @@ type UIActions = {
   setStickyPlatform: (platform: string) => void;
   setStickyRegion: (region: string) => void;
   setTheme: (theme: "light" | "dark") => void;
+  setBigPictureMode: (enabled: boolean) => void;
+  setLaunchInBigPicture: (enabled: boolean) => void;
 };
 
 export type UIStore = UIState & UIActions;
@@ -42,7 +44,9 @@ const initialState: UIState = {
   gridColumns: 3,
   stickyPlatform: "",
   stickyRegion: "",
-  theme: getInitialTheme()
+  theme: getInitialTheme(),
+  bigPictureMode: false,
+  launchInBigPicture: false
 };
 
 export const useUIStore = create<UIStore>()(
@@ -53,7 +57,9 @@ export const useUIStore = create<UIStore>()(
       setGridColumns: (columns) => set({ gridColumns: columns }),
       setStickyPlatform: (platform) => set({ stickyPlatform: platform }),
       setStickyRegion: (region) => set({ stickyRegion: region }),
-      setTheme: (theme) => set({ theme })
+      setTheme: (theme) => set({ theme }),
+      setBigPictureMode: (enabled) => set({ bigPictureMode: enabled }),
+      setLaunchInBigPicture: (enabled) => set({ launchInBigPicture: enabled })
     }),
     {
       name: "crocdesk-ui-storage",
@@ -61,7 +67,9 @@ export const useUIStore = create<UIStore>()(
         stickyPlatform: state.stickyPlatform,
         stickyRegion: state.stickyRegion,
         gridColumns: state.gridColumns,
-        theme: state.theme
+        theme: state.theme,
+        bigPictureMode: state.bigPictureMode,
+        launchInBigPicture: state.launchInBigPicture
       })
     }
   )

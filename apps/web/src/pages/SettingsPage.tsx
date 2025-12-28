@@ -6,8 +6,10 @@ import { useUIStore } from "../store";
 import { useTheme } from "../components/ThemeProvider";
 import { Card, Input, Button } from "../components/ui";
 import { spacing } from "../lib/design-tokens";
+import { useNavigate } from "react-router-dom";
 
 export default function SettingsPage() {
+  const navigate = useNavigate();
   const settingsQuery = useQuery({
     queryKey: ["settings"],
     queryFn: () => apiGet<Settings>("/settings")
@@ -19,6 +21,9 @@ export default function SettingsPage() {
   
   const theme = useUIStore((state) => state.theme);
   const setThemePreference = useUIStore((state) => state.setTheme);
+  const setBigPictureMode = useUIStore((state) => state.setBigPictureMode);
+  const launchInBigPicture = useUIStore((state) => state.launchInBigPicture);
+  const setLaunchInBigPicture = useUIStore((state) => state.setLaunchInBigPicture);
   const { setTheme: _setThemeObject } = useTheme();
 
   // Sync draft with query data when it changes (e.g., after refetch)
@@ -44,6 +49,11 @@ export default function SettingsPage() {
     // Mark that user has explicitly set a theme preference
     localStorage.setItem("jacare:theme-explicit", "true");
     // ThemeProvider will pick up the change automatically
+  };
+
+  const handleEnterBigPicture = () => {
+    setBigPictureMode(true);
+    navigate("/big-picture");
   };
 
   return (
@@ -80,6 +90,30 @@ export default function SettingsPage() {
               style={{ cursor: "pointer" }}
             />
             <span>Dark</span>
+          </label>
+        </div>
+      </Card>
+
+      <Card>
+        <h3>Big Picture Mode</h3>
+        <p className="status" style={{ marginBottom: "12px", fontSize: "12px" }}>
+          Controller-friendly fullscreen mode optimized for TV/living room use.
+        </p>
+        <div style={{ display: "flex", flexDirection: "column", gap: spacing.sm }}>
+          <Button
+            type="button"
+            onClick={handleEnterBigPicture}
+          >
+            Enter Big Picture Mode
+          </Button>
+          <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+            <input
+              type="checkbox"
+              checked={launchInBigPicture}
+              onChange={(e) => setLaunchInBigPicture(e.target.checked)}
+              style={{ cursor: "pointer" }}
+            />
+            <span>Launch in Big Picture Mode on startup</span>
           </label>
         </div>
       </Card>
