@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { apiGet } from "../lib/api";
@@ -27,7 +27,7 @@ export default function BigPicturePage() {
     queryFn: () => apiGet<LibraryItem[]>("/library/items")
   });
 
-  const libraryItems = libraryQuery.data || [];
+  const libraryItems = useMemo(() => libraryQuery.data || [], [libraryQuery.data]);
 
   // Enable fullscreen on mount if running in Electron
   useEffect(() => {
@@ -105,7 +105,7 @@ export default function BigPicturePage() {
         navigate(`/library/item?id=${item.id}`, { state: { backgroundLocation: location } });
       }
     }
-  }, [isSidebarFocused, activeSection, selectedIndex, libraryItems, exitBigPicture, navigate]);
+  }, [isSidebarFocused, activeSection, selectedIndex, libraryItems, exitBigPicture, navigate, location]);
 
   // Handle back
   const handleBack = useCallback(() => {
