@@ -7,6 +7,8 @@
 
 const { execSync } = require('child_process');
 const os = require('os');
+const fs = require('fs');
+const path = require('path');
 
 const platform = os.platform();
 const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
@@ -34,11 +36,21 @@ if (isCI && platform === 'linux') {
   console.log(`Building for current platform: ${target}`);
 }
 
-const command = `pkg dist/index.js --targets ${targets} --output-path ../../release/bundle/jacare`;
+// Create output directory if it doesn't exist
+const outputDir = path.join(__dirname, '..', '..', '..', 'release', 'bundle');
+if (!fs.existsSync(outputDir)) {
+  fs.mkdirSync(outputDir, { recursive: true });
+}
+
+// Build with pkg - it will create jacare-linux, jacare-macos, jacare-win.exe
+const command = `pkg dist/index.js --targets ${targets} --output ${path.join(outputDir, 'jacare')}`;
 
 try {
   execSync(command, { stdio: 'inherit', cwd: __dirname + '/..' });
+  console.log('\nBuild completed successfully!');
+  console.log(`Artifacts saved to: ${outputDir}`);
 } catch (error) {
+  console.error('Build failed:', error.message);
   process.exit(1);
 }
 
