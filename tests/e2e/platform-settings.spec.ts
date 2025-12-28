@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-import type { Page } from '@playwright/test';
 
 /**
  * E2E tests for Platform Settings Configuration
