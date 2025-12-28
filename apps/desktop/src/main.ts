@@ -27,7 +27,7 @@ async function startServer(): Promise<void> {
   try {
     // Dynamic import of server module (after env vars are set)
     const serverModule = await import(serverPath) as { 
-      startServer?: () => Promise<Server | void>;
+      startServer?: () => Promise<Server>;
       logger?: { 
         info: (msg: string, data?: Record<string, unknown>) => void;
         error: (msg: string, error?: Error | unknown, data?: Record<string, unknown>) => void;
@@ -42,10 +42,7 @@ async function startServer(): Promise<void> {
     
     // Call the exported startServer function
     if (serverModule.startServer) {
-      const result = await serverModule.startServer();
-      if (result && typeof result === 'object' && 'listen' in result) {
-        serverInstance = result as Server;
-      }
+      serverInstance = await serverModule.startServer();
       log.info("Server started successfully in Electron process");
     } else {
       const errorMsg = "Server module does not export startServer function";
