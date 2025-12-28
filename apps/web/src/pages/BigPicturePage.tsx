@@ -230,7 +230,7 @@ export default function BigPicturePage() {
         </div>
       </nav>
 
-      <main className="bp-content">
+      <main className="bp-content" key={activeSection}>
         <div className="bp-header">
           <h1 className="bp-title">
             {activeSection === "home" && "Welcome"}
