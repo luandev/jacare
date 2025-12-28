@@ -34,8 +34,107 @@ jobs:
       - name: Run tests
         run: npm run test:unit
 
-  build-bundles:
+  test-packages:
+    name: Test ${{ matrix.os }} package
+    runs-on: ${{ matrix.os }}
     needs: checks
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            executable: jacare-linux
+            platform: linux
+          - os: windows-latest
+            executable: jacare-win.exe
+            platform: windows
+          - os: macos-latest
+            executable: jacare-macos
+            platform: macos
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build package for current platform
+        run: npm run package:bundle
+        env:
+          CI: false
+
+      - name: Verify and test executable
+        shell: bash
+        run: |
+          # Verify executable exists
+          if [ ! -f "release/bundle/${{ matrix.executable }}" ]; then
+            echo "Error: Executable not found"
+            ls -la release/bundle/ || echo "Directory not found"
+            exit 1
+          fi
+          
+          # Make executable (Unix only)
+          if [ "${{ matrix.platform }}" != "windows" ]; then
+            chmod +x release/bundle/${{ matrix.executable }}
+          fi
+          
+          # Create test environment
+          mkdir -p test-data/logs
+          export CROCDESK_DATA_DIR="$PWD/test-data"
+          export CROCDESK_PORT=3334
+          
+          # Start server
+          if [ "${{ matrix.platform }}" = "windows" ]; then
+            ./release/bundle/${{ matrix.executable }} > test-output.log 2>&1 &
+          else
+            ./release/bundle/${{ matrix.executable }} > test-output.log 2>&1 &
+          fi
+          
+          SERVER_PID=$!
+          echo $SERVER_PID > server.pid
+          
+          # Wait for startup
+          for i in {1..30}; do
+            if curl -f http://localhost:3334/health > /dev/null 2>&1; then
+              echo "✓ Server started successfully"
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "Error: Server failed to start"
+              cat test-output.log || true
+              find test-data/logs -type f -exec cat {} \; 2>/dev/null || true
+              kill $SERVER_PID 2>/dev/null || true
+              exit 1
+            fi
+            sleep 1
+          done
+          
+          # Basic smoke test
+          curl -f http://localhost:3334/health
+          curl -f http://localhost:3334/settings > /dev/null
+          
+          # Cleanup
+          kill $SERVER_PID 2>/dev/null || true
+          echo "✓ All tests passed for ${{ matrix.platform }}"
+
+      - name: Upload artifact for release
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundle-${{ matrix.platform }}
+          path: release/bundle/${{ matrix.executable }}
+          retention-days: 1
+
+  build-bundles:
+    needs: test-packages
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -50,10 +149,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build all-in-one bundles
-        run: npm run package:bundle
-        env:
-          CI: true
+      - name: Download tested artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release/bundle/
+          pattern: bundle-*
+          merge-multiple: true
 
       # TODO: Add code signing here
       # Windows: Use signtool with certificate from secrets
