@@ -68,6 +68,10 @@ jobs:
           cd apps/server
           npm run package
 
+      - name: Package standalone bundle
+        if: matrix.os == 'ubuntu-latest'
+        run: npm run package:bundle
+
       - name: Upload desktop artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -80,6 +84,14 @@ jobs:
         with:
           name: server-${{ matrix.os }}
           path: release/server/*
+          retention-days: 30
+
+      - name: Upload bundle artifacts
+        uses: actions/upload-artifact@v4
+        if: matrix.os == 'ubuntu-latest'
+        with:
+          name: bundle
+          path: release/bundle/*
           retention-days: 30
 
   create-release:

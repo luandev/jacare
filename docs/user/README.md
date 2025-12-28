@@ -7,10 +7,22 @@ Jacare is a desktop app that helps you keep your game ROMs tidy. It finds detail
 
 ## Quick start
 1. **Install the app**
+   
+   **Option A: Standalone Bundle (Recommended - No Node.js required)**
+   - Download the standalone binary for your system from the [releases page](https://github.com/luandev/jacare/releases):
+     - Windows: `jacare-win.exe`
+     - macOS: `jacare-macos` (make executable with `chmod +x jacare-macos`)
+     - Linux: `jacare-linux` (make executable with `chmod +x jacare-linux`)
+   - Run the binary directly—no installation needed!
+   
+   **Option B: Desktop App**
    - Download the Jacare desktop package for your system (Windows/macOS/Linux) from the [releases page](https://github.com/luandev/jacare/releases).
    - Install it like any other app.
+   
 2. **Open Jacare**
-   - Launch the app. The server and the visual interface start automatically.
+   - **Standalone bundle:** Run the binary. The server and web UI start automatically.
+   - **Desktop app:** Launch the app. The server and the visual interface start automatically.
+   - Open your browser and go to `http://localhost:3333` (for standalone bundle) or use the desktop app window.
 3. **Configure your library**
    - Go to **Settings** and set your **Library Directory** to the folder containing your ROM files.
    - Optionally set a **Download Directory** for temporary downloads (files are deleted after extraction).

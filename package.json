@@ -17,7 +17,8 @@
     "test:unit": "vitest --run",
     "test": "npm run test:unit",
     "package:desktop": "npm run build && npm run package -w @crocdesk/desktop",
-    "package:server": "npm run build && npm run package -w @crocdesk/server"
+    "package:server": "npm run build && npm run package -w @crocdesk/server",
+    "package:bundle": "npm run build -w @crocdesk/shared && npm run build -w @crocdesk/web && npm run build -w @crocdesk/server && npm run package -w @crocdesk/server"
   },
   "devDependencies": {
     "@playwright/test": "^1.48.2",

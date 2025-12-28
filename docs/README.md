@@ -57,7 +57,6 @@ npm ci
 - `CROCDESK_ENABLE_DOWNLOADS` (default `false`) – Enable download functionality
 - `CROCDB_BASE_URL` (default `https://api.crocdb.net`) – Crocdb API base URL
 - `CROCDB_CACHE_TTL_MS` (default `86400000`) – Cache TTL in milliseconds (24 hours)
-- `VITE_API_URL` (default `http://localhost:3333`) – API URL for web client
 - `CROCDESK_DEV_URL` (default `http://localhost:5173`) – Dev server URL for Electron
 
 Settings stored in the database:
@@ -114,9 +113,52 @@ Settings stored in the database:
 **Responses:** Wrapped as `{ info, data }` objects for consistency.
 
 ## Production build
-- Run `npm run build` to compile all workspaces.
-- Package the Electron app from `apps/desktop`; it bundles the server and web assets.
-- CI on `main` can publish release archives with the latest changelog and README.
+
+### Standalone Bundle (Recommended)
+
+Create a single standalone binary that includes both the server and web UI:
+
+```bash
+npm run package:bundle
+```
+
+This will create binaries in `release/bundle/`:
+- `jacare-win.exe` (Windows)
+- `jacare-macos` (macOS)
+- `jacare-linux` (Linux)
+
+The bundle includes:
+- Express server
+- Web UI static assets
+- All dependencies (including native modules)
+
+No Node.js installation required—users can run the binary directly.
+
+### Desktop App
+
+Package the Electron app from `apps/desktop`:
+
+```bash
+npm run package:desktop
+```
+
+This bundles the server and web assets for a native desktop experience.
+
+### Server Binary Only
+
+Package just the server binary:
+
+```bash
+npm run package:server
+```
+
+### CI/CD
+
+CI on `main` automatically publishes release archives with:
+- Desktop app packages (Windows, macOS, Linux)
+- Standalone bundle binaries
+- Server-only binaries
+- Latest changelog and README
 
 ## Support
 - Issues & roadmap: [GitHub Issues](https://github.com/luandev/jacare/issues)

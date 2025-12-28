@@ -12,6 +12,11 @@ import jobsRouter from "./routes/jobs";
 import { logger } from "./utils/logger";
 import { resumeAllJobs } from "./services/jobs";
 
+// Type guard to check if running as pkg bundle
+function isPkgBundle(): boolean {
+  return 'pkg' in process && !!(process as any).pkg;
+}
+
 async function start(): Promise<void> {
   logger.info("Starting CrocDesk server");
   await initDb();
@@ -83,7 +88,10 @@ async function start(): Promise<void> {
     }
   });
 
-  // Serve static web assets in production (when bundled with desktop app)
+  // Serve static web assets in production (when bundled with desktop app or pkg)
+  // pkg bundles assets maintaining their relative path structure
+  // Since entry is dist/index.js and assets are ../../web/dist/**/*,
+  // the path ../../web/dist from __dirname should work in both dev and pkg bundle
   const webDistPath = path.resolve(__dirname, "../../web/dist");
   try {
     const fs = await import("fs");
@@ -104,9 +112,15 @@ async function start(): Promise<void> {
         }
         res.sendFile(path.join(webDistPath, "index.html"));
       });
+    } else if (isPkgBundle()) {
+      // Log warning if running as pkg bundle but web dist not found
+      logger.warn("Web UI assets not found in pkg bundle", { webDistPath });
     }
-  } catch {
+  } catch (error) {
     // Web dist not available, skip static serving
+    if (isPkgBundle()) {
+      logger.error("Failed to access web UI assets in pkg bundle", error);
+    }
   }
 
   app.get("/health", (_req, res) => {
