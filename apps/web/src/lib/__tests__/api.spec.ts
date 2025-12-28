@@ -23,7 +23,7 @@ describe('api', () => {
 
       const result = await apiGet('/test');
 
-      expect(global.fetch).toHaveBeenCalledWith('http://localhost:3333/test');
+      expect(global.fetch).toHaveBeenCalledWith('/test');
       expect(result).toEqual(mockResponse);
     });
 
@@ -51,7 +51,7 @@ describe('api', () => {
       const result = await apiPost('/test', payload);
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:3333/test',
+        '/test',
         expect.objectContaining({
           method: 'POST',
           headers: expect.objectContaining({
@@ -74,7 +74,7 @@ describe('api', () => {
       await apiPost('/test', {});
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:3333/test',
+        '/test',
         expect.objectContaining({
           body: JSON.stringify({})
         })

@@ -1,4 +1,6 @@
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3333";
+// Use relative URL to automatically connect to the same server that served the web UI.
+// This ensures the frontend works regardless of the port or hostname configured.
+const API_URL = "";
 
 export async function apiGet<T>(path: string): Promise<T> {
   const response = await fetch(`${API_URL}${path}`);
