@@ -13,38 +13,38 @@
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
       :root {
-        --bg: #f6f2ea;
-        --bg-alt: #efe7da;
-        --card: #fffaf2;
-        --text: #1b1a16;
-        --muted: #6c665f;
-        --primary: #2d8659;
-        --primary-strong: #1f6b47;
-        --primary-hover: #259965;
-        --border: #e0d6c6;
-        --border-strong: #d4c5b0;
-        --shadow: 0 12px 32px rgba(27, 26, 22, 0.12);
-        --shadow-sm: 0 2px 8px rgba(27, 26, 22, 0.08);
-        --shadow-md: 0 4px 12px rgba(27, 26, 22, 0.12);
-        color-scheme: light;
+        --bg: #1a1a1a;
+        --bg-alt: #0f0f0f;
+        --card: #252525;
+        --text: #e0e0e0;
+        --muted: #9b9b9b;
+        --primary: #3db875;
+        --primary-strong: #2d8659;
+        --primary-hover: #4dc885;
+        --border: #3a3a3a;
+        --border-strong: #4a4a4a;
+        --shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+        --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+        --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
+        color-scheme: dark;
       }
 
-      @media (prefers-color-scheme: dark) {
+      @media (prefers-color-scheme: light) {
         :root {
-          --bg: #1a1a1a;
-          --bg-alt: #0f0f0f;
-          --card: #252525;
-          --text: #e0e0e0;
-          --muted: #9b9b9b;
-          --primary: #3db875;
-          --primary-strong: #2d8659;
-          --primary-hover: #4dc885;
-          --border: #3a3a3a;
-          --border-strong: #4a4a4a;
-          --shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
-          --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
-          --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
-          color-scheme: dark;
+          --bg: #f6f2ea;
+          --bg-alt: #efe7da;
+          --card: #fffaf2;
+          --text: #1b1a16;
+          --muted: #6c665f;
+          --primary: #2d8659;
+          --primary-strong: #1f6b47;
+          --primary-hover: #259965;
+          --border: #e0d6c6;
+          --border-strong: #d4c5b0;
+          --shadow: 0 12px 32px rgba(27, 26, 22, 0.12);
+          --shadow-sm: 0 2px 8px rgba(27, 26, 22, 0.08);
+          --shadow-md: 0 4px 12px rgba(27, 26, 22, 0.12);
+          color-scheme: light;
         }
       }
 
@@ -61,8 +61,8 @@
             45deg,
             transparent,
             transparent 10px,
-            rgba(45, 134, 89, 0.02) 10px,
-            rgba(45, 134, 89, 0.02) 20px
+            rgba(61, 184, 117, 0.03) 10px,
+            rgba(61, 184, 117, 0.03) 20px
           );
         background-attachment: fixed;
         color: var(--text);
@@ -72,7 +72,7 @@
         flex-direction: column;
       }
 
-      @media (prefers-color-scheme: dark) {
+      @media (prefers-color-scheme: light) {
         body {
           background: 
             radial-gradient(circle at top, var(--card) 0%, var(--bg) 55%, var(--bg-alt) 100%),
@@ -80,8 +80,8 @@
               45deg,
               transparent,
               transparent 10px,
-              rgba(61, 184, 117, 0.03) 10px,
-              rgba(61, 184, 117, 0.03) 20px
+              rgba(45, 134, 89, 0.02) 10px,
+              rgba(45, 134, 89, 0.02) 20px
             );
         }
       }
@@ -121,6 +121,49 @@
         color: var(--text);
       }
 
+      .mobile-menu-toggle {
+        display: none;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 8px;
+        color: var(--text);
+      }
+
+      @media (max-width: 768px) {
+        nav {
+          display: none;
+          position: absolute;
+          top: 100%;
+          left: 0;
+          right: 0;
+          background: var(--card);
+          border: 1px solid var(--border);
+          border-radius: 12px;
+          margin: 8px 5vw;
+          padding: 16px;
+          flex-direction: column;
+          gap: 12px;
+          box-shadow: var(--shadow);
+        }
+
+        nav.mobile-open {
+          display: flex;
+        }
+
+        .mobile-menu-toggle {
+          display: block;
+        }
+
+        header {
+          position: relative;
+        }
+
+        .nav-download-mobile {
+          display: none;
+        }
+      }
+
       .cta {
         padding: 10px 16px;
         border-radius: 10px;
@@ -141,6 +184,17 @@
       .cta:active {
         transform: translateY(1px);
         box-shadow: none;
+      }
+
+      .cta:focus-visible {
+        outline: 3px solid var(--primary);
+        outline-offset: 2px;
+      }
+
+      a:focus-visible {
+        outline: 2px solid var(--primary);
+        outline-offset: 2px;
+        border-radius: 4px;
       }
 
       .hero {
@@ -168,6 +222,13 @@
         flex-wrap: wrap;
         gap: 12px;
         margin-bottom: 18px;
+        align-items: center;
+      }
+
+      .badge-row img {
+        height: 20px;
+        display: inline-block;
+        vertical-align: middle;
       }
 
       .pill {
@@ -188,6 +249,55 @@
       .button-row .cta.secondary {
         background: var(--card);
         color: var(--text);
+      }
+
+      .button-row .cta.github {
+        background: #24292e;
+        color: #ffffff;
+        border: 1px solid #1b1f23;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .button-row .cta.github .star-count {
+        background: rgba(255, 255, 255, 0.15);
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .button-row .cta.coffee {
+        background: #FFDD00;
+        color: #000000;
+        border: 1px solid #FFC800;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+      }
+
+      .button-row .cta.coffee:hover {
+        background: #FFC800;
+      }
+
+      @media (prefers-color-scheme: light) {
+        .button-row .cta.github {
+          background: #f0f6fc;
+          color: #24292e;
+          border: 1px solid #d0d7de;
+        }
+      }
+
+      .button-row .cta.github:hover {
+        background: #2f363d;
+      }
+
+      @media (prefers-color-scheme: light) {
+        .button-row .cta.github:hover {
+          background: #dce5f0;
+        }
       }
 
       .media-card {
@@ -272,6 +382,36 @@
       footer {
         padding: 24px 5vw 48px;
         color: var(--muted);
+        border-top: 1px solid var(--border);
+        margin-top: 48px;
+      }
+
+      footer .footer-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 24px;
+      }
+
+      footer h4 {
+        margin: 0 0 12px;
+        color: var(--text);
+        font-size: 16px;
+      }
+
+      footer ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      footer ul li {
+        margin: 8px 0;
+      }
+
+      footer a:hover {
+        color: var(--primary);
       }
 
       .section-header {
@@ -305,35 +445,58 @@
         <span aria-hidden="true">🐊</span>
         <span id="nav-title">Jacare</span>
       </div>
-      <nav>
+      <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle navigation menu">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
+      <nav id="mobile-nav">
         <a href="#highlights">Highlights</a>
+        <a href="#architecture">How it works</a>
         <a href="#getting-started">Get started</a>
         <a href="#distribution">Downloads</a>
         <a href="#docs">Docs</a>
       </nav>
-      <a class="cta" id="nav-download" href="#distribution">Download</a>
+      <a class="cta nav-download-mobile" id="nav-download" href="https://github.com/luandev/jacare/releases/latest">Download</a>
     </header>
 
     <main>
       <section class="hero">
         <div>
           <div class="badge-row">
+            <img src="https://github.com/luandev/jacare/actions/workflows/ci.yml/badge.svg" alt="CI Status" />
+            <img src="https://github.com/luandev/jacare/actions/workflows/docker.yml/badge.svg" alt="Docker Build Status" />
             <span class="pill" id="badge-platform">Desktop + Web</span>
             <span class="pill" id="badge-open-source">Open-source MIT</span>
           </div>
           <h1 id="hero-title">Jacare</h1>
           <p id="hero-subtitle">
-            An open-source, web-based desktop ROM library manager that keeps downloads persistent, metadata enriched, and your
+            An open-source, web-based desktop ROM library manager that keeps downloads persistent, metadata enriched with <a href="https://crocdb.net" target="_blank" rel="noopener" style="color: var(--primary); text-decoration: underline;">Crocdb</a>, and your
             library ultra-responsive.
           </p>
           <div class="button-row">
-            <a class="cta" id="download-primary" href="#distribution">Download Jacare</a>
+            <a class="cta" id="download-primary" href="https://github.com/luandev/jacare/releases/latest">Download Jacare</a>
+            <a class="cta github" id="github-star-btn" href="https://github.com/luandev/jacare" target="_blank" rel="noopener">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+              </svg>
+              Star on GitHub
+              <span class="star-count" id="star-count" style="display: none;"></span>
+            </a>
+            <a class="cta coffee" href="https://buymeacoffee.com/luandev" target="_blank" rel="noopener">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M20.216 6.415l-.132-.666c-.119-.598-.388-1.163-1.001-1.379-.197-.069-.42-.098-.57-.241-.152-.143-.196-.366-.231-.572-.065-.378-.125-.756-.192-1.133-.057-.325-.102-.69-.25-.987-.195-.4-.597-.634-.996-.788a5.723 5.723 0 00-.626-.194c-1-.263-2.05-.36-3.077-.416a25.834 25.834 0 00-3.7.062c-.915.083-1.88.184-2.75.5-.318.116-.646.256-.888.501-.297.302-.393.77-.177 1.146.154.267.415.456.692.58.36.162.737.284 1.123.366 1.075.238 2.189.331 3.287.37 1.218.05 2.437.01 3.65-.118.299-.033.598-.073.896-.119.352-.054.578-.513.474-.834-.124-.383-.457-.531-.834-.473-.466.074-.96.108-1.382.146-1.177.08-2.358.082-3.536.006a22.228 22.228 0 01-1.157-.107c-.086-.01-.18-.025-.258-.036-.243-.036-.484-.08-.724-.13-.111-.027-.111-.185 0-.212h.005c.277-.06.557-.108.838-.147h.002c.131-.009.263-.032.394-.048a25.076 25.076 0 013.426-.12c.674.019 1.347.067 2.017.144l.228.031c.267.04.533.088.798.145.392.085.895.113 1.07.542.055.137.08.288.111.431l.319 1.484a.237.237 0 01-.199.284h-.003c-.037.006-.075.01-.112.015a36.704 36.704 0 01-4.743.295 37.059 37.059 0 01-4.699-.304c-.14-.017-.293-.042-.417-.06-.326-.048-.649-.108-.973-.161-.393-.065-.768-.032-1.123.161-.29.16-.527.404-.675.701-.154.316-.198.663-.237 1.001-.128 1.078-.216 2.162-.248 3.25-.022.742.001 1.484.067 2.223.027.287.048.575.063.862.004.205.027.437.141.627.095.165.26.271.441.322.167.047.341.067.512.087.394.048.791.079 1.189.099 1.155.059 2.312.081 3.469.062a49.159 49.159 0 007.477-.576c.325-.06.655-.117.977-.188.293-.065.576-.187.848-.325.365-.184.677-.454.922-.776.244-.322.426-.7.534-1.099.163-.605.227-1.23.254-1.851.023-.522.01-1.043-.012-1.564a24.045 24.045 0 00-.289-2.513c-.034-.198-.07-.396-.107-.594l-.006-.036c-.02-.117-.038-.234-.052-.353-.01-.099-.02-.198-.03-.297 0-.016 0-.032-.002-.048-.015-.145.013-.291.079-.421.07-.143.186-.258.335-.322.164-.07.343-.096.519-.116.727-.083 1.457-.125 2.188-.128z"/>
+              </svg>
+              Buy me a beer
+            </a>
             <a class="cta secondary" id="docs-link" href="docs/README.md">Developer docs</a>
             <a class="cta secondary" id="user-link" href="docs/user/README.md">User guide</a>
           </div>
         </div>
         <div class="media-card">
-          <video autoplay loop muted playsinline style="width: 100%; display: block; border-radius: 12px; border: 1px solid var(--border);">
+          <video autoplay loop muted playsinline style="width: 100%; display: block; border-radius: 12px; border: 1px solid var(--border);" aria-label="Jacare application demo">
             <source src="demo.mp4" type="video/mp4" />
             Your browser does not support the video tag.
           </video>
@@ -343,7 +506,6 @@
       <section id="highlights">
         <div class="section-header">
           <h2>What makes Jacare special</h2>
-          <span class="muted">Filled automatically from README</span>
         </div>
         <div class="grid" id="highlight-grid"></div>
       </section>
@@ -356,10 +518,42 @@
         <ul class="list" id="why-list"></ul>
       </section>
 
+      <section id="architecture">
+        <div class="section-header">
+          <h2>How it works</h2>
+          <span class="muted">Modern tech stack for a seamless experience</span>
+        </div>
+        <div class="grid">
+          <div class="card">
+            <h3>⚡ Electron Desktop</h3>
+            <p>Native desktop app wrapper providing OS integration, system tray support, and a native feel on Windows, macOS, and Linux.</p>
+          </div>
+          <div class="card">
+            <h3>🚀 Express Server</h3>
+            <p>RESTful API backend handling job orchestration, file operations, Crocdb integration, and serving the web UI.</p>
+          </div>
+          <div class="card">
+            <h3>⚛️ React UI</h3>
+            <p>Ultra-responsive web interface built with Vite, TanStack Query for state management, and real-time updates via SSE.</p>
+          </div>
+          <div class="card">
+            <h3>💾 SQLite Storage</h3>
+            <p>Local database for settings, cached metadata, library items, and job history—fast, reliable, and portable.</p>
+          </div>
+          <div class="card">
+            <h3>📡 Server-Sent Events</h3>
+            <p>Real-time progress updates for downloads, scanning, and background jobs without polling overhead.</p>
+          </div>
+          <div class="card">
+            <h3>🗂️ Background Jobs</h3>
+            <p>Long-running operations execute as pausable, resumable jobs with step-by-step progress tracking.</p>
+          </div>
+        </div>
+      </section>
+
       <section id="getting-started">
         <div class="section-header">
           <h2>Getting started</h2>
-          <span class="muted">Command examples pulled from README</span>
         </div>
         <div class="split">
           <ol class="list" id="getting-started-list"></ol>
@@ -389,7 +583,6 @@
       <section id="docs">
         <div class="section-header">
           <h2>Documentation</h2>
-          <span class="muted">Links mirrored from README</span>
         </div>
         <div class="grid">
           <div class="card">
@@ -403,16 +596,65 @@
             <a class="cta secondary" id="docs-user" href="docs/user/README.md">Open user guide</a>
           </div>
           <div class="card">
-            <h3>Roadmap & support</h3>
-            <p>Track releases and report issues directly on GitHub.</p>
-            <a class="cta secondary" id="docs-issues" href="https://github.com/luandev/jacare/issues">View GitHub issues</a>
+            <h3>Report issues</h3>
+            <p>Found a bug or have a feature request? Report it on GitHub Issues.</p>
+            <a class="cta secondary" id="docs-issues" href="https://github.com/luandev/jacare/issues">Report an issue</a>
           </div>
         </div>
       </section>
     </main>
 
     <footer>
-      Built from README content. Ready for GitHub Pages.
+      <div class="footer-content">
+        <div>
+          <h4>🐊 Jacare</h4>
+          <p>Open-source ROM library manager for retro gaming enthusiasts.</p>
+          <p style="margin-top: 12px;">
+            <a href="https://github.com/luandev/jacare" target="_blank" rel="noopener" style="display: inline-flex; align-items: center; gap: 6px;">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+              </svg>
+              GitHub Repository
+            </a>
+          </p>
+          <p style="margin-top: 8px; font-size: 14px;">
+            Created by <a href="https://github.com/luandev" target="_blank" rel="noopener" style="color: var(--primary);">@luandev</a>
+          </p>
+        </div>
+        <div>
+          <h4>Resources</h4>
+          <ul>
+            <li><a href="docs/README.md">Developer Guide</a></li>
+            <li><a href="docs/user/README.md">User Guide</a></li>
+            <li><a href="https://github.com/luandev/jacare/issues" target="_blank" rel="noopener">Issues & Roadmap</a></li>
+            <li><a href="https://github.com/luandev/jacare/releases" target="_blank" rel="noopener">Releases</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Community</h4>
+          <ul>
+            <li><a href="https://crocdb.net" target="_blank" rel="noopener">Crocdb Metadata Service</a></li>
+            <li><a href="https://api.crocdb.net" target="_blank" rel="noopener">Crocdb API Docs</a></li>
+            <li><a href="https://github.com/luandev/jacare/blob/main/docker/README.md" target="_blank" rel="noopener">Docker Guide</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Legal</h4>
+          <ul>
+            <li><a href="https://github.com/luandev/jacare/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a></li>
+          </ul>
+          <p style="margin-top: 12px; font-size: 14px;">
+            Metadata provided by <a href="https://crocdb.net" target="_blank" rel="noopener">Crocdb</a> (ISC License). 
+            We acknowledge and thank the Crocdb project for their valuable service to the retro gaming community.
+          </p>
+          <p style="margin-top: 12px; font-size: 13px; opacity: 0.85; line-height: 1.5;">
+            <strong>⚖️ Legal Notice:</strong> Jacare is a library management tool only. Users are responsible for ensuring they have legal rights to any ROM files in their collection. Only use ROMs you legally own or have permission to use.
+          </p>
+        </div>
+      </div>
+      <div style="text-align: center; margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border);">
+        <p>&copy; 2024 Jacare. Open-source software under the MIT License.</p>
+      </div>
     </footer>
 
     <script>
@@ -475,23 +717,23 @@
         ],
         distribution: [
           {
-            title: "Standalone Bundle",
-            body: "Single executable for Windows, macOS, and Linux. No Node.js required!",
+            title: "🚀 Standalone Bundle (Recommended)",
+            body: "Single executable for Windows, macOS, and Linux. No Node.js required! Download jacare-win.exe, jacare-macos, or jacare-linux from releases.",
             link: "https://github.com/luandev/jacare/releases/latest"
           },
           {
-            title: "Desktop bundles",
-            body: "Packaged from apps/desktop with server + web assets included.",
-            link: "https://github.com/luandev/jacare/releases/latest"
-          },
-          {
-            title: "Docker image",
-            body: "ghcr.io/luandev/jacare with docker/docker-compose.yml examples.",
+            title: "🐳 Docker Image",
+            body: "Run with docker compose or pull ghcr.io/luandev/jacare:latest. Perfect for server deployments with persistent volumes.",
             link: "https://github.com/luandev/jacare/blob/main/docker/README.md"
           },
           {
-            title: "Server binaries",
-            body: "Standalone builds for Windows, macOS, and Linux with the web UI.",
+            title: "🖥️ Desktop Applications",
+            body: "Native Electron packages for Windows, macOS, and Linux. Includes server and web assets for a complete desktop experience.",
+            link: "https://github.com/luandev/jacare/releases/latest"
+          },
+          {
+            title: "⚙️ Server Binaries",
+            body: "Headless server builds for Windows, macOS, and Linux. Run standalone and access via browser at localhost:3333.",
             link: "https://github.com/luandev/jacare/releases/latest"
           },
         ],
@@ -583,33 +825,30 @@
         // Standalone Bundle (Recommended)
         if (block.includes("Standalone Bundle") || block.includes("standalone binary")) {
           cards.push({
-            title: "Standalone Bundle",
-            body: "Single executable for Windows, macOS, and Linux. No Node.js required!",
+            title: "🚀 Standalone Bundle (Recommended)",
+            body: "Single executable for Windows, macOS, and Linux. No Node.js required! Download jacare-win.exe, jacare-macos, or jacare-linux.",
             link: repoUrl + "/releases/latest",
           });
         }
         
         if (block.includes("Docker")) {
-          const dockerSnippet = (block.match(/```bash[\s\S]*?docker[\s\S]*?```/) || [""])[0]
-            .replace(/```bash|```/g, "")
-            .trim();
           cards.push({
-            title: "Docker image",
-            body: dockerSnippet ? dockerSnippet.split("\n")[0] : "Run Jacare with docker compose or ghcr.io images.",
+            title: "🐳 Docker Image",
+            body: "Run with docker compose or pull ghcr.io/luandev/jacare:latest. Perfect for server deployments.",
             link: repoUrl + "/blob/main/docker/README.md",
           });
         }
         if (block.includes("Desktop")) {
           cards.push({
-            title: "Desktop bundles",
-            body: "Ready-to-run packages published from apps/desktop releases.",
+            title: "🖥️ Desktop Applications",
+            body: "Native Electron packages with server and web assets for a complete desktop experience.",
             link: repoUrl + "/releases/latest",
           });
         }
         if (block.includes("Server Binaries")) {
           cards.push({
-            title: "Server binaries",
-            body: "Headless server builds for Windows, macOS, and Linux.",
+            title: "⚙️ Server Binaries",
+            body: "Headless server builds. Run standalone and access via browser at localhost:3333.",
             link: repoUrl + "/releases/latest",
           });
         }
@@ -684,6 +923,16 @@
         targets.navDownload.href = repoUrl + "/releases/latest";
         targets.downloadPrimary.href = repoUrl + "/releases/latest";
         targets.docsIssues.href = repoUrl + "/issues";
+
+        // Update badge images
+        const ciBadge = document.querySelector('.badge-row img[alt="CI Status"]');
+        const dockerBadge = document.querySelector('.badge-row img[alt="Docker Build Status"]');
+        if (ciBadge) ciBadge.src = `${repoUrl}/actions/workflows/ci.yml/badge.svg`;
+        if (dockerBadge) dockerBadge.src = `${repoUrl}/actions/workflows/docker.yml/badge.svg`;
+
+        // Update GitHub star button
+        const githubBtn = document.querySelector('.cta.github');
+        if (githubBtn) githubBtn.href = repoUrl;
       }
 
       renderHighlights(fallback.highlights);
@@ -694,6 +943,53 @@
       targets.distribution.innerHTML = fallback.distribution.map(createCard).join("");
 
       hydrateFromReadme();
+
+      // Mobile menu toggle
+      const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+      const mobileNav = document.getElementById('mobile-nav');
+      
+      if (mobileMenuToggle && mobileNav) {
+        mobileMenuToggle.addEventListener('click', () => {
+          mobileNav.classList.toggle('mobile-open');
+        });
+
+        // Close menu when clicking a link
+        const navLinks = mobileNav.querySelectorAll('a');
+        navLinks.forEach(link => {
+          link.addEventListener('click', () => {
+            mobileNav.classList.remove('mobile-open');
+          });
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', (e) => {
+          if (!mobileMenuToggle.contains(e.target) && !mobileNav.contains(e.target)) {
+            mobileNav.classList.remove('mobile-open');
+          }
+        });
+      }
+
+      // Fetch GitHub star count
+      async function fetchStarCount() {
+        try {
+          const repo = deriveRepoFromLocation();
+          const response = await fetch(`https://api.github.com/repos/${repo.owner}/${repo.name}`);
+          if (response.ok) {
+            const data = await response.json();
+            const starCount = data.stargazers_count;
+            const starCountEl = document.getElementById('star-count');
+            if (starCountEl && starCount) {
+              starCountEl.textContent = starCount.toLocaleString();
+              starCountEl.style.display = 'inline-block';
+            }
+          }
+        } catch (error) {
+          // Silently fail if we can't fetch the star count
+          console.debug('Could not fetch star count:', error);
+        }
+      }
+
+      fetchStarCount();
     </script>
   </body>
 </html>
