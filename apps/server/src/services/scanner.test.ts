@@ -531,6 +531,9 @@ describe("Scanner Service - ROM Detection Heuristics", () => {
   });
 
   describe("Error Handling", () => {
+    const READONLY_PERMISSIONS = 0o444;
+    const READWRITE_PERMISSIONS = 0o755;
+
     it("should handle Crocdb API errors gracefully", async () => {
       await fs.writeFile(path.join(libraryRoot, "game.nes"), "test");
 
@@ -551,12 +554,12 @@ describe("Scanner Service - ROM Detection Heuristics", () => {
       const items = await scanForUnorganizedItems(libraryRoot);
 
       // Make library root read-only to cause move to fail
-      await fs.chmod(libraryRoot, 0o444);
+      await fs.chmod(libraryRoot, READONLY_PERMISSIONS);
 
       const result = await reorganizeItems(items, libraryRoot);
 
       // Restore permissions for cleanup
-      await fs.chmod(libraryRoot, 0o755);
+      await fs.chmod(libraryRoot, READWRITE_PERMISSIONS);
 
       expect(result.reorganizedFiles).toBe(0);
       expect(result.errors.length).toBeGreaterThan(0);
@@ -577,11 +580,12 @@ describe("Scanner Service - ROM Detection Heuristics", () => {
       const targetDir = path.join(
         libraryRoot,
         "Nintendo - Nintendo Entertainment System",
+        "Not Found",
         "bad-game"
       );
       await fs.mkdir(targetDir, { recursive: true });
       await fs.writeFile(path.join(targetDir, "bad-game.nes"), "existing");
-      await fs.chmod(targetDir, 0o444); // Make read-only
+      await fs.chmod(targetDir, READONLY_PERMISSIONS);
 
       const result = await reorganizeItems(items, libraryRoot);
 
@@ -589,7 +593,7 @@ describe("Scanner Service - ROM Detection Heuristics", () => {
       expect(result.reorganizedFiles).toBeGreaterThan(0);
 
       // Restore permissions for cleanup
-      await fs.chmod(targetDir, 0o755);
+      await fs.chmod(targetDir, READWRITE_PERMISSIONS);
     });
   });
 });

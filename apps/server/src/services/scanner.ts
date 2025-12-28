@@ -13,9 +13,6 @@ const NOT_FOUND_FOLDER = "Not Found";
 
 // Regex patterns for detecting version tags and hacks
 const VERSION_TAG_PATTERN = /\s*[\(\[].*?[\)\]]/g;
-const REGION_PATTERN = /\((?:USA|Europe|Japan|World|Asia|Korea|Australia|Brazil|Canada|China|France|Germany|Italy|Netherlands|Spain|Sweden|UK|Unknown)\)/gi;
-const REVISION_PATTERN = /\(Rev\s*[A-Z0-9]+\)/gi;
-const HACK_PATTERN = /\[(?:Hack|Translation|T\+|Trainer|Beta|Proto|Unl|!|\?|h[0-9]*C?|b[0-9]*|f[0-9]*|o[0-9]*|t[0-9]*|v[0-9.]+)\]/gi;
 
 const SCAN_EXTENSIONS = new Set([
   ".zip",
@@ -587,7 +584,6 @@ function normalizeRomNameForSearch(fileName: string): string {
  */
 function extractVersionTags(fileName: string): string {
   const nameWithoutExt = path.basename(fileName, path.extname(fileName));
-  const tags: string[] = [];
   
   // Extract all bracketed content
   const matches = nameWithoutExt.match(VERSION_TAG_PATTERN);
@@ -603,7 +599,8 @@ function extractVersionTags(fileName: string): string {
  */
 function isRomHack(fileName: string): boolean {
   const nameWithoutExt = path.basename(fileName, path.extname(fileName));
-  return HACK_PATTERN.test(nameWithoutExt);
+  const hackPattern = /\[(?:Hack|Translation|T\+|Trainer|Beta|Proto|Unl)\]/gi;
+  return hackPattern.test(nameWithoutExt);
 }
 
 async function findCrocdbMatch(
