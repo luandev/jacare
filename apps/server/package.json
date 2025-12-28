@@ -5,14 +5,15 @@
   "main": "dist/index.js",
   "pkg": {
     "assets": [
-      "../../web/dist/**/*"
+      "../../web/dist/**/*",
+      "node_modules/better-sqlite3/**/*"
     ],
     "scripts": [
       "dist/**/*.js"
     ],
     "targets": [
       "node18-win-x64",
-      "node18-macos-x64",
+      "node18-macos-arm64",
       "node18-linux-x64"
     ]
   },

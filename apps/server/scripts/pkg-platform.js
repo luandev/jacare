@@ -16,7 +16,7 @@ const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
 // Map Node.js platform to pkg target
 const platformMap = {
   'win32': 'node18-win-x64',
-  'darwin': 'node18-macos-x64',
+  'darwin': 'node18-macos-arm64',
   'linux': 'node18-linux-x64'
 };
 
@@ -24,7 +24,7 @@ let targets;
 
 if (isCI && platform === 'linux') {
   // In CI on Linux, build for all platforms
-  targets = 'node18-win-x64,node18-macos-x64,node18-linux-x64';
+  targets = 'node18-win-x64,node18-macos-arm64,node18-linux-x64';
 } else {
   // Local builds: only current platform
   const target = platformMap[platform];
