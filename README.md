@@ -76,6 +76,7 @@ If you’d rather run it locally, make sure you have **[Node.js](https://nodejs.
    npm run typecheck  # Type-check the monorepo
    npm run lint       # Lint all code
    npm run test:unit  # Run unit tests
+   npm run test:e2e   # Run end-to-end tests (requires Playwright browsers)
    ```
 
 > Tip: The desktop app expects the web dev server at `http://localhost:5173` by default. Override with `CROCDESK_DEV_URL` if you change the Vite port.
