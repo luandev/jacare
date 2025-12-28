@@ -18,6 +18,7 @@ import {
 } from "../db";
 import { publishEvent } from "../events";
 import { scanLocal } from "./scanner";
+import { scanForUnorganizedItems, reorganizeItems } from "./scanner";
 import { runDownloadAndInstall, type DownloadJobPayload } from "./pipeline";
 import { getEntry } from "./crocdb";
 import { logger } from "../utils/logger";
@@ -283,11 +284,52 @@ async function runScanJob(job: JobRecord): Promise<void> {
   logger.info("Starting scan job", { jobId: job.id });
   await runJob(job, async (report) => {
     const settings = getSettings() ?? DEFAULT_SETTINGS;
-    const libraryDir = settings.libraryDir || "./library";
-    report.step("scan_local", 0.1, `Scanning library root ${libraryDir}`);
-    logger.debug("Scanning directory", { jobId: job.id, libraryDir });
+    const libraryDir = path.resolve(settings.libraryDir);
+    
+    // Phase 1: Scan for unorganized items
+    report.step("scan_analysis", 0.05, `Analyzing library structure at ${libraryDir}`);
+    logger.debug("Scanning for unorganized items", { jobId: job.id, libraryDir });
+    
+    const unorganizedItems = await scanForUnorganizedItems(libraryDir, (progress, message) => {
+      report.step("scan_analysis", 0.05 + (progress * 0.35), message);
+    });
+    
+    logger.info("Found unorganized items", { jobId: job.id, count: unorganizedItems.length });
+    
+    // Phase 2: Reorganize items if any found
+    if (unorganizedItems.length > 0) {
+      report.step("reorganize", 0.4, `Reorganizing ${unorganizedItems.length} items...`);
+      logger.debug("Starting reorganization", { jobId: job.id, itemCount: unorganizedItems.length });
+      
+      const reorganizeResult = await reorganizeItems(unorganizedItems, libraryDir, (progress, message) => {
+        report.step("reorganize", 0.4 + (progress * 0.4), message);
+      });
+      
+      logger.info("Reorganization completed", { 
+        jobId: job.id, 
+        reorganized: reorganizeResult.reorganizedFiles,
+        skipped: reorganizeResult.skippedFiles,
+        errors: reorganizeResult.errors.length
+      });
+      
+      if (reorganizeResult.errors.length > 0) {
+        logger.warn("Reorganization had errors", { 
+          jobId: job.id, 
+          errors: reorganizeResult.errors.slice(0, 5) // Log first 5 errors
+        });
+      }
+    } else {
+      report.step("reorganize", 0.8, "No items need reorganization");
+      logger.info("No unorganized items found", { jobId: job.id });
+    }
+    
+    // Phase 3: Final scan and indexing
+    report.step("indexing", 0.8, `Indexing library files...`);
+    logger.debug("Performing final scan", { jobId: job.id, libraryDir });
+    
     const items = await scanLocal([{ id: "library", path: libraryDir }]);
-    logger.info("Scan found items", { jobId: job.id, count: items.length });
+    logger.info("Final scan complete", { jobId: job.id, count: items.length });
+    
     for (const item of items) {
       upsertLibraryItem({
         path: item.path,
@@ -299,7 +341,8 @@ async function runScanJob(job: JobRecord): Promise<void> {
         source: item.source
       });
     }
-    report.step("scan_local", 1, `Indexed ${items.length} files`);
+    
+    report.step("indexing", 1, `Scan complete: indexed ${items.length} files`);
     logger.info("Scan job completed", { jobId: job.id, itemsIndexed: items.length });
   });
 }
