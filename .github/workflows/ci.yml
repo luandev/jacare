@@ -84,6 +84,10 @@ jobs:
   
   test-e2e:
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+      pull-requests: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -99,3 +103,36 @@ jobs:
 
       - name: Test E2E
         run: npm run test:e2e
+
+      - name: Upload Playwright report artifact
+        if: failure()
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: playwright-report
+
+      - name: Deploy Pages (HTML report)
+        if: failure()
+        id: deploy
+        uses: actions/deploy-pages@v4
+        environment:
+          name: github-pages
+          url: ${{ steps.deploy.outputs.page_url }}
+
+      - name: Comment PR with report link
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pageUrl = '${{ steps.deploy.outputs.page_url }}';
+            const prNumber = context.payload.pull_request?.number;
+            if (!prNumber) {
+              core.info('No PR number found; skipping comment.');
+              return;
+            }
+            const body = `❌ E2E failed. View the HTML report:\n\n${pageUrl}`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body,
+            });
