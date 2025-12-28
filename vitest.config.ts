@@ -31,9 +31,9 @@ export default defineConfig({
           environment: 'node',
           setupFiles: ['tests/vitest.setup.ts'],
           include: [
-            'apps/server/**/*.{test,spec}.{ts,tsx}',
-            'apps/desktop/**/*.{test,spec}.{ts,tsx}',
-            'packages/**/*.{test,spec}.{ts,tsx}'
+            'apps/server/src/**/*.{test,spec}.{ts,tsx}',
+            'apps/desktop/src/**/*.{test,spec}.{ts,tsx}',
+            'packages/**/src/**/*.{test,spec}.{ts,tsx}'
           ]
         },
         resolve: {
@@ -48,7 +48,7 @@ export default defineConfig({
           environment: 'jsdom',
           setupFiles: ['tests/vitest.setup.ts'],
           include: [
-            'apps/web/**/*.{test,spec}.{ts,tsx}'
+            'apps/web/src/**/*.{test,spec}.{ts,tsx}'
           ]
         },
         resolve: {
