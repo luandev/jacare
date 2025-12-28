@@ -88,6 +88,9 @@ jobs:
       pages: write
       id-token: write
       pull-requests: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -102,28 +105,27 @@ jobs:
         run: npm ci
 
       - name: Test E2E
+        id: e2e_test
         run: npm run test:e2e
+        continue-on-error: true
 
       - name: Upload Playwright report artifact
-        if: failure()
+        if: ${{ always() && steps.e2e_test.conclusion == 'failure' }}
         uses: actions/upload-pages-artifact@v3
         with:
           path: playwright-report
 
       - name: Deploy Pages (HTML report)
-        if: failure()
-        id: deploy
+        if: ${{ always() && steps.e2e_test.conclusion == 'failure' }}
+        id: deployment
         uses: actions/deploy-pages@v4
-        environment:
-          name: github-pages
-          url: ${{ steps.deploy.outputs.page_url }}
 
       - name: Comment PR with report link
-        if: failure()
+        if: ${{ always() && steps.e2e_test.conclusion == 'failure' }}
         uses: actions/github-script@v7
         with:
           script: |
-            const pageUrl = '${{ steps.deploy.outputs.page_url }}';
+            const pageUrl = '${{ steps.deployment.outputs.page_url }}';
             const prNumber = context.payload.pull_request?.number;
             if (!prNumber) {
               core.info('No PR number found; skipping comment.');
