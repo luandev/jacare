@@ -28,6 +28,28 @@ Before creating a release, ensure:
 
 ### 1. Tag the Release
 
+#### Option A: Using the Automated Script (Recommended)
+
+Use the provided script that handles validation, checks, and tagging:
+
+```bash
+# Using npm script
+npm run release v1.0.0
+
+# Or directly
+./scripts/create-release.sh v1.0.0
+```
+
+The script will:
+- Validate version format
+- Check you're on the main branch
+- Pull latest changes
+- Run pre-release checks (typecheck, lint, tests)
+- Prompt for confirmation
+- Create and push the tag
+
+#### Option B: Manual Process
+
 ```bash
 # Make sure you're on main and up to date
 git checkout main
