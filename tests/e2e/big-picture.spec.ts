@@ -38,19 +38,17 @@ test.describe('Big Picture Mode E2E', () => {
       await enterBigPictureButton.click();
       
       // Wait for Big Picture mode to load
-      await page.waitForTimeout(500);
+      const bigPictureMode = page.locator('.big-picture-mode');
+      await expect(bigPictureMode).toBeVisible();
+      await expect(bigPictureMode.locator('.bp-logo')).toContainText('Jacare');
       
-      // Verify Big Picture elements are visible
-      await expect(page.locator('.big-picture-mode')).toBeVisible();
-      await expect(page.locator('.bp-logo')).toContainText('Jacare');
-      
-      // Verify navigation items
-      await expect(page.getByText('Home')).toBeVisible();
-      await expect(page.getByText('Library')).toBeVisible();
-      await expect(page.getByText('Search')).toBeVisible();
-      await expect(page.getByText('Downloads')).toBeVisible();
-      await expect(page.getByText('Settings')).toBeVisible();
-      await expect(page.getByText('Exit')).toBeVisible();
+      // Verify navigation items within Big Picture mode
+      await expect(bigPictureMode.locator('.bp-nav-item', { hasText: 'Home' })).toBeVisible();
+      await expect(bigPictureMode.locator('.bp-nav-item', { hasText: 'Library' })).toBeVisible();
+      await expect(bigPictureMode.locator('.bp-nav-item', { hasText: 'Search' })).toBeVisible();
+      await expect(bigPictureMode.locator('.bp-nav-item', { hasText: 'Downloads' })).toBeVisible();
+      await expect(bigPictureMode.locator('.bp-nav-item', { hasText: 'Settings' })).toBeVisible();
+      await expect(bigPictureMode.locator('.bp-nav-item', { hasText: 'Exit' })).toBeVisible();
     });
     
     // Step 3: Test keyboard navigation
@@ -61,18 +59,15 @@ test.describe('Big Picture Mode E2E', () => {
       
       // Press ArrowDown to navigate to Library
       await page.keyboard.press('ArrowDown');
-      await page.waitForTimeout(300);
-      await expect(page.getByRole('heading', { name: 'Library' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Library' })).toBeVisible({ timeout: 1000 });
       
       // Press ArrowDown to navigate to Search
       await page.keyboard.press('ArrowDown');
-      await page.waitForTimeout(300);
-      await expect(page.getByRole('heading', { name: 'Search' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Search' })).toBeVisible({ timeout: 1000 });
       
       // Press ArrowUp to go back to Library
       await page.keyboard.press('ArrowUp');
-      await page.waitForTimeout(300);
-      await expect(page.getByRole('heading', { name: 'Library' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Library' })).toBeVisible({ timeout: 1000 });
     });
     
     // Step 4: Test Library section
@@ -88,23 +83,20 @@ test.describe('Big Picture Mode E2E', () => {
     await test.step('Navigate to Downloads section', async () => {
       await page.keyboard.press('ArrowDown');
       await page.keyboard.press('ArrowDown');
-      await page.waitForTimeout(300);
-      await expect(page.getByRole('heading', { name: 'Downloads' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Downloads' })).toBeVisible({ timeout: 1000 });
     });
     
     // Step 6: Exit Big Picture Mode
     await test.step('Exit Big Picture Mode', async () => {
       // Press Escape to exit
       await page.keyboard.press('Escape');
-      await page.waitForTimeout(500);
       
-      // Verify we're back to normal mode
-      const bigPictureMode = page.locator('.big-picture-mode');
-      await expect(bigPictureMode).not.toBeVisible();
+      // Wait for Big Picture mode to disappear
+      await expect(page.locator('.big-picture-mode')).not.toBeVisible();
       
       // Verify normal UI is visible
-      const sidebar = page.locator('.sidebar');
-      await expect(sidebar).toBeVisible();
+      await expect(page.locator('.sidebar')).toBeVisible();
+      await expect(page.locator('.app-shell')).toBeVisible();
     });
   });
   
@@ -114,7 +106,6 @@ test.describe('Big Picture Mode E2E', () => {
     // Dismiss welcome if shown
     try {
       await page.getByRole('button', { name: /Skip/i }).click({ timeout: 2000 });
-      await page.waitForTimeout(300);
     } catch {
       // Continue
     }
@@ -122,7 +113,9 @@ test.describe('Big Picture Mode E2E', () => {
     // Navigate to Settings and enter Big Picture
     await page.getByRole('link', { name: 'Settings' }).click();
     await page.getByRole('button', { name: /Enter Big Picture Mode/i }).click();
-    await page.waitForTimeout(500);
+    
+    // Wait for Big Picture mode to be visible
+    await expect(page.locator('.big-picture-mode')).toBeVisible();
     
     // Test clicking navigation items
     await test.step('Click Library navigation', async () => {
@@ -140,10 +133,10 @@ test.describe('Big Picture Mode E2E', () => {
     await test.step('Click Exit to leave Big Picture', async () => {
       const exitButton = page.locator('.bp-nav-item', { hasText: 'Exit' });
       await exitButton.click();
-      await page.waitForTimeout(500);
       
       // Verify we exited
       await expect(page.locator('.big-picture-mode')).not.toBeVisible();
+      await expect(page.locator('.sidebar')).toBeVisible();
     });
   });
   
@@ -153,7 +146,6 @@ test.describe('Big Picture Mode E2E', () => {
     // Skip welcome
     try {
       await page.getByRole('button', { name: /Skip/i }).click({ timeout: 2000 });
-      await page.waitForTimeout(300);
     } catch {
       // Continue
     }
@@ -161,7 +153,9 @@ test.describe('Big Picture Mode E2E', () => {
     // Enter Big Picture mode
     await page.getByRole('link', { name: 'Settings' }).click();
     await page.getByRole('button', { name: /Enter Big Picture Mode/i }).click();
-    await page.waitForTimeout(500);
+    
+    // Wait for Big Picture mode to be visible
+    await expect(page.locator('.big-picture-mode')).toBeVisible();
     
     await test.step('Verify focus indicators on navigation', async () => {
       // Home should be focused initially
@@ -170,10 +164,9 @@ test.describe('Big Picture Mode E2E', () => {
       
       // Navigate and check focus moves
       await page.keyboard.press('ArrowDown');
-      await page.waitForTimeout(200);
       
       const libraryButton = page.locator('.bp-nav-item.focused', { hasText: 'Library' });
-      await expect(libraryButton).toBeVisible();
+      await expect(libraryButton).toBeVisible({ timeout: 1000 });
     });
   });
 });
