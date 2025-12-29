@@ -164,6 +164,32 @@ npm run package:server   # Package server-only binary
 
 **Important:** Profiles and per-platform roots have been removed. Use `downloadDir` for temporary downloads and `libraryDir` as the single root for all game files.
 
+### API URL and Port Configuration
+
+The frontend uses **runtime API URL detection** to work across different deployment scenarios. This is critical for avoiding hardcoded port issues.
+
+**How it works:**
+1. **Priority 1**: `window.API_URL` (if injected via script tag) - for Docker/separate deployments
+2. **Priority 2**: `/api-config` endpoint - automatically detects API URL based on request origin
+3. **Priority 3**: Relative URLs (empty string) - default for Electron and same-origin serving
+
+**Key principles:**
+- **Never hardcode `localhost:3333`** in frontend code. Always use `getApiUrl()` from `apps/web/src/lib/api.ts`.
+- **Vite environment variables** (like `VITE_API_URL`) only work at build time, not runtime. Don't use them for runtime configuration.
+- **The `/api-config` endpoint** returns `{ apiUrl: string, port: number }` and is used by the frontend to auto-detect the correct API URL.
+- **Vite proxy** in development respects `CROCDESK_PORT` environment variable.
+
+**For Docker deployments:**
+- If frontend and backend are on the same origin (default), relative URLs work automatically.
+- If on different origins, inject `window.API_URL` via entrypoint script or template substitution in `index.html`.
+- The `/api-config` endpoint can also be used to configure the frontend dynamically.
+
+**Common mistakes to avoid:**
+- Hardcoding ports in frontend code
+- Using `VITE_API_URL` expecting it to work at runtime
+- Assuming `localhost:3333` will always work
+- Not awaiting `getApiUrl()` when constructing API URLs
+
 ## Data Storage
 
 ### SQLite Tables

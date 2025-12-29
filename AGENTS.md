@@ -40,3 +40,31 @@ Profiles and per-platform roots have been removed in favor of separate `download
 - CROCDB_BASE_URL (default https://api.crocdb.net)
 - CROCDB_CACHE_TTL_MS (default 86400000)
 - CROCDESK_DEV_URL (Electron dev URL, default http://localhost:5173)
+
+## API URL Configuration
+
+The frontend automatically detects the API base URL at runtime using a multi-layered approach:
+
+1. **window.API_URL** (highest priority): If injected via script tag in `index.html`, this takes precedence. Useful for Docker deployments where frontend and backend are on different origins.
+
+2. **/api-config endpoint**: The frontend fetches this endpoint on first API call. If the returned URL matches the current origin, relative URLs are used. If different, the configured URL is used.
+
+3. **Relative URLs** (default): For Electron and same-origin serving, empty string "" is used, which makes all API calls relative to the current origin.
+
+### Why this matters
+
+- **Electron**: Frontend and backend are served from the same origin, so relative URLs work perfectly.
+- **Development**: Vite proxy forwards API requests to the backend (configurable via `CROCDESK_PORT`).
+- **Docker/Production**: When frontend and backend are on different origins, inject `window.API_URL` or rely on `/api-config` endpoint.
+
+### Common pitfalls to avoid
+
+- **Never hardcode `localhost:3333`** in frontend code. Always use `getApiUrl()` from `apps/web/src/lib/api.ts`.
+- **Don't use `VITE_API_URL`** for runtime configuration. Vite environment variables are only available at build time, not runtime.
+- **Always await `getApiUrl()`** when constructing API URLs. It's an async function that may need to fetch configuration.
+
+### Best practices
+
+- Use `getApiUrl()` function for all API URL construction
+- The `/api-config` endpoint automatically detects the correct API URL based on request origin
+- For Docker deployments, you can inject `window.API_URL` via entrypoint script or template substitution

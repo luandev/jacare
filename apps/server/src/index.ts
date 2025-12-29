@@ -111,7 +111,8 @@ export async function startServer(): Promise<Server> {
             req.path.startsWith("/jobs") || 
             req.path.startsWith("/events") || 
             req.path.startsWith("/file") || 
-            req.path.startsWith("/health")) {
+            req.path.startsWith("/health") ||
+            req.path.startsWith("/api-config")) {
           return next();
         }
         res.sendFile(path.join(webDistPath, "index.html"));
@@ -129,6 +130,17 @@ export async function startServer(): Promise<Server> {
 
   app.get("/health", (_req, res) => {
     res.json({ ok: true });
+  });
+
+  // API configuration endpoint for frontend
+  // Returns the API base URL and port so the frontend can configure itself
+  app.get("/api-config", (req, res) => {
+    const protocol = req.protocol || "http";
+    const host = req.get("host") || `localhost:${PORT}`;
+    res.json({ 
+      apiUrl: `${protocol}://${host}`,
+      port: PORT
+    });
   });
 
   app.get("/events", sseHandler);

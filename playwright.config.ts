@@ -24,7 +24,9 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: 'http://localhost:3333',
+    baseURL: process.env.CROCDESK_PORT 
+      ? `http://localhost:${process.env.CROCDESK_PORT}`
+      : 'http://localhost:3333',
     
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
@@ -40,8 +42,12 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'npm run build -w @crocdesk/shared && npm run build -w @crocdesk/web && npm run dev:server',
-    url: 'http://localhost:3333',
+    command: process.env.CROCDESK_PORT
+      ? `CROCDESK_PORT=${process.env.CROCDESK_PORT} npm run build -w @crocdesk/shared && npm run build -w @crocdesk/web && CROCDESK_PORT=${process.env.CROCDESK_PORT} npm run dev:server`
+      : 'npm run build -w @crocdesk/shared && npm run build -w @crocdesk/web && npm run dev:server',
+    url: process.env.CROCDESK_PORT 
+      ? `http://localhost:${process.env.CROCDESK_PORT}`
+      : 'http://localhost:3333',
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
     stdout: 'pipe',

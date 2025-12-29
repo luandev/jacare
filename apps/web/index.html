@@ -4,6 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Jacare</title>
+    <!-- Inject API URL for Docker/separate deployments -->
+    <!-- This can be replaced at build time or via a template engine -->
+    <script>
+      // Set API_URL if provided via environment variable at build time
+      // For Docker: replace this during build or container startup
+      // Example: window.API_URL = window.API_URL || "http://192.168.1.42:6024";
+      window.API_URL = window.API_URL || "";
+    </script>
   </head>
   <body>
     <div id="root"></div>
