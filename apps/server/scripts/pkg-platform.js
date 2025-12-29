@@ -51,15 +51,20 @@ try {
   // Normalize filenames to match expected format
   if (isCI && platform === 'linux') {
     // Multi-platform build: rename files to expected format
-    const renameMap = {
-      'jacare-linux-x64': 'jacare-linux',
-      'jacare-win-x64.exe': 'jacare-win.exe',
-      'jacare-macos-arm64': 'jacare-macos'
+    // Map pkg target names to simple platform names
+    const targetToSimpleName = {
+      'node18-linux-x64': 'jacare-linux',
+      'node18-win-x64': 'jacare-win.exe',
+      'node18-macos-arm64': 'jacare-macos'
     };
     
-    for (const [pkgName, expectedName] of Object.entries(renameMap)) {
+    for (const [target, expectedName] of Object.entries(targetToSimpleName)) {
+      // pkg generates filenames like jacare-linux-x64, jacare-win-x64.exe, jacare-macos-arm64
+      const pkgSuffix = target.replace('node18-', '');
+      const pkgName = pkgSuffix === 'win-x64' ? `jacare-${pkgSuffix}.exe` : `jacare-${pkgSuffix}`;
       const pkgPath = path.join(outputDir, pkgName);
       const expectedPath = path.join(outputDir, expectedName);
+      
       if (fs.existsSync(pkgPath)) {
         console.log(`Renaming ${pkgName} to ${expectedName}`);
         fs.renameSync(pkgPath, expectedPath);
