@@ -3,7 +3,7 @@ import { Link, type Location } from "react-router-dom";
 import PlatformIcon from "./PlatformIcon";
 import DownloadProgress from "./DownloadProgress";
 import type { Manifest, CrocdbEntry, CrocdbPlatformsResponseData } from "@crocdesk/shared";
-import { API_URL } from "../lib/api";
+import { getApiUrl } from "../lib/api";
 import type { SpeedDataPoint } from "../hooks/useDownloadProgress";
 import { useDownloadProgressStore } from "../store";
 import { Card, Button, Badge } from "./ui";
@@ -73,6 +73,15 @@ export default function GameCard({
   // Determine cover image source
   const [imgIndex, setImgIndex] = React.useState(0);
   const [imgError, setImgError] = React.useState(false);
+  const [apiUrl, setApiUrl] = React.useState<string>("");
+  
+  // Get API URL on mount
+  React.useEffect(() => {
+    getApiUrl().then(setApiUrl).catch(() => {
+      // Fallback to empty string (relative URL)
+      setApiUrl("");
+    });
+  }, []);
   
   let coverUrl: string | undefined;
   let coverUrls: string[] = [];
@@ -82,11 +91,12 @@ export default function GameCard({
     coverUrl = boxartUrl;
   } else if (manifest && artifactPath) {
     // LibraryPage: try local cover files
+    // apiUrl will be empty string (relative URL) or a full URL
     const baseDir = dirname(artifactPath);
     const coverCandidates = ["cover.jpg", "cover.png", "cover.webp", "boxart.jpg", "boxart.png"];
     const version = manifest.createdAt ?? "";
     coverUrls = coverCandidates.map((name) => 
-      `${API_URL}/file?path=${encodeURIComponent(joinPath(baseDir, name))}&v=${encodeURIComponent(version)}`
+      `${apiUrl}/file?path=${encodeURIComponent(joinPath(baseDir, name))}&v=${encodeURIComponent(version)}`
     );
     coverUrl = coverUrls[imgIndex];
   }

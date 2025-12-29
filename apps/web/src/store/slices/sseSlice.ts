@@ -1,12 +1,12 @@
 import { create } from "zustand";
 import type { SSEState } from "../types";
 import type { JobEvent } from "@crocdesk/shared";
-import { API_URL } from "../../lib/api";
+import { getApiUrl } from "../../lib/api";
 import { useDownloadProgressStore } from "./downloadProgressSlice";
 import { useJobResultsStore } from "./jobResultsSlice";
 
 type SSEActions = {
-  connect: () => void;
+  connect: () => Promise<void>;
   disconnect: () => void;
   handleEvent: (event: JobEvent) => void;
 };
@@ -22,13 +22,14 @@ const initialState: SSEState = {
 export const useSSEStore = create<SSEStore>((set, get) => ({
   ...initialState,
   
-  connect: () => {
+  connect: async () => {
     const state = get();
     if (state.isConnected && state.eventSource) {
       return; // Already connected
     }
     
-    const eventSource = new EventSource(`${API_URL}/events`);
+    const apiUrl = await getApiUrl();
+    const eventSource = new EventSource(`${apiUrl}/events`);
     
     eventSource.onmessage = (event) => {
       try {

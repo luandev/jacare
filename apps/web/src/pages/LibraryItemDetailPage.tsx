@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { apiGet, API_URL } from "../lib/api";
+import { apiGet, getApiUrl } from "../lib/api";
 import type { Manifest } from "@crocdesk/shared";
 import { DetailLayout } from "../components/DetailLayout";
 import { MediaGrid } from "../components/MediaGrid";
@@ -13,6 +13,15 @@ export default function LibraryItemDetailPage() {
   const manifestPath = useMemo(() => (dir ? joinPath(dir, ".crocdesk.json") : ""), [dir]);
   const [manifest, setManifest] = useState<Manifest | null>(null);
   const [status, setStatus] = useState<string>("");
+  const [apiUrl, setApiUrl] = useState<string>("");
+
+  // Get API URL on mount
+  useEffect(() => {
+    getApiUrl().then(setApiUrl).catch(() => {
+      // Fallback to empty string (relative URL)
+      setApiUrl("");
+    });
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -34,7 +43,7 @@ export default function LibraryItemDetailPage() {
   const version = manifest?.createdAt ?? "";
   const coverUrls = coverCandidates.map(
     (name) =>
-      `${API_URL}/file?path=${encodeURIComponent(
+      `${apiUrl}/file?path=${encodeURIComponent(
         joinPath(dir, name)
       )}&v=${encodeURIComponent(version)}`
   );

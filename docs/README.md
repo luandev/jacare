@@ -109,6 +109,7 @@ Settings stored in the database:
 - `GET /events` – SSE stream for job progress (scans, downloads, cache refreshes)
 - `GET /file?path=<path>` – Serve files from the library directory (JSON files are parsed, others are streamed)
 - `GET /health` – Health check endpoint
+- `GET /api-config` – API configuration endpoint. Returns `{ apiUrl: string, port: number }` for frontend runtime configuration. The frontend uses this to auto-detect the correct API base URL.
 
 **Responses:** Wrapped as `{ info, data }` objects for consistency.
 
@@ -159,6 +160,27 @@ CI on `main` automatically publishes release archives with:
 - Standalone bundle binaries
 - Server-only binaries
 - Latest changelog and README
+
+## Troubleshooting
+
+### Port and API URL Configuration Issues
+
+**Problem**: Frontend shows CORS errors or can't connect to API, especially in Docker deployments.
+
+**Solution**: The frontend uses runtime API URL detection. It will:
+1. Check for `window.API_URL` (injected via script tag)
+2. Fetch `/api-config` endpoint to auto-detect the API URL
+3. Fall back to relative URLs for same-origin serving
+
+**For Docker with custom port:**
+- The `/api-config` endpoint automatically returns the correct API URL based on the request origin
+- If frontend and backend are on different origins, inject `window.API_URL` in `index.html` via entrypoint script
+- Never hardcode `localhost:3333` in frontend code
+
+**Common issues:**
+- **CORS errors**: Usually means frontend is trying to connect to wrong origin. Check that `/api-config` returns the correct URL.
+- **Connection refused**: Frontend is using hardcoded `localhost:3333` instead of `getApiUrl()`. Always use `getApiUrl()` function.
+- **Vite proxy not working**: Ensure `CROCDESK_PORT` environment variable is set when running `npm run dev:web`.
 
 ## Support
 - Issues & roadmap: [GitHub Issues](https://github.com/luandev/jacare/issues)
