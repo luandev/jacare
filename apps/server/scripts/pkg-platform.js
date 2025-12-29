@@ -13,18 +13,21 @@ const path = require('path');
 const platform = os.platform();
 const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
 
+// Node version used by pkg targets
+const NODE_VERSION = 'node18';
+
 // Map Node.js platform to pkg target
 const platformMap = {
-  'win32': 'node18-win-x64',
-  'darwin': 'node18-macos-arm64',
-  'linux': 'node18-linux-x64'
+  'win32': `${NODE_VERSION}-win-x64`,
+  'darwin': `${NODE_VERSION}-macos-arm64`,
+  'linux': `${NODE_VERSION}-linux-x64`
 };
 
 let targets;
 
 if (isCI && platform === 'linux') {
   // In CI on Linux, build for all platforms
-  targets = 'node18-win-x64,node18-macos-arm64,node18-linux-x64';
+  targets = `${NODE_VERSION}-win-x64,${NODE_VERSION}-macos-arm64,${NODE_VERSION}-linux-x64`;
 } else {
   // Local builds: only current platform
   const target = platformMap[platform];
@@ -53,14 +56,14 @@ try {
     // Multi-platform build: rename files to expected format
     // Map pkg target names to simple platform names
     const targetToSimpleName = {
-      'node18-linux-x64': 'jacare-linux',
-      'node18-win-x64': 'jacare-win.exe',
-      'node18-macos-arm64': 'jacare-macos'
+      [`${NODE_VERSION}-linux-x64`]: 'jacare-linux',
+      [`${NODE_VERSION}-win-x64`]: 'jacare-win.exe',
+      [`${NODE_VERSION}-macos-arm64`]: 'jacare-macos'
     };
     
     for (const [target, expectedName] of Object.entries(targetToSimpleName)) {
       // pkg generates filenames like jacare-linux-x64, jacare-win-x64.exe, jacare-macos-arm64
-      const pkgSuffix = target.replace('node18-', '');
+      const pkgSuffix = target.replace(`${NODE_VERSION}-`, '');
       const pkgName = pkgSuffix === 'win-x64' ? `jacare-${pkgSuffix}.exe` : `jacare-${pkgSuffix}`;
       const pkgPath = path.join(outputDir, pkgName);
       const expectedPath = path.join(outputDir, expectedName);
