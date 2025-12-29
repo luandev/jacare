@@ -48,10 +48,25 @@ const command = `pkg dist/index.js --targets ${targets} --output ${path.join(out
 try {
   execSync(command, { stdio: 'inherit', cwd: __dirname + '/..' });
   
-  // pkg sometimes creates files without platform suffix on single-platform builds
-  // Ensure consistent naming by renaming if needed
-  if (!isCI || platform !== 'linux') {
-    // We're building for a single platform
+  // Normalize filenames to match expected format
+  if (isCI && platform === 'linux') {
+    // Multi-platform build: rename files to expected format
+    const renameMap = {
+      'jacare-linux-x64': 'jacare-linux',
+      'jacare-win-x64.exe': 'jacare-win.exe',
+      'jacare-macos-arm64': 'jacare-macos'
+    };
+    
+    for (const [pkgName, expectedName] of Object.entries(renameMap)) {
+      const pkgPath = path.join(outputDir, pkgName);
+      const expectedPath = path.join(outputDir, expectedName);
+      if (fs.existsSync(pkgPath)) {
+        console.log(`Renaming ${pkgName} to ${expectedName}`);
+        fs.renameSync(pkgPath, expectedPath);
+      }
+    }
+  } else {
+    // Single-platform build: ensure consistent naming
     const expectedName = platform === 'win32' ? 'jacare-win.exe' :
                          platform === 'darwin' ? 'jacare-macos' :
                          'jacare-linux';
@@ -63,7 +78,10 @@ try {
       'jacare.exe',
       'jacare-macos',
       'jacare-linux',
-      'jacare-win.exe'
+      'jacare-win.exe',
+      'jacare-linux-x64',
+      'jacare-win-x64.exe',
+      'jacare-macos-arm64'
     ];
     
     let foundFile = null;
