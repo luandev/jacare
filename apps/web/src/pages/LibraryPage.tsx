@@ -13,7 +13,7 @@ export default function LibraryPage() {
   const [items, setItems] = useState<LibraryItem[]>([]);
   const [manifests, setManifests] = useState<Record<string, Manifest | null>>({});
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<Error | null>(null);
   const [status, setStatus] = useState<string>("");
   const [gridColumns, setGridColumns] = useState(3);
   const [scanJobId, setScanJobId] = useState<string | null>(null);
@@ -101,8 +101,8 @@ export default function LibraryPage() {
       } catch (e) {
         console.error("[LibraryPage] Failed to load library:", e);
         if (!cancelled) {
-          const errorMessage = e instanceof Error ? e.message : "Failed to load library";
-          setError(errorMessage);
+          const error = e instanceof Error ? e : new Error(String(e));
+          setError(error);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -139,7 +139,13 @@ export default function LibraryPage() {
   }
 
   if (error) {
-    return <div className="card">Error: {error}</div>;
+    return (
+      <ErrorAlert
+        error={error}
+        context="Library View - Failed to load library items"
+        onDismiss={() => setError(null)}
+      />
+    );
   }
   
   if (items.length === 0 && downloadingSlugsArray.length === 0) {

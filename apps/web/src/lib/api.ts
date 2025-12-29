@@ -6,7 +6,6 @@ export async function apiGet<T>(path: string): Promise<T> {
   try {
     const response = await fetch(`${API_URL}${path}`);
     if (!response.ok) {
-      const contentType = response.headers.get("content-type");
       let errorDetails = `${response.status} ${response.statusText}`;
       
       // Try to get error body for more details
@@ -50,7 +49,6 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
     });
     
     if (!response.ok) {
-      const contentType = response.headers.get("content-type");
       let errorDetails = `${response.status} ${response.statusText}`;
       
       try {
@@ -93,7 +91,6 @@ export async function apiPut<T>(path: string, body: unknown): Promise<T> {
     });
     
     if (!response.ok) {
-      const contentType = response.headers.get("content-type");
       let errorDetails = `${response.status} ${response.statusText}`;
       
       try {
