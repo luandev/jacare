@@ -15,8 +15,9 @@ async function getApiUrl(): Promise<string> {
 
   // Check if injected via script tag (for Docker builds)
   if (typeof window !== "undefined" && (window as any).API_URL) {
-    cachedApiUrl = (window as any).API_URL;
-    return cachedApiUrl;
+    const injectedUrl = String((window as any).API_URL);
+    cachedApiUrl = injectedUrl;
+    return injectedUrl;
   }
 
   // Check if we're on the same origin (Electron or server serving static files)
