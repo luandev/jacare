@@ -3,6 +3,7 @@ import { promises as fs } from "fs";
 import { Readable } from "stream";
 import type { ReadableStream as NodeReadableStream } from "stream/web";
 import type { CrocdbEntry, Manifest, Settings } from "@crocdesk/shared";
+import { resolvePlatformAcronym } from "@crocdesk/shared";
 import { ENABLE_DOWNLOADS } from "../config";
 import { getEntry } from "./crocdb";
 import { writeManifest } from "./manifest";
@@ -79,11 +80,12 @@ export async function runDownloadAndInstall(
     try {
       if (abortSignal?.aborted) throw new Error("Cancelled by user");
       progressReporter(0.6, "Extracting archive");
-      // Extract to libraryDir/{console}/{game}
+      // Extract to libraryDir/{acronym}/{game}
       const libraryDir = path.resolve(settings.libraryDir || "./library");
       const platform = entry.platform || "unknown";
+      const platformAcronym = resolvePlatformAcronym(platform, settings);
       const gameName = formatName(entry);
-      const extractDir = path.join(libraryDir, platform, gameName);
+      const extractDir = path.join(libraryDir, platformAcronym, gameName);
       await ensureDir(extractDir);
       await extractZip(downloadPath, extractDir);
 
@@ -109,6 +111,7 @@ export async function runDownloadAndInstall(
           slug: entry.slug,
           title: entry.title,
           platform: entry.platform,
+          platformAcronym,
           regions: entry.regions
         },
         artifacts,
@@ -132,7 +135,7 @@ export async function runDownloadAndInstall(
   await saveBoxart(entry, path.dirname(outputPath)).catch(() => {});
 
   const stats = await fs.stat(outputPath);
-  const manifest = buildManifest(entry, outputPath, stats.size);
+  const manifest = buildManifest(entry, outputPath, stats.size, settings);
   await writeManifest(path.dirname(outputPath), manifest);
 
   if (abortSignal?.aborted) throw new Error("Cancelled by user");
@@ -468,8 +471,10 @@ async function finalizeLayout(
   sourcePath: string,
   settings: Settings
 ): Promise<string> {
-  // Use settings.libraryDir as source of truth; place files under console subfolder
-  const targetRoot = path.join(path.resolve(settings.libraryDir || "./library"), entry.platform);
+  // Use settings.libraryDir as source of truth; place files under acronym subfolder
+  const platform = entry.platform || "unknown";
+  const platformAcronym = resolvePlatformAcronym(platform, settings);
+  const targetRoot = path.join(path.resolve(settings.libraryDir || "./library"), platformAcronym);
   await ensureDir(targetRoot);
 
   const ext = path.extname(sourcePath);
@@ -490,7 +495,8 @@ async function finalizeLayoutMany(
 ): Promise<{ outputDir: string; outputPaths: string[] }> {
   const libraryRoot = path.resolve(settings.libraryDir || "./library");
   const platform = entry.platform || "unknown";
-  const baseRoot = path.join(libraryRoot, platform);
+  const platformAcronym = resolvePlatformAcronym(platform, settings);
+  const baseRoot = path.join(libraryRoot, platformAcronym);
   // Create a dedicated folder for the game under the platform root
   const folderName = formatName(entry);
   // Avoid double-nesting if baseRoot already is the game folder
@@ -527,15 +533,19 @@ function sanitize(value: string): string {
 function buildManifest(
   entry: CrocdbEntry,
   outputPath: string,
-  size: number
+  size: number,
+  settings: Settings
 ): Manifest {
   const artifactPath = path.basename(outputPath);
+  const platform = entry.platform || "unknown";
+  const platformAcronym = resolvePlatformAcronym(platform, settings);
   return {
     schema: 1,
     crocdb: {
       slug: entry.slug,
       title: entry.title,
       platform: entry.platform,
+      platformAcronym,
       regions: entry.regions
     },
     artifacts: [

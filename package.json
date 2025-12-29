@@ -34,6 +34,7 @@
     "@playwright/test": "^1.48.2",
     "@testing-library/jest-dom": "^6.4.2",
     "@testing-library/react": "^14.0.0",
+    "@types/supertest": "^6.0.3",
     "@typescript-eslint/eslint-plugin": "^8.50.1",
     "@typescript-eslint/parser": "^8.50.1",
     "concurrently": "^8.2.2",
@@ -43,6 +44,7 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
     "jsdom": "^24.0.0",
+    "supertest": "^7.1.4",
     "typescript": "^5.4.5",
     "vitest": "^4.0.16"
   }

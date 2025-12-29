@@ -84,6 +84,24 @@ function ensureDefaults(): void {
   const settings = getSettings();
   if (!settings) {
     setSettings(DEFAULT_SETTINGS);
+  } else {
+    // Migrate existing settings to include new fields with defaults
+    let needsUpdate = false;
+    const updated = { ...settings };
+    
+    if (!updated.platformAcronyms) {
+      updated.platformAcronyms = {};
+      needsUpdate = true;
+    }
+    
+    if (!updated.platformIcons) {
+      updated.platformIcons = {};
+      needsUpdate = true;
+    }
+    
+    if (needsUpdate) {
+      setSettings(updated);
+    }
   }
 }
 

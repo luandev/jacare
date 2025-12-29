@@ -73,6 +73,20 @@ export type Settings = {
   queue?: {
     concurrency?: number;
   };
+  /**
+   * Custom platform acronyms for folder naming.
+   * Keys are platform identifiers (lowercase, normalized).
+   * Values are acronyms (2-12 chars, [a-z0-9-_]).
+   * Empty object means use defaults from DEFAULT_PLATFORM_ACRONYMS.
+   */
+  platformAcronyms?: Record<string, string>;
+  /**
+   * Custom platform icon brand slugs.
+   * Keys are platform identifiers (lowercase, normalized).
+   * Values are brand slugs (nintendo, sony, xbox, sega, pc, atari, commodore, nec, generic).
+   * Empty object means use defaults from DEFAULT_PLATFORM_ICONS.
+   */
+  platformIcons?: Record<string, string>;
 };
 
 export type ManifestArtifact = {
@@ -87,6 +101,7 @@ export type Manifest = {
     slug: string;
     title: string;
     platform: string;
+    platformAcronym?: string;
     regions: string[];
   };
   artifacts: ManifestArtifact[];

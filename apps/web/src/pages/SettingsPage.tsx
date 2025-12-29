@@ -5,6 +5,7 @@ import type { Settings } from "@crocdesk/shared";
 import { useUIStore } from "../store";
 import { useTheme } from "../components/ThemeProvider";
 import { Card, Input, Button } from "../components/ui";
+import PlatformSettings from "../components/PlatformSettings";
 import { spacing } from "../lib/design-tokens";
 
 export default function SettingsPage() {
@@ -133,6 +134,17 @@ export default function SettingsPage() {
           </div>
         </div>
       </Card>
+
+      {settingsQuery.data && (
+        <PlatformSettings
+          settings={draft || settingsQuery.data}
+          onUpdate={(updated) => {
+            setDraft(updated);
+            // Auto-save platform settings
+            saveMutation.mutate(updated);
+          }}
+        />
+      )}
 
       <Card>
         <h3>About</h3>
