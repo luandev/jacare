@@ -1,0 +1,72 @@
+{
+  "site": {
+    "name": "Jacare",
+    "title": "Jacare | Retro ROM Library Manager",
+    "description": "Jacare is an open-source, web-based desktop ROM library manager with persistent downloads, Crocdb enrichment, and an ultra-responsive UI. Organize your retro gaming collection with smart metadata and seamless download management.",
+    "url": "https://luandev.github.io/jacare",
+    "image": "https://luandev.github.io/jacare/demo.gif",
+    "language": "en",
+    "locale": "en_US",
+    "themeColor": "#3db875",
+    "keywords": "ROM manager, retro gaming, emulator, game library, ROM collection, Crocdb, open source, desktop app, game metadata, retro games, ROM organizer, game collection manager, emulation"
+  },
+  "organization": {
+    "name": "Jacare",
+    "legalName": "Jacare Project",
+    "url": "https://github.com/luandev/jacare",
+    "logo": "https://luandev.github.io/jacare/demo.gif",
+    "description": "Open-source ROM library manager for retro gaming enthusiasts",
+    "sameAs": [
+      "https://github.com/luandev/jacare"
+    ],
+    "foundingDate": "2024"
+  },
+  "author": {
+    "name": "Luan Dev",
+    "url": "https://github.com/luandev"
+  },
+  "social": {
+    "twitter": {
+      "card": "summary_large_image",
+      "site": "@luandev",
+      "creator": "@luandev"
+    }
+  },
+  "robots": {
+    "index": true,
+    "follow": true,
+    "noarchive": false,
+    "noimageindex": false
+  },
+  "pages": {
+    "/": {
+      "title": "Jacare | Retro ROM Library Manager",
+      "description": "Open-source desktop ROM library manager with persistent downloads, Crocdb metadata enrichment, and ultra-responsive UI. Organize your retro gaming collection.",
+      "keywords": "ROM manager, retro gaming, emulator library, ROM organizer",
+      "type": "website",
+      "breadcrumbs": [
+        { "name": "Home", "url": "https://luandev.github.io/jacare/" }
+      ]
+    },
+    "/README.md": {
+      "title": "Developer Guide | Jacare Documentation",
+      "description": "Technical documentation for Jacare developers. Learn about architecture, API reference, configuration, and development workflow.",
+      "keywords": "Jacare documentation, developer guide, API reference, technical docs",
+      "type": "TechArticle",
+      "breadcrumbs": [
+        { "name": "Home", "url": "https://luandev.github.io/jacare/" },
+        { "name": "Developer Guide", "url": "https://luandev.github.io/jacare/README.md" }
+      ]
+    },
+    "/user/README.md": {
+      "title": "User Guide | Jacare Documentation",
+      "description": "Friendly guide for Jacare users. Learn how to install, configure, and use Jacare to organize your ROM collection.",
+      "keywords": "Jacare user guide, ROM manager tutorial, how to use Jacare",
+      "type": "Article",
+      "breadcrumbs": [
+        { "name": "Home", "url": "https://luandev.github.io/jacare/" },
+        { "name": "User Guide", "url": "https://luandev.github.io/jacare/user/README.md" }
+      ]
+    }
+  }
+}
