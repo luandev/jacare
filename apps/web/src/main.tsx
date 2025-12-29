@@ -12,7 +12,10 @@ const client = new QueryClient();
 function AppWithSSE() {
   React.useEffect(() => {
     const { connect, disconnect } = useSSEStore.getState();
-    connect();
+    // connect() is async but we don't need to await it
+    connect().catch(() => {
+      // Silently handle connection errors - SSE will retry automatically
+    });
     
     return () => {
       disconnect();

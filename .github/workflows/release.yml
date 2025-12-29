@@ -2,8 +2,8 @@ name: Release
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -133,9 +133,12 @@ jobs:
           path: release/bundle/${{ matrix.executable }}
           retention-days: 1
 
-  build-bundles:
+  build:
     needs: test-packages
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -156,104 +159,62 @@ jobs:
           pattern: bundle-*
           merge-multiple: true
 
-      # TODO: Add code signing here
-      # Windows: Use signtool with certificate from secrets
-      # macOS: Use codesign and notarytool with Apple Developer credentials
-      # See docs/RELEASE.md for details
+      - name: Build workspace artifacts
+        run: npm run build
 
-      - name: Generate checksums
+      - name: Package desktop app
         run: |
-          cd release/bundle
-          for file in jacare-*; do
-            if [ -f "$file" ]; then
-              sha256sum "$file" > "$file.sha256"
-              echo "Generated checksum for $file"
-            fi
-          done
+          cd apps/desktop
+          npm run package
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: List artifacts
-        run: ls -lh release/bundle/
+      - name: Package server binary
+        run: |
+          cd apps/server
+          npm run package
 
-      - name: Upload bundle artifacts
+      - name: Package standalone bundle
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          cd apps/server
+          npm run build && pkg dist/index.js --targets node18-win-x64,node18-macos-x64,node18-linux-x64 --output-path ../../release/bundle/jacare
+
+      - name: Upload desktop artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: bundles
-          path: |
-            release/bundle/jacare-*
-            release/bundle/*.sha256
-          retention-days: 90
+          name: desktop-${{ matrix.os }}
+          path: release/desktop/*
+          retention-days: 30
+
+      - name: Upload server artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-${{ matrix.os }}
+          path: release/server/*
+          retention-days: 30
 
   create-release:
-    needs: build-bundles
+    needs: build
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Download bundle artifacts
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          name: bundles
-          path: release-artifacts
+          path: artifacts
 
-      - name: Generate release notes
-        id: release_notes
-        run: |
-          echo "Generating release notes..."
-
-          # Get the tag name
-          TAG_NAME="${GITHUB_REF#refs/tags/}"
-          echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
-
-          # Get previous tag
-          PREV_TAG=$(git describe --tags --abbrev=0 \
-            "$TAG_NAME"^ 2>/dev/null || echo "")
-
-          # Generate release notes
-          if [ -n "$PREV_TAG" ]; then
-            {
-              echo "Changes since $PREV_TAG:"
-              echo ""
-              git log "$PREV_TAG".."$TAG_NAME" \
-                --pretty=format:"- %s (%h)" --no-merges
-            } > release_notes.md
-          else
-            {
-              echo "Initial release"
-              echo ""
-              git log "$TAG_NAME" --pretty=format:"- %s (%h)" \
-                --no-merges --max-count=20
-            } > release_notes.md
-          fi
-
-          {
-            echo ""
-            echo ""
-            echo "## Downloads"
-            echo ""
-            echo "- **Windows**: \`jacare-win.exe\`"
-            echo "- **macOS**: \`jacare-macos\`"
-            echo "- **Linux**: \`jacare-linux\`"
-            echo ""
-            echo "All binaries are standalone and include both" \
-              "frontend and backend."
-            echo "SHA256 checksums are provided for verification."
-          } >> release_notes.md
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ steps.release_notes.outputs.tag_name }}
-          name: Jacare ${{ steps.release_notes.outputs.tag_name }}
-          body_path: release_notes.md
+          tag_name: v${{ github.run_number }}
+          name: Jacare v${{ github.run_number }}
+          body_path: CHANGELOG.md
           files: |
-            release-artifacts/jacare-*
+            artifacts/**/*
           draft: false
           prerelease: false
-          fail_on_unmatched_files: true
-          generate_release_notes: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

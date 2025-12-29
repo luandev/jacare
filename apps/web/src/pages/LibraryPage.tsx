@@ -5,6 +5,7 @@ import type { LibraryItem, Manifest, JobEvent } from "@crocdesk/shared";
 import GameCard from "../components/GameCard";
 import PaginationBar from "../components/PaginationBar";
 import { DownloadingGhostCard } from "../components/DownloadingGhostCard";
+import { ErrorAlert } from "../components/ErrorAlert";
 import { useDownloadProgressStore, useSSEStore } from "../store";
 import { useSSE } from "../store/hooks/useSSE";
 
@@ -12,7 +13,7 @@ export default function LibraryPage() {
   const [items, setItems] = useState<LibraryItem[]>([]);
   const [manifests, setManifests] = useState<Record<string, Manifest | null>>({});
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<Error | null>(null);
   const [status, setStatus] = useState<string>("");
   const [gridColumns, setGridColumns] = useState(3);
   const [scanJobId, setScanJobId] = useState<string | null>(null);
@@ -76,7 +77,10 @@ export default function LibraryPage() {
     let cancelled = false;
     const load = async () => {
       try {
+        console.log("[LibraryPage] Loading library items from /library/downloads/items");
         const data = await apiGet<LibraryItem[]>("/library/downloads/items");
+        console.log("[LibraryPage] Loaded library items:", data.length, "items");
+        
         if (!cancelled) {
           setItems(data);
           const manifestMap: Record<string, Manifest | null> = {};
@@ -86,7 +90,8 @@ export default function LibraryPage() {
               try {
                 const manifest = await apiGet<Manifest>(`/file?path=${encodeURIComponent(manifestPath)}`);
                 manifestMap[item.path] = manifest;
-              } catch {
+              } catch (manifestError) {
+                console.warn(`[LibraryPage] Failed to load manifest for ${item.path}:`, manifestError);
                 manifestMap[item.path] = null;
               }
             })
@@ -94,8 +99,10 @@ export default function LibraryPage() {
           setManifests(manifestMap);
         }
       } catch (e) {
+        console.error("[LibraryPage] Failed to load library:", e);
         if (!cancelled) {
-          setError(e instanceof Error ? e.message : "Failed to load library");
+          const error = e instanceof Error ? e : new Error(String(e));
+          setError(error);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -113,11 +120,15 @@ export default function LibraryPage() {
     setScanProgress(0);
     setScanMessage("Initializing scan...");
     try {
+      console.log("[LibraryPage] Starting library scan");
       const response = await apiPost<{ id: string }>("/library/scan/local", {});
+      console.log("[LibraryPage] Scan job created:", response.id);
       setScanJobId(response.id);
     } catch (e) {
+      console.error("[LibraryPage] Failed to start scan:", e);
       setIsScanning(false);
-      setStatus(e instanceof Error ? e.message : "Scan failed");
+      const errorMessage = e instanceof Error ? e.message : "Scan failed";
+      setStatus(errorMessage);
     }
   }
   
@@ -128,7 +139,13 @@ export default function LibraryPage() {
   }
 
   if (error) {
-    return <div className="card">Error: {error}</div>;
+    return (
+      <ErrorAlert
+        error={error}
+        context="Library View - Failed to load library items"
+        onDismiss={() => setError(null)}
+      />
+    );
   }
   
   if (items.length === 0 && downloadingSlugsArray.length === 0) {
