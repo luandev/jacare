@@ -160,6 +160,17 @@ export async function startServer(): Promise<Server> {
 
 // Auto-start if run directly (not imported)
 if (require.main === module) {
+  // Set up global error handlers to log crashes
+  process.on('uncaughtException', (error) => {
+    logger.error('Uncaught Exception - Application will exit', error);
+    // Give time for log to be written
+    setTimeout(() => process.exit(1), 100);
+  });
+
+  process.on('unhandledRejection', (reason, promise) => {
+    logger.error('Unhandled Promise Rejection', reason, { promise: String(promise) });
+  });
+
   startServer().catch((error) => {
     logger.error("Failed to start server", error);
     process.exit(1);

@@ -1,4 +1,4 @@
-import PQueue from "p-queue";
+import SimpleQueue from "../utils/simple-queue";
 import crypto from "crypto";
 import { promises as fs } from "fs";
 import path from "path";
@@ -23,7 +23,7 @@ import { runDownloadAndInstall, type DownloadJobPayload } from "./pipeline";
 import { getEntry } from "./crocdb";
 import { logger } from "../utils/logger";
 
-const queue = new PQueue({ concurrency: 2 });
+const queue = new SimpleQueue({ concurrency: 2 });
 
 // Track active job tasks for cancellation
 const activeJobTasks = new Map<string, { abortController: AbortController; task: Promise<void> }>();
@@ -44,7 +44,7 @@ export async function enqueueScanLocal(): Promise<JobRecord> {
   const job = createJobRecord("scan_local", {});
   logger.info("Scan job enqueued", { jobId: job.id });
   const settings = getSettings() ?? DEFAULT_SETTINGS;
-  queue.concurrency = settings.queue?.concurrency ?? 2;
+  queue.concurrencyLimit = settings.queue?.concurrency ?? 2;
   queue.add(() => runScanJob(job));
   return job;
 }
@@ -55,7 +55,7 @@ export async function enqueueDownloadAndInstall(
   const job = createJobRecord("download_and_install", payload);
   logger.info("Download job enqueued", { jobId: job.id, slug: payload.slug, linkIndex: payload.linkIndex });
   const settings = getSettings() ?? DEFAULT_SETTINGS;
-  queue.concurrency = settings.queue?.concurrency ?? 2;
+  queue.concurrencyLimit = settings.queue?.concurrency ?? 2;
   
   const abortController = new AbortController();
   const task = queue.add(() => runDownloadJob(job, payload, abortController.signal));
