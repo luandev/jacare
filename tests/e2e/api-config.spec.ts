@@ -31,8 +31,8 @@ test.describe('API Configuration', () => {
     // Navigate to the app
     await page.goto('/');
     
-    // Wait for the app to load
-    await page.waitForLoadState('networkidle');
+    // Wait for the page to be loaded (domcontentloaded is faster than networkidle)
+    await page.waitForLoadState('domcontentloaded');
     
     // Try to fetch a simple endpoint (health check)
     const healthResponse = await page.request.get('/health');
@@ -47,16 +47,17 @@ test.describe('API Configuration', () => {
     // Navigate to the app
     await page.goto('/');
     
-    // Wait for the app to initialize
-    await page.waitForLoadState('networkidle');
+    // Wait for the page to be loaded
+    await page.waitForLoadState('domcontentloaded');
     
     // Test that we can fetch settings (a real API endpoint)
     const settingsResponse = await page.request.get('/settings');
     expect(settingsResponse.ok()).toBeTruthy();
     
     const settings = await settingsResponse.json();
-    // Settings should have a data property (wrapped response)
-    expect(settings).toHaveProperty('data');
+    // Settings endpoint returns settings directly (not wrapped)
+    expect(settings).toHaveProperty('libraryDir');
+    expect(settings).toHaveProperty('downloadDir');
   });
 
   test('should handle /api-config endpoint in SPA routing', async ({ page }) => {

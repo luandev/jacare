@@ -6,6 +6,14 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './tests/e2e',
   
+  /* Test timeout */
+  timeout: 15000, // 15 seconds per test
+  
+  /* Expect timeout */
+  expect: {
+    timeout: 5000, // 5 seconds for assertions
+  },
+  
   /* Run tests in files in parallel */
   fullyParallel: true,
   
@@ -19,7 +27,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
+  reporter: process.env.CI ? 'github' : 'html',
   
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
@@ -32,7 +40,7 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
 
-  /* Configure projects for major browsers */
+  /* Configure projects for major browsers - only Chromium */
   projects: [
     {
       name: 'chromium',

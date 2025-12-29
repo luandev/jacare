@@ -10,7 +10,7 @@
     "packages/*"
   ],
   "scripts": {
-    "pretest:e2e": "npx playwright install --with-deps",
+    "pretest:e2e": "npx playwright install chromium --with-deps",
     "dev": "npm run build -w @crocdesk/shared && concurrently \"npm run dev:shared\" \"npm run dev:server\" \"npm run dev:web\" \"npm run dev:desktop\"",
     "dev:shared": "npm run dev -w @crocdesk/shared",
     "dev:server": "npm run dev -w @crocdesk/server",

@@ -18,8 +18,8 @@ test.describe('Docker/Separate Deployment Scenario', () => {
     // Navigate to the app
     await page.goto('/');
     
-    // Wait for the app to initialize
-    await page.waitForLoadState('networkidle');
+    // Wait for the page to be loaded
+    await page.waitForLoadState('domcontentloaded');
     
     // Verify that window.API_URL is set
     const apiUrl = await page.evaluate(() => (window as any).API_URL);
@@ -41,8 +41,8 @@ test.describe('Docker/Separate Deployment Scenario', () => {
     // Navigate to the app
     await page.goto('/');
     
-    // Wait for the app to initialize
-    await page.waitForLoadState('networkidle');
+    // Wait for the page to be loaded
+    await page.waitForLoadState('domcontentloaded');
     
     // Verify that window.API_URL is set to the custom URL
     const apiUrl = await page.evaluate(() => (window as any).API_URL);
@@ -57,8 +57,8 @@ test.describe('Docker/Separate Deployment Scenario', () => {
     // Navigate without injecting window.API_URL
     await page.goto('/');
     
-    // Wait for the app to initialize
-    await page.waitForLoadState('networkidle');
+    // Wait for the page to be loaded
+    await page.waitForLoadState('domcontentloaded');
     
     // Verify that window.API_URL is not set (or is empty string)
     const apiUrl = await page.evaluate(() => (window as any).API_URL);
@@ -73,8 +73,8 @@ test.describe('Docker/Separate Deployment Scenario', () => {
     // Navigate to the app
     await page.goto('/');
     
-    // Wait for the app to initialize
-    await page.waitForLoadState('networkidle');
+    // Wait for the page to be loaded
+    await page.waitForLoadState('domcontentloaded');
     
     // The app should have fetched /api-config during initialization
     // We can verify this by checking network requests or by ensuring
