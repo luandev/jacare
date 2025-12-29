@@ -1,0 +1,8 @@
+# Robots.txt for Jacare Documentation
+# https://www.robotstxt.org/
+
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://luandev.github.io/jacare/sitemap.xml
