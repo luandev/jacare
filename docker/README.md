@@ -28,4 +28,27 @@ You can also build the server image from the repository by uncommenting the `bui
 - `CROCDB_BASE_URL` – Crocdb API URL (default: https://api.crocdb.net)
 - `CROCDB_CACHE_TTL_MS` – Cache TTL in milliseconds (default: 86400000)
 
+## API URL Configuration
+
+The frontend automatically detects the API base URL at runtime. In Docker deployments, this works seamlessly when the frontend and backend are served from the same origin (default setup).
+
+**How it works:**
+- The frontend fetches `/api-config` endpoint on first API call
+- If the API URL matches the current origin, relative URLs are used (default behavior)
+- If frontend and backend are on different origins, you can inject `window.API_URL` via entrypoint script
+
+**For custom port configurations:**
+- The `/api-config` endpoint automatically detects the correct API URL based on the request
+- No additional configuration needed when using the default setup (same origin)
+- If you need to serve frontend and backend separately, inject `window.API_URL` in `index.html`:
+  ```bash
+  # Example entrypoint script
+  sed -i "s|window.API_URL = window.API_URL || \"\";|window.API_URL = \"http://your-backend-host:6024\";|g" /app/apps/web/dist/index.html
+  ```
+
+**Troubleshooting:**
+- If you see CORS errors, check that the frontend can access `/api-config` endpoint
+- The frontend never hardcodes `localhost:3333` - it uses runtime detection
+- Ensure `CROCDESK_PORT` matches the port you expose in Docker
+
 For broader project context, configuration options, and runtime expectations, see the [root README](../README.md).

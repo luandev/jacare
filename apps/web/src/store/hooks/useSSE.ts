@@ -10,7 +10,10 @@ export function useSSE() {
   const { connect, disconnect: _disconnect, lastEvent, isConnected } = useSSEStore();
   
   useEffect(() => {
-    connect();
+    // connect() is async but we don't need to await it
+    connect().catch(() => {
+      // Silently handle connection errors - SSE will retry automatically
+    });
     
     return () => {
       // Don't disconnect on unmount - keep connection alive for other components
