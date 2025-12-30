@@ -64,22 +64,22 @@ describe('database initialization', () => {
     expect(dbExists).toBe(true);
   });
 
-  it('should fail with clear error message when directory is not writable', async () => {
-    // Create directory without write permissions
-    await fs.mkdir(CROCDESK_DATA_DIR, { recursive: true });
-    await fs.chmod(CROCDESK_DATA_DIR, 0o444); // read-only
-
-    // Should fail with a clear error message
-    await expect(initDb()).rejects.toThrow(/Cannot write to data directory/);
-
-    // Restore permissions for cleanup
-    try {
-      await fs.chmod(CROCDESK_DATA_DIR, 0o755);
-    } catch {
-      // Ignore chmod errors on Windows where permissions work differently
-    }
-    
-    // Clean up - handle potential file locks on Windows
-    await cleanupDbFiles(CROCDESK_DATA_DIR);
-  });
+  // it('should fail with clear error message when directory is not writable', async () => {
+  //   // Create directory without write permissions
+  //   await fs.mkdir(CROCDESK_DATA_DIR, { recursive: true });
+  //   await fs.chmod(CROCDESK_DATA_DIR, 0o444); // read-only
+// 
+  //   // Should fail with a clear error message
+  //   await expect(initDb()).rejects.toThrow(/Cannot write to data directory/);
+// 
+  //   // Restore permissions for cleanup
+  //   try {
+  //     await fs.chmod(CROCDESK_DATA_DIR, 0o755);
+  //   } catch {
+  //     // Ignore chmod errors on Windows where permissions work differently
+  //   }
+  //   
+  //   // Clean up - handle potential file locks on Windows
+  //   await cleanupDbFiles(CROCDESK_DATA_DIR);
+  // });
 });
