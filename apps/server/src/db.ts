@@ -1,5 +1,6 @@
 import Database from "better-sqlite3";
 import path from "path";
+import { promises as fs } from "fs";
 import { DEFAULT_SETTINGS } from "@crocdesk/shared";
 import type {
   JobRecord,
@@ -21,9 +22,8 @@ export async function initDb(): Promise<void> {
   // Test write permissions before opening database
   const testFile = path.join(CROCDESK_DATA_DIR, ".write_test");
   try {
-    const fs = await import("fs");
-    await fs.promises.writeFile(testFile, "test", "utf-8");
-    await fs.promises.unlink(testFile);
+    await fs.writeFile(testFile, "test", "utf-8");
+    await fs.unlink(testFile);
   } catch (error) {
     const err = error as NodeJS.ErrnoException;
     throw new Error(

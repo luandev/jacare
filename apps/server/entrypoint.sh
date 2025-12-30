@@ -13,7 +13,9 @@ if [ -d "/data" ]; then
     
     # If running as root (shouldn't happen but check anyway), fix permissions
     if [ "$(id -u)" = "0" ]; then
-      echo "Running as root - fixing /data ownership..."
+      echo "WARNING: Running as root - fixing /data ownership..."
+      echo "NOTE: This is a fallback. Host directory permissions should be properly configured."
+      echo "Recommended: Set ownership to UID 1001 on the host: sudo chown -R 1001:1001 /path/to/data"
       chown -R jacare:jacare /data
     else
       echo "ERROR: Cannot write to /data. Please ensure the host directory has appropriate permissions."
