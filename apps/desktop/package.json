@@ -14,13 +14,13 @@
     },
     "files": [
       "dist/**/*",
-      "../../web/dist/**/*",
-      "../../server/dist/**/*",
+      "../web/dist/**/*",
+      "../server/dist/**/*",
       "package.json"
     ],
     "extraResources": [
       {
-        "from": "../../server/dist",
+        "from": "../server/dist",
         "to": "server",
         "filter": [
           "**/*"
