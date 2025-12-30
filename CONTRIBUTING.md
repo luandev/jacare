@@ -99,7 +99,6 @@ npm run lint && npm run typecheck
 - Env vars:
   - `CROCDESK_PORT` (3333)
   - `CROCDESK_DATA_DIR` (`./data`)
-  - `CROCDESK_ENABLE_DOWNLOADS` (`false`)
   - `CROCDB_BASE_URL` (`https://api.crocdb.net`)
   - `CROCDB_CACHE_TTL_MS` (`86400000`)
   - `CROCDESK_DEV_URL` (`http://localhost:5173`)

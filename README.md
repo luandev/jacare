@@ -102,7 +102,7 @@ If you’d rather run it locally, make sure you have **[Node.js](https://nodejs.
 ## Configuration & data ⚙️
 - **Default port:** `CROCDESK_PORT=3333`.
 - **Data directory:** `CROCDESK_DATA_DIR=./data` holds SQLite databases, cache tables, and manifest files. Customize it to point Jacare at a shared drive or fast SSD.
-- **Downloads:** Disabled by default; enable with `CROCDESK_ENABLE_DOWNLOADS=true` to fetch assets or binaries.
+- **Downloads:** Enabled by default to fetch assets or binaries.
 - **Crocdb base URL:** `CROCDB_BASE_URL=https://api.crocdb.net`.
 - **Cache TTL:** `CROCDB_CACHE_TTL_MS=86400000` (24 hours) for search and entry cache tables.
 - **Electron dev URL:** `CROCDESK_DEV_URL` (defaults to `http://localhost:5173`).
@@ -242,7 +242,7 @@ Logs are automatically rotated and kept for 7 days. They include:
 **Common Issues:**
 
 1. **Server won't start**: Check the most recent log file for error messages
-2. **Downloads failing**: Ensure `CROCDESK_ENABLE_DOWNLOADS=true` is set
+2. **Downloads failing**: Check network connectivity and download directory permissions
 3. **Library not showing games**: Run a library scan from the Library view
 4. **Port already in use**: Set `CROCDESK_PORT` to a different port number
 

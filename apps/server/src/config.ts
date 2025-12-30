@@ -11,7 +11,6 @@ export const CROCDB_BASE_URL =
 export const CROCDB_CACHE_TTL_MS = Number(
   process.env.CROCDB_CACHE_TTL_MS ?? 1000 * 60 * 60 * 24
 );
-export const ENABLE_DOWNLOADS =  "true";
 
 export function getDefaultSettings(): Settings {
   const useAbsolutePaths = process.env.CROCDESK_USE_ABSOLUTE_PATHS === "true";
