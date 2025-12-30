@@ -116,6 +116,9 @@ export async function startServer(): Promise<Server> {
     const fs = await import("fs");
     const webDistExists = await fs.promises.access(webDistPath).then(() => true).catch(() => false);
     if (webDistExists) {
+      // Create static middleware once for efficiency
+      const staticMiddleware = express.static(webDistPath);
+      
       // Static middleware - skip API routes
       app.use((req, res, next) => {
         // Skip static file serving for API routes
@@ -129,7 +132,7 @@ export async function startServer(): Promise<Server> {
             req.path.startsWith("/api-config")) {
           return next();
         }
-        express.static(webDistPath)(req, res, next);
+        staticMiddleware(req, res, next);
       });
       // SPA fallback: serve index.html for all non-API routes
       app.get("*", (req, res, next) => {
