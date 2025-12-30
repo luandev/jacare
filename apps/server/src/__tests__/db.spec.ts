@@ -10,22 +10,48 @@ vi.mock('../config', () => ({
   CROCDESK_DATA_DIR: path.join(os.tmpdir(), 'crocdesk-test-db'),
   CROCDB_BASE_URL: 'https://api.crocdb.net',
   CROCDB_CACHE_TTL_MS: 86400000,
-  ENABLE_DOWNLOADS: 'false'
+  getDefaultSettings: () => ({
+    downloadDir: './downloads',
+    libraryDir: './library',
+    queue: {
+      concurrency: 2
+    }
+  })
 }));
 
 // Import after mocking
 import { initDb } from '../db';
 import { CROCDESK_DATA_DIR } from '../config';
 
+// Helper function to clean up database files with retry logic for Windows file locking
+async function cleanupDbFiles(dir: string, retries = 3): Promise<void> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      await fs.rm(dir, { recursive: true, force: true });
+      return;
+    } catch (error) {
+      const err = error as NodeJS.ErrnoException;
+      // On Windows, database files can be locked briefly after closing
+      if (err.code === 'EBUSY' && i < retries - 1) {
+        // Wait a bit before retrying (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, 100 * (i + 1)));
+        continue;
+      }
+      // If it's not EBUSY or we've exhausted retries, throw
+      throw error;
+    }
+  }
+}
+
 describe('database initialization', () => {
   beforeEach(async () => {
     // Clean up test directory before each test
-    await fs.rm(CROCDESK_DATA_DIR, { recursive: true, force: true });
+    await cleanupDbFiles(CROCDESK_DATA_DIR);
   });
 
   afterAll(async () => {
     // Clean up test directory after all tests
-    await fs.rm(CROCDESK_DATA_DIR, { recursive: true, force: true });
+    await cleanupDbFiles(CROCDESK_DATA_DIR);
   });
 
   it('should initialize database with proper permissions', async () => {
@@ -47,6 +73,13 @@ describe('database initialization', () => {
     await expect(initDb()).rejects.toThrow(/Cannot write to data directory/);
 
     // Restore permissions for cleanup
-    await fs.chmod(CROCDESK_DATA_DIR, 0o755);
+    try {
+      await fs.chmod(CROCDESK_DATA_DIR, 0o755);
+    } catch {
+      // Ignore chmod errors on Windows where permissions work differently
+    }
+    
+    // Clean up - handle potential file locks on Windows
+    await cleanupDbFiles(CROCDESK_DATA_DIR);
   });
 });
