@@ -17,6 +17,22 @@ let db: Database.Database | null = null;
 
 export async function initDb(): Promise<void> {
   await ensureDir(CROCDESK_DATA_DIR);
+  
+  // Test write permissions before opening database
+  const testFile = path.join(CROCDESK_DATA_DIR, ".write_test");
+  try {
+    const fs = await import("fs");
+    await fs.promises.writeFile(testFile, "test", "utf-8");
+    await fs.promises.unlink(testFile);
+  } catch (error) {
+    const err = error as NodeJS.ErrnoException;
+    throw new Error(
+      `Cannot write to data directory: ${CROCDESK_DATA_DIR}. ` +
+      `Error: ${err.message}. ` +
+      `Please ensure the directory exists and has write permissions for the current user.`
+    );
+  }
+  
   db = new Database(dbPath);
   db.pragma("journal_mode = WAL");
 

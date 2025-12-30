@@ -50,6 +50,10 @@ COPY --from=builder /app/apps/web/dist ./apps/web/dist
 COPY packages/shared/package.json ./packages/shared/
 COPY apps/server/package.json ./apps/server/
 
+# Copy entrypoint script
+COPY apps/server/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 # Create data directory and set ownership
 RUN mkdir -p /data && \
     chown -R jacare:jacare /app /data
@@ -71,5 +75,6 @@ USER jacare
 
 # Start server
 WORKDIR /app/apps/server
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["node", "dist/index.js"]
 
