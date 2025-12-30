@@ -1,5 +1,7 @@
 import Database from "better-sqlite3";
 import path from "path";
+import { promises as fs } from "fs";
+import { DEFAULT_SETTINGS } from "@crocdesk/shared";
 import type {
   JobRecord,
   JobStatus,
@@ -16,6 +18,21 @@ let db: Database.Database | null = null;
 
 export async function initDb(): Promise<void> {
   await ensureDir(CROCDESK_DATA_DIR);
+  
+  // Test write permissions before opening database
+  const testFile = path.join(CROCDESK_DATA_DIR, ".write_test");
+  try {
+    await fs.writeFile(testFile, "test", "utf-8");
+    await fs.unlink(testFile);
+  } catch (error) {
+    const err = error as NodeJS.ErrnoException;
+    throw new Error(
+      `Cannot write to data directory: ${CROCDESK_DATA_DIR}. ` +
+      `Error: ${err.message}. ` +
+      `Please ensure the directory exists and has write permissions for the current user.`
+    );
+  }
+  
   db = new Database(dbPath);
   db.pragma("journal_mode = WAL");
 

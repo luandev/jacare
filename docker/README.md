@@ -6,12 +6,23 @@ This folder contains a starter `docker-compose.yml` for running Jacare with bind
 1. Adjust the bind mounts in [`docker-compose.yml`](docker-compose.yml) to match your host paths.
    - Set `CROCDESK_DATA_DIR` to point to where you want SQLite databases and cache stored.
    - Set `libraryDir` in settings to point to your ROM collection directory.
-2. (Optional) Uncomment any emulator services you want to run alongside Jacare (RetroArch, Dolphin, PCSX2).
-3. Start the stack:
+2. **Important for Linux/macOS users:** Ensure the host directories have proper permissions.
+   The container runs as UID 1001 (user `jacare`) and needs write access to the data directory.
+   ```bash
+   # Create directories if they don't exist
+   mkdir -p /path/to/data /path/to/library
+   
+   # Set proper ownership (Linux/macOS only)
+   sudo chown -R 1001:1001 /path/to/data
+   sudo chmod -R 755 /path/to/data
+   ```
+   **Note:** On Windows, Docker Desktop handles permissions automatically.
+3. (Optional) Uncomment any emulator services you want to run alongside Jacare (RetroArch, Dolphin, PCSX2).
+4. Start the stack:
    ```bash
    docker compose -f docker/docker-compose.yml up -d
    ```
-4. Visit the Jacare web UI and API at `http://localhost:3333`.
+5. Visit the Jacare web UI and API at `http://localhost:3333`.
 
 The Docker image includes both the server API and web UI, so everything is accessible on port 3333. The template sets `CROCDESK_DATA_DIR` to `/data` and assumes your ROM library is mounted at `/library`. 
 
@@ -49,5 +60,6 @@ The frontend automatically detects the API base URL at runtime. In Docker deploy
 - If you see CORS errors, check that the frontend can access `/api-config` endpoint
 - The frontend never hardcodes `localhost:3333` - it uses runtime detection
 - Ensure `CROCDESK_PORT` matches the port you expose in Docker
+- **"readonly database" error:** This occurs when the `/data` directory doesn't have write permissions for UID 1001. Fix with: `sudo chown -R 1001:1001 /path/to/data && sudo chmod -R 755 /path/to/data`
 
 For broader project context, configuration options, and runtime expectations, see the [root README](../README.md).
