@@ -3,7 +3,6 @@ import crypto from "crypto";
 import { promises as fs } from "fs";
 import path from "path";
 import type { JobRecord } from "@crocdesk/shared";
-import { DEFAULT_SETTINGS } from "@crocdesk/shared";
 import {
   createJob,
   createJobStep,
@@ -16,6 +15,7 @@ import {
   upsertLibraryItem,
   getLibraryItemByPath
 } from "../db";
+import { getDefaultSettings } from "../config";
 import { publishEvent } from "../events";
 import { scanLocal } from "./scanner";
 import { scanForUnorganizedItems, reorganizeItems } from "./scanner";
@@ -43,7 +43,7 @@ export function getJobSteps(jobId: string) {
 export async function enqueueScanLocal(): Promise<JobRecord> {
   const job = createJobRecord("scan_local", {});
   logger.info("Scan job enqueued", { jobId: job.id });
-  const settings = getSettings() ?? DEFAULT_SETTINGS;
+  const settings = getSettings() ?? getDefaultSettings();
   queue.concurrencyLimit = settings.queue?.concurrency ?? 2;
   queue.add(() => runScanJob(job));
   return job;
@@ -54,7 +54,7 @@ export async function enqueueDownloadAndInstall(
 ): Promise<JobRecord> {
   const job = createJobRecord("download_and_install", payload);
   logger.info("Download job enqueued", { jobId: job.id, slug: payload.slug, linkIndex: payload.linkIndex });
-  const settings = getSettings() ?? DEFAULT_SETTINGS;
+  const settings = getSettings() ?? getDefaultSettings();
   queue.concurrencyLimit = settings.queue?.concurrency ?? 2;
   
   const abortController = new AbortController();
@@ -283,7 +283,7 @@ function createJobRecord(
 async function runScanJob(job: JobRecord): Promise<void> {
   logger.info("Starting scan job", { jobId: job.id });
   await runJob(job, async (report) => {
-    const settings = getSettings() ?? DEFAULT_SETTINGS;
+    const settings = getSettings() ?? getDefaultSettings();
     const libraryDir = path.resolve(settings.libraryDir);
     
     // Phase 1: Scan for unorganized items
@@ -359,7 +359,7 @@ export async function runDownloadJob(
       throw new Error("Cancelled by user");
     }
     
-    const settings = getSettings() ?? DEFAULT_SETTINGS;
+    const settings = getSettings() ?? getDefaultSettings();
     const result = await runDownloadAndInstall(payload, settings, abortSignal, (progress, message, bytesDownloaded, totalBytes) => {
       report.step("download_and_install", progress, message, bytesDownloaded, totalBytes);
       // Log progress milestones
@@ -575,7 +575,7 @@ async function cleanupDownloadPartFile(job: JobRecord): Promise<void> {
     const link = entry.links[resolvedLinkIndex];
     
     // Reconstruct download path
-    const settings = getSettings() ?? DEFAULT_SETTINGS;
+    const settings = getSettings() ?? getDefaultSettings();
     const downloadDir = path.resolve(settings.downloadDir || "./downloads");
     const downloadPath = path.join(downloadDir, link.filename || `${entry.slug}.zip`);
     const partPath = `${downloadPath}.part`;

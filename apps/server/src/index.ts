@@ -92,6 +92,21 @@ export async function startServer(): Promise<Server> {
     }
   });
 
+  app.get("/health", (_req, res) => {
+    res.json({ ok: true });
+  });
+
+  // API configuration endpoint for frontend
+  // Returns the API base URL and port so the frontend can configure itself
+  app.get("/api-config", (req, res) => {
+    const protocol = req.protocol || "http";
+    const host = req.get("host") || `localhost:${PORT}`;
+    res.json({ 
+      apiUrl: `${protocol}://${host}`,
+      port: PORT
+    });
+  });
+
   // Serve static web assets in production (when bundled with desktop app or pkg)
   // pkg bundles assets maintaining their relative path structure
   // Since entry is dist/index.js and assets are ../../web/dist/**/*,
@@ -101,7 +116,21 @@ export async function startServer(): Promise<Server> {
     const fs = await import("fs");
     const webDistExists = await fs.promises.access(webDistPath).then(() => true).catch(() => false);
     if (webDistExists) {
-      app.use(express.static(webDistPath));
+      // Static middleware - skip API routes
+      app.use((req, res, next) => {
+        // Skip static file serving for API routes
+        if (req.path.startsWith("/crocdb") || 
+            req.path.startsWith("/settings") || 
+            req.path.startsWith("/library") || 
+            req.path.startsWith("/jobs") || 
+            req.path.startsWith("/events") || 
+            req.path.startsWith("/file") || 
+            req.path.startsWith("/health") ||
+            req.path.startsWith("/api-config")) {
+          return next();
+        }
+        express.static(webDistPath)(req, res, next);
+      });
       // SPA fallback: serve index.html for all non-API routes
       app.get("*", (req, res, next) => {
         // Skip API routes
@@ -127,21 +156,6 @@ export async function startServer(): Promise<Server> {
       logger.error("Failed to access web UI assets in pkg bundle", error);
     }
   }
-
-  app.get("/health", (_req, res) => {
-    res.json({ ok: true });
-  });
-
-  // API configuration endpoint for frontend
-  // Returns the API base URL and port so the frontend can configure itself
-  app.get("/api-config", (req, res) => {
-    const protocol = req.protocol || "http";
-    const host = req.get("host") || `localhost:${PORT}`;
-    res.json({ 
-      apiUrl: `${protocol}://${host}`,
-      port: PORT
-    });
-  });
 
   app.get("/events", sseHandler);
 

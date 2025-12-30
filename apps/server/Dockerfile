@@ -61,6 +61,7 @@ EXPOSE 3333
 ENV NODE_ENV=production
 ENV CROCDESK_PORT=3333
 ENV CROCDESK_DATA_DIR=/data
+ENV CROCDESK_USE_ABSOLUTE_PATHS=true
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
