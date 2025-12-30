@@ -169,7 +169,7 @@ jobs:
           echo "Rebuilding 7zip-bin to ensure binaries are available..."
           npm rebuild 7zip-bin || true
           
-          # Verify binary exists for current platform
+          # Verify binary exists for current platform and set executable permissions
           if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
             if [ ! -f "node_modules/7zip-bin/linux/x64/7za" ]; then
               echo "7za binary missing for Linux, reinstalling 7zip-bin..."
@@ -181,7 +181,9 @@ jobs:
                 exit 1
               fi
             fi
-            echo "✓ 7za binary verified for Linux"
+            # Ensure binary is executable
+            chmod +x node_modules/7zip-bin/linux/x64/7za
+            echo "✓ 7za binary verified and made executable for Linux"
           elif [ "${{ matrix.os }}" == "windows-latest" ]; then
             if [ ! -f "node_modules/7zip-bin/win/x64/7za.exe" ]; then
               echo "7za.exe binary missing for Windows, reinstalling 7zip-bin..."
@@ -193,7 +195,9 @@ jobs:
                 exit 1
               fi
             fi
-            echo "✓ 7za.exe binary verified for Windows"
+            # Ensure binary is executable
+            chmod +x node_modules/7zip-bin/win/x64/7za.exe
+            echo "✓ 7za.exe binary verified and made executable for Windows"
           elif [ "${{ matrix.os }}" == "macos-latest" ]; then
             if [ ! -f "node_modules/7zip-bin/mac/x64/7za" ]; then
               echo "7za binary missing for macOS, reinstalling 7zip-bin..."
@@ -205,15 +209,16 @@ jobs:
                 exit 1
               fi
             fi
-            echo "✓ 7za binary verified for macOS"
+            # Ensure binary is executable
+            chmod +x node_modules/7zip-bin/mac/x64/7za
+            echo "✓ 7za binary verified and made executable for macOS"
           fi
 
       - name: Package desktop app
         shell: bash
         run: |
-          cd apps/desktop
           echo "Packaging desktop app for ${{ matrix.os }}..."
-          npm run package
+          npm run package -w @crocdesk/desktop
           if [ $? -ne 0 ]; then
             echo "Error: Desktop app packaging failed"
             exit 1

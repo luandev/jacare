@@ -9,6 +9,9 @@
     "appId": "com.jacare.app",
     "productName": "Jacare",
     "electronVersion": "29.1.0",
+    "npmRebuild": false,
+    "buildDependenciesFromSource": false,
+    "nodeGypRebuild": false,
     "directories": {
       "output": "../../release/desktop"
     },
