@@ -1,7 +1,6 @@
 import Database from "better-sqlite3";
 import path from "path";
 import { promises as fs } from "fs";
-import { DEFAULT_SETTINGS } from "@crocdesk/shared";
 import type {
   JobRecord,
   JobStatus,

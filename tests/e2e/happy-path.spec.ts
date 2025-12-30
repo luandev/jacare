@@ -81,7 +81,7 @@ test.describe('Happy Path E2E', () => {
       // Verify search was attempted (check for status or results)
       // The page should show either results or an error status
       const statusElement = page.locator('.status').first();
-      const hasStatus = await statusElement.isVisible().catch(() => false);
+      await statusElement.isVisible().catch(() => false);
       
       // We just verify that the page is still functional after search
       await expect(page.getByRole('heading', { name: 'Browse Crocdb' })).toBeVisible();
