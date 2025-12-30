@@ -12,6 +12,7 @@ services:
       - "3333:3333" # Jacare server/API and web UI
     environment:
       CROCDESK_DATA_DIR: /data
+      CROCDESK_USE_ABSOLUTE_PATHS: "true"
     volumes:
       # Windows default: bind your data, library, and downloads folders into the container.
       - type: bind
