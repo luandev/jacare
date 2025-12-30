@@ -49,8 +49,8 @@ docker run --rm -p 3333:3333 -v ./library:/library -v ./downloads:/downloads ghc
 - What it does:
   -  `--rm` - Automatically removes the container when it stops
   - `-p 3333:3333` - Exposes port 3333 for the web UI
-  - `-v jacare-data:/data` - Creates a named volume for data (persists between runs)
-  - `-v jacare-library:/library` - Creates a named volume for library (persists between runs)
+  - `-v ./library:/library` - Maps your local `./library` folder to the container's `/library` directory where extracted games are stored (persists between runs)
+  - `-v ./downloads:/downloads` - Maps your local `./downloads` folder to the container's `/downloads` directory used for temporary zip downloads and in-progress jobs (persists between runs)
 
  Uses the pre-built image from GitHub Container Registry
 
