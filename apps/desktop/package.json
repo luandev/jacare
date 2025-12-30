@@ -3,8 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "main": "dist/main.js",
-  "author": "Jacare Contributors",
+  "author": {
+    "name": "Jacare Contributors",
+    "email": "jacare@crocdb.net"
+  },
   "description": "Jacare - Desktop ROM library manager",
+  "homepage": "https://github.com/luandev/jacare",
   "build": {
     "appId": "com.jacare.app",
     "productName": "Jacare",
@@ -52,7 +56,9 @@
         "rpm"
       ],
       "icon": "build/icon.png",
-      "category": "Game"
+      "category": "Game",
+      "maintainer": "Jacare Contributors <jacare@crocdb.net>",
+      "artifactName": "jacare-${version}.${ext}"
     },
     "nsis": {
       "oneClick": false,
