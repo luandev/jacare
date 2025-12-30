@@ -39,7 +39,8 @@
         "nsis",
         "portable"
       ],
-      "icon": "build/icon.ico"
+      "icon": "build/icon.ico",
+      "artifactName": "jacare-${version}.${ext}"
     },
     "mac": {
       "target": [
@@ -47,7 +48,8 @@
         "zip"
       ],
       "icon": "build/icon.icns",
-      "category": "public.app-category.games"
+      "category": "public.app-category.games",
+      "artifactName": "jacare-${version}.${ext}"
     },
     "linux": {
       "target": [
