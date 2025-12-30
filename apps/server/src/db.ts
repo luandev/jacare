@@ -9,7 +9,7 @@ import type {
   LibraryItem,
   Settings
 } from "@crocdesk/shared";
-import { CROCDESK_DATA_DIR } from "./config";
+import { CROCDESK_DATA_DIR, getDefaultSettings } from "./config";
 import { ensureDir } from "./utils/fs";
 
 const dbPath = path.join(CROCDESK_DATA_DIR, "crocdesk.db");
@@ -99,7 +99,7 @@ function getDb(): Database.Database {
 function ensureDefaults(): void {
   const settings = getSettings();
   if (!settings) {
-    setSettings(DEFAULT_SETTINGS);
+    setSettings(getDefaultSettings());
   }
 }
 

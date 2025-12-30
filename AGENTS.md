@@ -16,7 +16,7 @@ CrocDesk is a desktop ROM library manager built as an Electron shell over an Exp
 
 ## Runtime conventions
 - Slow work runs as jobs and emits SSE events at GET /events
-- Default download behavior is disabled unless CROCDESK_ENABLE_DOWNLOADS=true
+- Downloads are enabled by default
 - Manifest file: .crocdesk.json written in the target game folder
 
 ## Data storage (MVP)
@@ -36,7 +36,6 @@ Profiles and per-platform roots have been removed in favor of separate `download
 ## Environment variables
 - CROCDESK_PORT (default 3333)
 - CROCDESK_DATA_DIR (default ./data)
-- CROCDESK_ENABLE_DOWNLOADS (default false)
 - CROCDB_BASE_URL (default https://api.crocdb.net)
 - CROCDB_CACHE_TTL_MS (default 86400000)
 - CROCDESK_DEV_URL (Electron dev URL, default http://localhost:5173)

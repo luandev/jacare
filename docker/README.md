@@ -35,7 +35,6 @@ You can also build the server image from the repository by uncommenting the `bui
 ## Environment variables
 - `CROCDESK_PORT` – Server port (default: 3333)
 - `CROCDESK_DATA_DIR` – Data directory for SQLite and cache (default: ./data)
-- `CROCDESK_ENABLE_DOWNLOADS` – Enable downloads (default: false)
 - `CROCDB_BASE_URL` – Crocdb API URL (default: https://api.crocdb.net)
 - `CROCDB_CACHE_TTL_MS` – Cache TTL in milliseconds (default: 86400000)
 

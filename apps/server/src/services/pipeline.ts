@@ -3,7 +3,6 @@ import { promises as fs } from "fs";
 import { Readable } from "stream";
 import type { ReadableStream as NodeReadableStream } from "stream/web";
 import type { CrocdbEntry, Manifest, Settings } from "@crocdesk/shared";
-import { ENABLE_DOWNLOADS } from "../config";
 import { getEntry } from "./crocdb";
 import { writeManifest } from "./manifest";
 import { ensureDir, moveFile } from "../utils/fs";
@@ -47,12 +46,6 @@ export async function runDownloadAndInstall(
       ? payload.linkIndex
       : chooseLinkIndex(entry);
   const link = entry.links[resolvedLinkIndex];
-
-  if (!ENABLE_DOWNLOADS) {
-    logger.warn("Downloads disabled, skipping download", { slug: entry.slug });
-    progressReporter(1, "Downloads disabled; skipping transfer");
-    return { entry };
-  }
 
   const downloadDir = path.resolve(settings.downloadDir || "./downloads");
   await ensureDir(downloadDir);
