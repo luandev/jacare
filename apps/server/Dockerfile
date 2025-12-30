@@ -50,9 +50,9 @@ COPY --from=builder /app/apps/web/dist ./apps/web/dist
 COPY packages/shared/package.json ./packages/shared/
 COPY apps/server/package.json ./apps/server/
 
-# Create data directory and set ownership
-RUN mkdir -p /data && \
-    chown -R jacare:jacare /app /data
+# Create data and downloads directories and set ownership
+RUN mkdir -p /data /downloads && \
+    chown -R jacare:jacare /app /data /downloads
 
 # Expose port
 EXPOSE 3333

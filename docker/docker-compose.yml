@@ -13,13 +13,16 @@ services:
     environment:
       CROCDESK_DATA_DIR: /data
     volumes:
-      # Windows default: bind your data and library folders into the container.
+      # Windows default: bind your data, library, and downloads folders into the container.
       - type: bind
         source: C:/Users/<you>/jacare/data
         target: /data
       - type: bind
         source: C:/Users/<you>/jacare/library
         target: /library
+      - type: bind
+        source: C:/Users/<you>/jacare/downloads
+        target: /downloads
       # macOS example paths:
       # - type: bind
       #   source: /Users/<you>/jacare/data
@@ -27,6 +30,9 @@ services:
       # - type: bind
       #   source: /Users/<you>/jacare/library
       #   target: /library
+      # - type: bind
+      #   source: /Users/<you>/jacare/downloads
+      #   target: /downloads
       # Linux example paths:
       # - type: bind
       #   source: /home/<you>/jacare/data
@@ -34,6 +40,9 @@ services:
       # - type: bind
       #   source: /home/<you>/jacare/library
       #   target: /library
+      # - type: bind
+      #   source: /home/<you>/jacare/downloads
+      #   target: /downloads
 
   # Emulator examples (disabled by default). These services expect ROMs under /library
   # and can be linked via Jacare's launcher settings. Uncomment the services you need
