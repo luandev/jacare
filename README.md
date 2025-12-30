@@ -34,15 +34,24 @@
 
 
 If you’re familiar with [Docker](https://docs.docker.com/get-started/docker-overview/), here's a one-liner to run and test Jacare:
+
+**Windows (PowerShell)**
+```powershell
+docker run --rm -p 3333:3333 -v ./library:/library -v ./downloads:/downloads ghcr.io/luandev/jacare:latest
+````
+
+**Ubuntu / Linux**
+
+```bash
+docker run --rm -p 3333:3333 -v ./library:/library -v ./downloads:/downloads ghcr.io/luandev/jacare:latest
 ```
-docker run --rm -p 3333:3333 -v jacare-data:/data -v jacare-library:/library -e CROCDESK_ENABLE_DOWNLOADS=false ghcr.io/luandev/jacare:latest
-```
+
 - What it does:
   -  `--rm` - Automatically removes the container when it stops
   - `-p 3333:3333` - Exposes port 3333 for the web UI
   - `-v jacare-data:/data` - Creates a named volume for data (persists between runs)
   - `-v jacare-library:/library` - Creates a named volume for library (persists between runs)
-  - `-e CROCDESK_ENABLE_DOWNLOADS=false` - Disables downloads (default)
+
  Uses the pre-built image from GitHub Container Registry
 
 - Access the app:
