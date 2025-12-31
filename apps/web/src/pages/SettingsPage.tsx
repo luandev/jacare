@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { apiGet, apiPut } from "../lib/api";
 import type { Settings } from "@crocdesk/shared";
-import { useUIStore } from "../store";
+import { useUIStore, useBigPictureStore } from "../store";
 import { useTheme } from "../components/ThemeProvider";
 import { Card, Input, Button } from "../components/ui";
 import { spacing } from "../lib/design-tokens";
 
 export default function SettingsPage() {
+  const navigate = useNavigate();
   const settingsQuery = useQuery({
     queryKey: ["settings"],
     queryFn: () => apiGet<Settings>("/settings")
@@ -20,6 +22,13 @@ export default function SettingsPage() {
   const theme = useUIStore((state) => state.theme);
   const setThemePreference = useUIStore((state) => state.setTheme);
   const { setTheme: _setThemeObject } = useTheme();
+  
+  // Big Picture mode settings
+  const setBigPictureEnabled = useBigPictureStore((state) => state.setEnabled);
+  const hapticFeedbackEnabled = useBigPictureStore((state) => state.hapticFeedbackEnabled);
+  const setHapticFeedbackEnabled = useBigPictureStore((state) => state.setHapticFeedbackEnabled);
+  const gridSize = useBigPictureStore((state) => state.gridSize);
+  const setGridSize = useBigPictureStore((state) => state.setGridSize);
 
   // Sync draft with query data when it changes (e.g., after refetch)
   // This is a valid pattern for syncing external data with local state
@@ -130,6 +139,72 @@ export default function SettingsPage() {
               {saveMutation.isPending ? "Saving..." : "Save Settings"}
             </Button>
             {status && <span className="status">{status}</span>}
+          </div>
+        </div>
+      </Card>
+
+      <Card>
+        <h3>Big Picture Mode</h3>
+        <p className="status" style={{ marginBottom: spacing.sm, fontSize: "12px" }}>
+          Controller-friendly interface designed for TVs and couch gaming.
+        </p>
+        
+        <div style={{ display: "flex", flexDirection: "column", gap: spacing.md }}>
+          {/* Launch Big Picture Mode */}
+          <div style={{ display: "flex", gap: spacing.sm, alignItems: "center" }}>
+            <Button
+              type="button"
+              onClick={() => {
+                setBigPictureEnabled(true);
+                navigate("/big-picture");
+              }}
+            >
+              🎮 Launch Big Picture Mode
+            </Button>
+          </div>
+          
+          {/* Haptic Feedback */}
+          <div>
+            <label style={{ display: "flex", alignItems: "center", gap: spacing.sm, cursor: "pointer" }}>
+              <input
+                type="checkbox"
+                checked={hapticFeedbackEnabled}
+                onChange={(e) => setHapticFeedbackEnabled(e.target.checked)}
+                style={{ cursor: "pointer" }}
+              />
+              <span>Enable haptic feedback (controller vibration)</span>
+            </label>
+          </div>
+          
+          {/* Grid Size */}
+          <div>
+            <label htmlFor="grid-size-select" style={{ display: "block", marginBottom: spacing.xs }}>
+              Grid Size
+            </label>
+            <select
+              id="grid-size-select"
+              value={gridSize}
+              onChange={(e) => setGridSize(e.target.value as "small" | "medium" | "large" | "auto")}
+              style={{
+                padding: "8px 12px",
+                borderRadius: "4px",
+                border: "1px solid var(--border)",
+                background: "var(--bg)",
+                color: "var(--ink)",
+                cursor: "pointer"
+              }}
+            >
+              <option value="auto">Auto (Dynamic)</option>
+              <option value="small">Small (3 columns)</option>
+              <option value="medium">Medium (4 columns)</option>
+              <option value="large">Large (5 columns)</option>
+            </select>
+          </div>
+          
+          <div className="status" style={{ fontSize: "12px", lineHeight: 1.6 }}>
+            <p style={{ margin: 0 }}>
+              <strong>Controls:</strong> Use D-Pad or Left Stick to navigate, A to select, B to go back, X to search, Y for menu, LB/RB for pages.
+            </p>
           </div>
         </div>
       </Card>
