@@ -122,13 +122,18 @@ export const useBigPictureStore = create<BigPictureStore>()(
       detectMonitors: async () => {
         // Use Screen Orientation API if available
         if (window.screen && 'isExtended' in window.screen) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const isExtended = await (window.screen as any).isExtended;
-          if (isExtended) {
-            // Multi-monitor setup detected
-            // We can't get exact count, but we know there's more than one
-            set({ availableMonitors: 2 });
-          } else {
+          try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const isExtended = await (window.screen as any).isExtended?.();
+            if (isExtended) {
+              // Multi-monitor setup detected
+              // We can't get exact count, but we know there's more than one
+              set({ availableMonitors: 2 });
+            } else {
+              set({ availableMonitors: 1 });
+            }
+          } catch {
+            // If the API call fails, assume single monitor
             set({ availableMonitors: 1 });
           }
         } else {

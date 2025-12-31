@@ -9,6 +9,7 @@ import type {
 } from "@crocdesk/shared";
 import { useBigPictureStore, useDownloadProgressStore } from "../store";
 import { useGamepadNavigation, triggerHapticFeedback } from "../hooks/useGamepadNavigation";
+import { useFullscreenMode } from "../hooks/useFullscreenMode";
 import { OnScreenKeyboard } from "../components/OnScreenKeyboard";
 import GameCard from "../components/GameCard";
 import "./BigPictureModePage.css";
@@ -269,21 +270,7 @@ export default function BigPictureModePage() {
   };
   
   // Enter fullscreen on mount
-  useEffect(() => {
-    if (bigPictureStore.enabled && document.documentElement.requestFullscreen) {
-      document.documentElement.requestFullscreen().catch(() => {
-        // Fullscreen request failed, continue anyway
-      });
-    }
-    
-    return () => {
-      if (document.fullscreenElement) {
-        document.exitFullscreen().catch(() => {
-          // Exit fullscreen failed
-        });
-      }
-    };
-  }, [bigPictureStore.enabled]);
+  useFullscreenMode(bigPictureStore.enabled);
   
   return (
     <div className="big-picture-mode" data-big-picture="true">

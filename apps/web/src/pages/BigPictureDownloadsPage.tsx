@@ -5,6 +5,7 @@ import { apiGet } from "../lib/api";
 import type { JobRecord } from "@crocdesk/shared";
 import { useBigPictureStore, useDownloadProgressStore } from "../store";
 import { useGamepadNavigation, triggerHapticFeedback } from "../hooks/useGamepadNavigation";
+import { useFullscreenMode } from "../hooks/useFullscreenMode";
 import DownloadCard from "../components/DownloadCard";
 import "./BigPictureDownloadsPage.css";
 
@@ -94,21 +95,7 @@ export default function BigPictureDownloadsPage() {
   });
   
   // Enter fullscreen on mount
-  useEffect(() => {
-    if (bigPictureStore.enabled && document.documentElement.requestFullscreen) {
-      document.documentElement.requestFullscreen().catch(() => {
-        // Fullscreen request failed, continue anyway
-      });
-    }
-    
-    return () => {
-      if (document.fullscreenElement) {
-        document.exitFullscreen().catch(() => {
-          // Exit fullscreen failed
-        });
-      }
-    };
-  }, [bigPictureStore.enabled]);
+  useFullscreenMode(bigPictureStore.enabled);
   
   return (
     <div className="bp-downloads-page" data-big-picture="true">

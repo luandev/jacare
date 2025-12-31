@@ -117,7 +117,6 @@ export function useGamepadNavigation(options: GamepadNavigationOptions = {}) {
     };
 
     pollFunctionRef.current = pollGamepads;
-    pollFunctionRef.current = pollGamepads;
   }, [enabled, buttonMapping, getGamepads, wasButtonJustPressed]);
 
   useEffect(() => {

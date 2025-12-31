@@ -130,8 +130,7 @@ export function OnScreenKeyboard({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [focusedRow, focusedCol, shift, value, totalRows]);
+  }, [focusedRow, focusedCol, shift, value, totalRows, getCurrentKey, handleKeyPress, onClose]);
 
   // Normalize focused column when changing rows
   useEffect(() => {
