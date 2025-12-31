@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useBigPictureStore } from "../store";
 import "./OnScreenKeyboard.css";
 
@@ -47,8 +47,8 @@ export function OnScreenKeyboard({
   // Calculate total rows including special keys row
   const totalRows = QWERTY_LAYOUT.length + 1; // +1 for special keys row
 
-  // Get the current key at focus position
-  const getCurrentKey = () => {
+  // Get the current key at focus position - memoized to avoid recreation
+  const getCurrentKey = useCallback(() => {
     if (focusedRow < QWERTY_LAYOUT.length) {
       const row = QWERTY_LAYOUT[focusedRow];
       if (focusedCol < row.length) {
@@ -68,10 +68,10 @@ export function OnScreenKeyboard({
       return specialKeysArray[focusedCol] || null;
     }
     return null;
-  };
+  }, [focusedRow, focusedCol, shift]);
 
-  // Handle key press
-  const handleKeyPress = (key: string) => {
+  // Handle key press - memoized to avoid recreation
+  const handleKeyPress = useCallback((key: string) => {
     if (key === SPECIAL_KEYS.BACKSPACE) {
       onChange(value.slice(0, -1));
     } else if (key === SPECIAL_KEYS.SPACE) {
@@ -91,7 +91,7 @@ export function OnScreenKeyboard({
         setShift(false);
       }
     }
-  };
+  }, [value, shift, onChange, onClose, onSubmit]);
 
   // Handle keyboard navigation
   useEffect(() => {
@@ -140,7 +140,7 @@ export function OnScreenKeyboard({
     if (focusedCol >= currentRow) {
       setFocusedCol(currentRow - 1);
     }
-  }, [focusedRow]);
+  }, [focusedRow, focusedCol]);
 
   return (
     <div className="onscreen-keyboard" ref={keyboardRef}>

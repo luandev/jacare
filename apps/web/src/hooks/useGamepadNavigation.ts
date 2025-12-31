@@ -54,7 +54,6 @@ export function useGamepadNavigation(options: GamepadNavigationOptions = {}) {
   const frameRef = useRef<number>();
   const lastButtonStatesRef = useRef<Map<number, boolean[]>>(new Map());
   const connectedGamepadsRef = useRef<Set<number>>(new Set());
-  const pollFunctionRef = useRef<() => void>();
 
   // Get connected gamepads
   const getGamepads = useCallback((): Gamepad[] => {
@@ -116,7 +115,16 @@ export function useGamepadNavigation(options: GamepadNavigationOptions = {}) {
       frameRef.current = requestAnimationFrame(pollGamepads);
     };
 
-    pollFunctionRef.current = pollGamepads;
+    if (!enabled) return;
+
+    // Start polling
+    frameRef.current = requestAnimationFrame(pollGamepads);
+
+    return () => {
+      if (frameRef.current !== undefined) {
+        cancelAnimationFrame(frameRef.current);
+      }
+    };
   }, [enabled, buttonMapping, getGamepads, wasButtonJustPressed]);
 
   useEffect(() => {
@@ -125,11 +133,6 @@ export function useGamepadNavigation(options: GamepadNavigationOptions = {}) {
     // Add event listeners
     window.addEventListener("gamepadconnected", handleGamepadConnected);
     window.addEventListener("gamepaddisconnected", handleGamepadDisconnected);
-
-    // Start polling
-    if (pollFunctionRef.current) {
-      pollFunctionRef.current();
-    }
 
     return () => {
       // Clean up
