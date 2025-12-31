@@ -29,6 +29,16 @@ export default function SettingsPage() {
   const setHapticFeedbackEnabled = useBigPictureStore((state) => state.setHapticFeedbackEnabled);
   const gridSize = useBigPictureStore((state) => state.gridSize);
   const setGridSize = useBigPictureStore((state) => state.setGridSize);
+  const availableMonitors = useBigPictureStore((state) => state.availableMonitors);
+  const selectedMonitor = useBigPictureStore((state) => state.selectedMonitor);
+  const setSelectedMonitor = useBigPictureStore((state) => state.setSelectedMonitor);
+  const detectMonitors = useBigPictureStore((state) => state.detectMonitors);
+  
+  // Detect monitors on mount
+  useEffect(() => {
+    detectMonitors();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Sync draft with query data when it changes (e.g., after refetch)
   // This is a valid pattern for syncing external data with local state
@@ -200,6 +210,37 @@ export default function SettingsPage() {
               <option value="large">Large (5 columns)</option>
             </select>
           </div>
+          
+          {/* Monitor Selection */}
+          {availableMonitors > 1 && (
+            <div>
+              <label htmlFor="monitor-select" style={{ display: "block", marginBottom: spacing.xs }}>
+                Monitor Selection
+              </label>
+              <select
+                id="monitor-select"
+                value={selectedMonitor}
+                onChange={(e) => setSelectedMonitor(parseInt(e.target.value, 10))}
+                style={{
+                  padding: "8px 12px",
+                  borderRadius: "4px",
+                  border: "1px solid var(--border)",
+                  background: "var(--bg)",
+                  color: "var(--ink)",
+                  cursor: "pointer"
+                }}
+              >
+                {Array.from({ length: availableMonitors }, (_, i) => (
+                  <option key={i} value={i}>
+                    Monitor {i + 1}
+                  </option>
+                ))}
+              </select>
+              <p className="status" style={{ marginTop: spacing.xs, fontSize: "12px" }}>
+                {availableMonitors} monitors detected
+              </p>
+            </div>
+          )}
           
           <div className="status" style={{ fontSize: "12px", lineHeight: 1.6 }}>
             <p style={{ margin: 0 }}>

@@ -397,9 +397,10 @@ export default function BigPictureModePage() {
           <div className="bp-menu" onClick={(e) => e.stopPropagation()}>
             <h2>Big Picture Menu</h2>
             <ul>
+              <li><button onClick={() => { navigate("/big-picture"); setShowMenu(false); }}>Browse Games</button></li>
               <li><button onClick={() => { navigate("/library"); setShowMenu(false); }}>Library</button></li>
+              <li><button onClick={() => { navigate("/big-picture/downloads"); setShowMenu(false); }}>Downloads</button></li>
               <li><button onClick={() => { navigate("/queue"); setShowMenu(false); }}>Queue</button></li>
-              <li><button onClick={() => { navigate("/downloads"); setShowMenu(false); }}>Downloads</button></li>
               <li><button onClick={() => { navigate("/settings"); setShowMenu(false); }}>Settings</button></li>
               <li><button onClick={() => { navigate("/"); setShowMenu(false); }}>Exit Big Picture</button></li>
             </ul>

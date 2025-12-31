@@ -8,6 +8,7 @@ import SettingsPage from "./pages/SettingsPage";
 import GameDetailPage from "./pages/GameDetailPage";
 import LibraryItemDetailPage from "./pages/LibraryItemDetailPage";
 import BigPictureModePage from "./pages/BigPictureModePage";
+import BigPictureDownloadsPage from "./pages/BigPictureDownloadsPage";
 import { WelcomeView, shouldShowWelcome } from "./components/WelcomeView";
 // useMemo imported above
 
@@ -26,6 +27,7 @@ function AppRoutes() {
         <Route path="/downloads" element={<DownloadsPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/big-picture" element={<BigPictureModePage />} />
+        <Route path="/big-picture/downloads" element={<BigPictureDownloadsPage />} />
         <Route path="/game/:slug" element={<GameDetailPage />} />
       </Routes>
       {state?.backgroundLocation && (

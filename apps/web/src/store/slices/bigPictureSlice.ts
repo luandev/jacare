@@ -55,6 +55,7 @@ export interface BigPictureState {
   gridSize: "small" | "medium" | "large" | "auto";
   autoHideUI: boolean;
   autoHideDelay: number; // in seconds
+  availableMonitors: number; // Number of detected monitors
 }
 
 type BigPictureActions = {
@@ -69,6 +70,8 @@ type BigPictureActions = {
   setGridSize: (size: "small" | "medium" | "large" | "auto") => void;
   setAutoHideUI: (autoHide: boolean) => void;
   setAutoHideDelay: (delay: number) => void;
+  setAvailableMonitors: (count: number) => void;
+  detectMonitors: () => Promise<void>;
 };
 
 export type BigPictureStore = BigPictureState & BigPictureActions;
@@ -83,7 +86,8 @@ const initialState: BigPictureState = {
   keyboardLayout: "qwerty",
   gridSize: "auto",
   autoHideUI: false,
-  autoHideDelay: 3
+  autoHideDelay: 3,
+  availableMonitors: 1
 };
 
 export const useBigPictureStore = create<BigPictureStore>()(
@@ -111,7 +115,27 @@ export const useBigPictureStore = create<BigPictureStore>()(
       
       setAutoHideUI: (autoHide) => set({ autoHideUI: autoHide }),
       
-      setAutoHideDelay: (delay) => set({ autoHideDelay: delay })
+      setAutoHideDelay: (delay) => set({ autoHideDelay: delay }),
+      
+      setAvailableMonitors: (count) => set({ availableMonitors: count }),
+      
+      detectMonitors: async () => {
+        // Use Screen Orientation API if available
+        if (window.screen && 'isExtended' in window.screen) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const isExtended = await (window.screen as any).isExtended;
+          if (isExtended) {
+            // Multi-monitor setup detected
+            // We can't get exact count, but we know there's more than one
+            set({ availableMonitors: 2 });
+          } else {
+            set({ availableMonitors: 1 });
+          }
+        } else {
+          // Fallback: assume single monitor
+          set({ availableMonitors: 1 });
+        }
+      }
     }),
     {
       name: "crocdesk-bigpicture-storage",
