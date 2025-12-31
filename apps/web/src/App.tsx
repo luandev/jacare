@@ -7,7 +7,9 @@ import DownloadsPage from "./pages/DownloadsPage";
 import SettingsPage from "./pages/SettingsPage";
 import GameDetailPage from "./pages/GameDetailPage";
 import LibraryItemDetailPage from "./pages/LibraryItemDetailPage";
+import BigPicturePage from "./pages/BigPicturePage";
 import { WelcomeView, shouldShowWelcome } from "./components/WelcomeView";
+import { useUIStore } from "./store";
 // useMemo imported above
 
 function AppRoutes() {
@@ -25,6 +27,7 @@ function AppRoutes() {
         <Route path="/downloads" element={<DownloadsPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/game/:slug" element={<GameDetailPage />} />
+        <Route path="/big-picture" element={<BigPicturePage />} />
       </Routes>
       {state?.backgroundLocation && (
         <Routes>
@@ -83,8 +86,27 @@ function ModalOverlay({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   const [showWelcome, setShowWelcome] = useState(() => shouldShowWelcome());
+  const bigPictureMode = useUIStore((state) => state.bigPictureMode);
+  const launchInBigPicture = useUIStore((state) => state.launchInBigPicture);
+  const setBigPictureMode = useUIStore((state) => state.setBigPictureMode);
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
     isActive ? "active" : undefined;
+
+  // Auto-launch Big Picture mode if enabled
+  useEffect(() => {
+    if (launchInBigPicture && !bigPictureMode) {
+      setBigPictureMode(true);
+    }
+  }, [launchInBigPicture, bigPictureMode, setBigPictureMode]);
+
+  // If Big Picture mode is enabled, show only Big Picture UI
+  if (bigPictureMode) {
+    return (
+      <BrowserRouter>
+        <BigPicturePage />
+      </BrowserRouter>
+    );
+  }
 
   return (
     <BrowserRouter>

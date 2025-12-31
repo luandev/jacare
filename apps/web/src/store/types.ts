@@ -33,6 +33,8 @@ export type UIState = {
   stickyPlatform: string;
   stickyRegion: string;
   theme: "light" | "dark";
+  bigPictureMode: boolean;
+  launchInBigPicture: boolean;
 };
 
 
