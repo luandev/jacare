@@ -138,8 +138,8 @@ describe("runDownloadJob", () => {
     const getSettings = vi.fn(() => settingsFor(path.join(tempDir, "downloads")));
     const createJobStep = vi.fn(() => ({ id: 1 }));
 
-    vi.doMock("@crocdesk/shared", () => ({
-      DEFAULT_SETTINGS: settingsFor(path.join(tempDir, "downloads"))
+    vi.doMock("../config", () => ({
+      getDefaultSettings: () => settingsFor(path.join(tempDir, "downloads"))
     }));
     vi.doMock("../db", () => ({
       createJob: vi.fn(),
@@ -181,8 +181,8 @@ describe("runDownloadJob", () => {
   it("skips library updates when no file was downloaded", async () => {
     const upsertLibraryItem = vi.fn();
 
-    vi.doMock("@crocdesk/shared", () => ({
-      DEFAULT_SETTINGS: settingsFor(path.join(tempDir, "downloads"))
+    vi.doMock("../config", () => ({
+      getDefaultSettings: () => settingsFor(path.join(tempDir, "downloads"))
     }));
     vi.doMock("../db", () => ({
       createJob: vi.fn(),

@@ -3,24 +3,31 @@
   "version": "0.1.0",
   "private": true,
   "main": "dist/main.js",
-  "author": "Jacare Contributors",
+  "author": {
+    "name": "Jacare Contributors",
+    "email": "jacare@crocdb.net"
+  },
   "description": "Jacare - Desktop ROM library manager",
+  "homepage": "https://github.com/luandev/jacare",
   "build": {
     "appId": "com.jacare.app",
     "productName": "Jacare",
     "electronVersion": "29.1.0",
+    "npmRebuild": false,
+    "buildDependenciesFromSource": false,
+    "nodeGypRebuild": false,
     "directories": {
       "output": "../../release/desktop"
     },
     "files": [
       "dist/**/*",
-      "../../web/dist/**/*",
-      "../../server/dist/**/*",
+      "../web/dist/**/*",
+      "../server/dist/**/*",
       "package.json"
     ],
     "extraResources": [
       {
-        "from": "../../server/dist",
+        "from": "../server/dist",
         "to": "server",
         "filter": [
           "**/*"
@@ -32,7 +39,8 @@
         "nsis",
         "portable"
       ],
-      "icon": "build/icon.ico"
+      "icon": "build/icon.ico",
+      "artifactName": "jacare-${version}.${ext}"
     },
     "mac": {
       "target": [
@@ -40,7 +48,8 @@
         "zip"
       ],
       "icon": "build/icon.icns",
-      "category": "public.app-category.games"
+      "category": "public.app-category.games",
+      "artifactName": "jacare-${version}.${ext}"
     },
     "linux": {
       "target": [
@@ -49,7 +58,9 @@
         "rpm"
       ],
       "icon": "build/icon.png",
-      "category": "Game"
+      "category": "Game",
+      "maintainer": "Jacare Contributors <jacare@crocdb.net>",
+      "artifactName": "jacare-${version}.${ext}"
     },
     "nsis": {
       "oneClick": false,

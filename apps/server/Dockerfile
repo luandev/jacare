@@ -50,9 +50,14 @@ COPY --from=builder /app/apps/web/dist ./apps/web/dist
 COPY packages/shared/package.json ./packages/shared/
 COPY apps/server/package.json ./apps/server/
 
-# Create data directory and set ownership
-RUN mkdir -p /data && \
-    chown -R jacare:jacare /app /data
+
+# Copy entrypoint script
+COPY apps/server/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Create data and downloads directories and set ownership
+RUN mkdir -p /data /downloads && \
+    chown -R jacare:jacare /app /data /downloads
 
 # Expose port
 EXPOSE 3333
@@ -61,6 +66,7 @@ EXPOSE 3333
 ENV NODE_ENV=production
 ENV CROCDESK_PORT=3333
 ENV CROCDESK_DATA_DIR=/data
+ENV CROCDESK_USE_ABSOLUTE_PATHS=true
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
@@ -71,5 +77,6 @@ USER jacare
 
 # Start server
 WORKDIR /app/apps/server
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["node", "dist/index.js"]
 

@@ -1,11 +1,11 @@
 import { Router } from "express";
-import { DEFAULT_SETTINGS } from "@crocdesk/shared";
 import { getSettings, setSettings } from "../db";
+import { getDefaultSettings } from "../config";
 
 const router = Router();
 
 router.get("/", (_req, res) => {
-  const settings = getSettings() ?? DEFAULT_SETTINGS;
+  const settings = getSettings() ?? getDefaultSettings();
   res.json(settings);
 });
 

@@ -1,0 +1,238 @@
+name: Test Packaged Executables
+
+on:
+  pull_request:
+    paths:
+      - 'apps/server/**'
+      - 'apps/web/**'
+      - 'packages/shared/**'
+      - 'package*.json'
+      - '.github/workflows/test-packaged.yml'
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Test ${{ matrix.os }} executable
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            executable: jacare-linux
+            platform: linux
+          - os: windows-latest
+            executable: jacare-win.exe
+            platform: windows
+          - os: macos-latest
+            executable: jacare-macos
+            platform: macos
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build package for current platform
+        run: npm run package:bundle
+        env:
+          CI: false
+
+      - name: Verify executable was created
+        shell: bash
+        run: |
+          if [ ! -f "release/bundle/${{ matrix.executable }}" ]; then
+            echo "Error: Executable not found at release/bundle/${{ matrix.executable }}"
+            ls -la release/bundle/ || echo "release/bundle directory does not exist"
+            exit 1
+          fi
+          echo "✓ Executable found: release/bundle/${{ matrix.executable }}"
+          
+          # Check file size
+          FILE_SIZE=$(stat -f%z "release/bundle/${{ matrix.executable }}" 2>/dev/null || stat -c%s "release/bundle/${{ matrix.executable }}" 2>/dev/null)
+          echo "File size: $FILE_SIZE bytes"
+          
+          if [ "$FILE_SIZE" -lt 10000000 ]; then
+            echo "Warning: Executable seems too small (< 10MB). This might indicate a build issue."
+            exit 1
+          fi
+
+      - name: Make executable runnable (Unix)
+        if: matrix.platform != 'windows'
+        run: chmod +x release/bundle/${{ matrix.executable }}
+
+      - name: Start executable in background
+        shell: bash
+        run: |
+          # Create test data directory
+          mkdir -p test-data/logs
+          
+          # Set environment variables for testing
+          export CROCDESK_DATA_DIR="$PWD/test-data"
+          export CROCDESK_PORT=3334
+          export CROCDESK_ENABLE_DOWNLOADS=false
+          
+          # Start the executable in background
+          if [ "${{ matrix.platform }}" = "windows" ]; then
+            ./release/bundle/${{ matrix.executable }} > test-output.log 2>&1 &
+          else
+            ./release/bundle/${{ matrix.executable }} > test-output.log 2>&1 &
+          fi
+          
+          SERVER_PID=$!
+          echo $SERVER_PID > server.pid
+          echo "Server started with PID: $SERVER_PID"
+          
+          # Wait for server to start (up to 30 seconds)
+          echo "Waiting for server to start..."
+          for i in {1..30}; do
+            if curl -f http://localhost:3334/health > /dev/null 2>&1; then
+              echo "✓ Server is responding on port 3334"
+              break
+            fi
+            
+            if [ $i -eq 30 ]; then
+              echo "Error: Server did not start within 30 seconds"
+              echo "=== Server output ==="
+              cat test-output.log || echo "No output log found"
+              echo "=== Log files ==="
+              find test-data/logs -type f -exec echo "--- {} ---" \; -exec cat {} \; 2>/dev/null || echo "No log files found"
+              kill $SERVER_PID 2>/dev/null || true
+              exit 1
+            fi
+            
+            echo "Attempt $i/30: Server not ready yet..."
+            sleep 1
+          done
+          
+          echo "=== Initial server output ==="
+          cat test-output.log
+
+      - name: Run smoke tests
+        shell: bash
+        run: |
+          echo "Running smoke tests against packaged executable..."
+          
+          # Test 1: Health check
+          echo "Test 1: Health check"
+          HEALTH_RESPONSE=$(curl -s http://localhost:3334/health)
+          echo "Health response: $HEALTH_RESPONSE"
+          if [ "$(echo $HEALTH_RESPONSE | jq -r '.ok')" != "true" ]; then
+            echo "❌ Health check failed"
+            exit 1
+          fi
+          echo "✓ Health check passed"
+          
+          # Test 2: Get settings
+          echo "Test 2: Get settings"
+          SETTINGS_RESPONSE=$(curl -s http://localhost:3334/settings)
+          echo "Settings response: $SETTINGS_RESPONSE"
+          if [ -z "$SETTINGS_RESPONSE" ]; then
+            echo "❌ Settings endpoint failed"
+            exit 1
+          fi
+          echo "✓ Settings endpoint passed"
+          
+          # Test 3: List jobs (should be empty initially)
+          echo "Test 3: List jobs"
+          JOBS_RESPONSE=$(curl -s http://localhost:3334/jobs)
+          echo "Jobs response: $JOBS_RESPONSE"
+          if [ -z "$JOBS_RESPONSE" ]; then
+            echo "❌ Jobs endpoint failed"
+            exit 1
+          fi
+          echo "✓ Jobs endpoint passed"
+          
+          # Test 4: Check web UI is served (if bundled)
+          echo "Test 4: Check web UI"
+          UI_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3334/)
+          echo "UI response code: $UI_RESPONSE"
+          if [ "$UI_RESPONSE" != "200" ]; then
+            echo "⚠️  Web UI not available (code: $UI_RESPONSE) - this might be expected in some builds"
+          else
+            echo "✓ Web UI is available"
+          fi
+          
+          echo "=== All smoke tests passed ==="
+
+      - name: Check log files were created
+        shell: bash
+        run: |
+          echo "Checking log files..."
+          if [ -d "test-data/logs" ]; then
+            echo "Log directory exists"
+            ls -lah test-data/logs/
+            
+            LOG_COUNT=$(find test-data/logs -name "*.log" | wc -l)
+            if [ "$LOG_COUNT" -gt 0 ]; then
+              echo "✓ Log files created: $LOG_COUNT file(s)"
+              echo "=== Log contents ==="
+              find test-data/logs -name "*.log" -exec echo "--- {} ---" \; -exec cat {} \;
+            else
+              echo "❌ No log files were created"
+              exit 1
+            fi
+          else
+            echo "❌ Log directory was not created"
+            exit 1
+          fi
+
+      - name: Stop server and check for crashes
+        if: always()
+        shell: bash
+        run: |
+          if [ -f server.pid ]; then
+            SERVER_PID=$(cat server.pid)
+            echo "Stopping server (PID: $SERVER_PID)..."
+            
+            # Check if process is still running
+            if kill -0 $SERVER_PID 2>/dev/null; then
+              echo "✓ Server is still running (good - no crash)"
+              kill $SERVER_PID 2>/dev/null || true
+              
+              # Wait for graceful shutdown
+              for i in {1..5}; do
+                if ! kill -0 $SERVER_PID 2>/dev/null; then
+                  echo "Server shut down gracefully"
+                  break
+                fi
+                sleep 1
+              done
+              
+              # Force kill if still running
+              kill -9 $SERVER_PID 2>/dev/null || true
+            else
+              echo "⚠️  Server process not running - may have crashed"
+              echo "=== Final server output ==="
+              cat test-output.log || echo "No output log"
+              echo "=== Final log files ==="
+              find test-data/logs -type f -exec echo "--- {} ---" \; -exec cat {} \; 2>/dev/null || echo "No logs"
+              exit 1
+            fi
+          fi
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs-${{ matrix.platform }}
+          path: |
+            test-output.log
+            test-data/logs/
+          retention-days: 7

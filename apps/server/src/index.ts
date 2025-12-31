@@ -92,6 +92,21 @@ export async function startServer(): Promise<Server> {
     }
   });
 
+  app.get("/health", (_req, res) => {
+    res.json({ ok: true });
+  });
+
+  // API configuration endpoint for frontend
+  // Returns the API base URL and port so the frontend can configure itself
+  app.get("/api-config", (req, res) => {
+    const protocol = req.protocol || "http";
+    const host = req.get("host") || `localhost:${PORT}`;
+    res.json({ 
+      apiUrl: `${protocol}://${host}`,
+      port: PORT
+    });
+  });
+
   // Serve static web assets in production (when bundled with desktop app or pkg)
   // pkg bundles assets maintaining their relative path structure
   // Since entry is dist/index.js and assets are ../../web/dist/**/*,
@@ -101,7 +116,24 @@ export async function startServer(): Promise<Server> {
     const fs = await import("fs");
     const webDistExists = await fs.promises.access(webDistPath).then(() => true).catch(() => false);
     if (webDistExists) {
-      app.use(express.static(webDistPath));
+      // Create static middleware once for efficiency
+      const staticMiddleware = express.static(webDistPath);
+      
+      // Static middleware - skip API routes
+      app.use((req, res, next) => {
+        // Skip static file serving for API routes
+        if (req.path.startsWith("/crocdb") || 
+            req.path.startsWith("/settings") || 
+            req.path.startsWith("/library") || 
+            req.path.startsWith("/jobs") || 
+            req.path.startsWith("/events") || 
+            req.path.startsWith("/file") || 
+            req.path.startsWith("/health") ||
+            req.path.startsWith("/api-config")) {
+          return next();
+        }
+        staticMiddleware(req, res, next);
+      });
       // SPA fallback: serve index.html for all non-API routes
       app.get("*", (req, res, next) => {
         // Skip API routes
@@ -128,21 +160,6 @@ export async function startServer(): Promise<Server> {
     }
   }
 
-  app.get("/health", (_req, res) => {
-    res.json({ ok: true });
-  });
-
-  // API configuration endpoint for frontend
-  // Returns the API base URL and port so the frontend can configure itself
-  app.get("/api-config", (req, res) => {
-    const protocol = req.protocol || "http";
-    const host = req.get("host") || `localhost:${PORT}`;
-    res.json({ 
-      apiUrl: `${protocol}://${host}`,
-      port: PORT
-    });
-  });
-
   app.get("/events", sseHandler);
 
   app.use("/crocdb", crocdbRouter);
@@ -160,6 +177,17 @@ export async function startServer(): Promise<Server> {
 
 // Auto-start if run directly (not imported)
 if (require.main === module) {
+  // Set up global error handlers to log crashes
+  process.on('uncaughtException', (error) => {
+    logger.error('Uncaught Exception - Application will exit', error);
+    // Give time for log to be written
+    setTimeout(() => process.exit(1), 100);
+  });
+
+  process.on('unhandledRejection', (reason, promise) => {
+    logger.error('Unhandled Promise Rejection', reason, { promise: String(promise) });
+  });
+
   startServer().catch((error) => {
     logger.error("Failed to start server", error);
     process.exit(1);

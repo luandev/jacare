@@ -34,15 +34,24 @@
 
 
 If you’re familiar with [Docker](https://docs.docker.com/get-started/docker-overview/), here's a one-liner to run and test Jacare:
+
+**Windows (PowerShell)**
+```powershell
+docker run --rm -p 3333:3333 -v ./library:/library -v ./downloads:/downloads ghcr.io/luandev/jacare:latest
+````
+
+**Ubuntu / Linux**
+
+```bash
+docker run --rm -p 3333:3333 -v ./library:/library -v ./downloads:/downloads ghcr.io/luandev/jacare:latest
 ```
-docker run --rm -p 3333:3333 -v jacare-data:/data -v jacare-library:/library -e CROCDESK_ENABLE_DOWNLOADS=false ghcr.io/luandev/jacare:latest
-```
+
 - What it does:
   -  `--rm` - Automatically removes the container when it stops
   - `-p 3333:3333` - Exposes port 3333 for the web UI
-  - `-v jacare-data:/data` - Creates a named volume for data (persists between runs)
-  - `-v jacare-library:/library` - Creates a named volume for library (persists between runs)
-  - `-e CROCDESK_ENABLE_DOWNLOADS=false` - Disables downloads (default)
+  - `-v ./library:/library` - Maps your local `./library` folder to the container's `/library` directory where extracted games are stored (persists between runs)
+  - `-v ./downloads:/downloads` - Maps your local `./downloads` folder to the container's `/downloads` directory used for temporary zip downloads and in-progress jobs (persists between runs)
+
  Uses the pre-built image from GitHub Container Registry
 
 - Access the app:
@@ -93,7 +102,7 @@ If you’d rather run it locally, make sure you have **[Node.js](https://nodejs.
 ## Configuration & data ⚙️
 - **Default port:** `CROCDESK_PORT=3333`.
 - **Data directory:** `CROCDESK_DATA_DIR=./data` holds SQLite databases, cache tables, and manifest files. Customize it to point Jacare at a shared drive or fast SSD.
-- **Downloads:** Disabled by default; enable with `CROCDESK_ENABLE_DOWNLOADS=true` to fetch assets or binaries.
+- **Downloads:** Enabled by default to fetch assets or binaries.
 - **Crocdb base URL:** `CROCDB_BASE_URL=https://api.crocdb.net`.
 - **Cache TTL:** `CROCDB_CACHE_TTL_MS=86400000` (24 hours) for search and entry cache tables.
 - **Electron dev URL:** `CROCDESK_DEV_URL` (defaults to `http://localhost:5173`).
@@ -209,6 +218,43 @@ CI builds on the `main` branch automatically publish release archives to GitHub 
 - Desktop app packages
 - Server-only binaries
 - Latest changelog and README
+
+All packaged executables are automatically tested on their target platforms before release to ensure reliability.
+
+## Troubleshooting 🔧
+
+### Application Issues
+
+If you encounter problems with Jacare, check the log files first:
+
+**Log Location:**
+- Standalone/Desktop: `data/logs/crocdesk-YYYY-MM-DD.log` (in the same directory as the executable)
+- Docker: `/data/logs/crocdesk-YYYY-MM-DD.log` (inside the container)
+- Source: `data/logs/crocdesk-YYYY-MM-DD.log` (in your project root)
+
+Logs are automatically rotated and kept for 7 days. They include:
+- Startup messages and configuration
+- API requests and responses
+- Job execution details
+- Error messages with stack traces
+- Uncaught exceptions and crashes
+
+**Common Issues:**
+
+1. **Server won't start**: Check the most recent log file for error messages
+2. **Downloads failing**: Check network connectivity and download directory permissions
+3. **Library not showing games**: Run a library scan from the Library view
+4. **Port already in use**: Set `CROCDESK_PORT` to a different port number
+
+**Reporting Issues:**
+
+When reporting issues on [GitHub](https://github.com/luandev/jacare/issues), please include:
+- The relevant log file from `data/logs/`
+- Your operating system and version
+- How you're running Jacare (Docker, standalone, source)
+- Steps to reproduce the issue
+
+For more details on release improvements and testing, see [`docs/RELEASE_IMPROVEMENTS.md`](docs/RELEASE_IMPROVEMENTS.md).
 
 ## License 📜
 

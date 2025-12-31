@@ -19,7 +19,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 18
           cache: npm
 
       - name: Install dependencies
@@ -34,8 +34,107 @@ jobs:
       - name: Run tests
         run: npm run test:unit
 
-  build:
+  test-packages:
+    name: Test ${{ matrix.os }} package
+    runs-on: ${{ matrix.os }}
     needs: checks
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            executable: jacare-linux
+            platform: linux
+          - os: windows-latest
+            executable: jacare-win.exe
+            platform: windows
+          - os: macos-latest
+            executable: jacare-macos
+            platform: macos
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build package for current platform
+        run: npm run package:bundle
+        env:
+          CI: false
+
+      - name: Verify and test executable
+        shell: bash
+        run: |
+          # Verify executable exists
+          if [ ! -f "release/bundle/${{ matrix.executable }}" ]; then
+            echo "Error: Executable not found"
+            ls -la release/bundle/ || echo "Directory not found"
+            exit 1
+          fi
+          
+          # Make executable (Unix only)
+          if [ "${{ matrix.platform }}" != "windows" ]; then
+            chmod +x release/bundle/${{ matrix.executable }}
+          fi
+          
+          # Create test environment
+          mkdir -p test-data/logs
+          export CROCDESK_DATA_DIR="$PWD/test-data"
+          export CROCDESK_PORT=3334
+          
+          # Start server
+          if [ "${{ matrix.platform }}" = "windows" ]; then
+            ./release/bundle/${{ matrix.executable }} > test-output.log 2>&1 &
+          else
+            ./release/bundle/${{ matrix.executable }} > test-output.log 2>&1 &
+          fi
+          
+          SERVER_PID=$!
+          echo $SERVER_PID > server.pid
+          
+          # Wait for startup
+          for i in {1..30}; do
+            if curl -f http://localhost:3334/health > /dev/null 2>&1; then
+              echo "✓ Server started successfully"
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "Error: Server failed to start"
+              cat test-output.log || true
+              find test-data/logs -type f -exec cat {} \; 2>/dev/null || true
+              kill $SERVER_PID 2>/dev/null || true
+              exit 1
+            fi
+            sleep 1
+          done
+          
+          # Basic smoke test
+          curl -f http://localhost:3334/health
+          curl -f http://localhost:3334/settings > /dev/null
+          
+          # Cleanup
+          kill $SERVER_PID 2>/dev/null || true
+          echo "✓ All tests passed for ${{ matrix.platform }}"
+
+      - name: Upload artifact for release
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundle-${{ matrix.platform }}
+          path: release/bundle/${{ matrix.executable }}
+          retention-days: 1
+
+  build:
+    needs: test-packages
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
@@ -47,19 +146,84 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 18
           cache: npm
 
       - name: Install dependencies
         run: npm ci
 
+      - name: Download tested artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release/bundle/
+          pattern: bundle-*
+          merge-multiple: true
+
       - name: Build workspace artifacts
         run: npm run build
 
-      - name: Package desktop app
+      - name: Ensure 7zip-bin is ready
+        shell: bash
         run: |
-          cd apps/desktop
-          npm run package
+          # Ensure postinstall scripts have run
+          echo "Rebuilding 7zip-bin to ensure binaries are available..."
+          npm rebuild 7zip-bin || true
+          
+          # Verify binary exists for current platform and set executable permissions
+          if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+            if [ ! -f "node_modules/7zip-bin/linux/x64/7za" ]; then
+              echo "7za binary missing for Linux, reinstalling 7zip-bin..."
+              npm install 7zip-bin --force
+              npm rebuild 7zip-bin
+              if [ ! -f "node_modules/7zip-bin/linux/x64/7za" ]; then
+                echo "Error: Failed to install 7za binary for Linux"
+                ls -la node_modules/7zip-bin/linux/x64/ 2>/dev/null || echo "Directory does not exist"
+                exit 1
+              fi
+            fi
+            # Ensure binary is executable
+            chmod +x node_modules/7zip-bin/linux/x64/7za
+            echo "✓ 7za binary verified and made executable for Linux"
+          elif [ "${{ matrix.os }}" == "windows-latest" ]; then
+            if [ ! -f "node_modules/7zip-bin/win/x64/7za.exe" ]; then
+              echo "7za.exe binary missing for Windows, reinstalling 7zip-bin..."
+              npm install 7zip-bin --force
+              npm rebuild 7zip-bin
+              if [ ! -f "node_modules/7zip-bin/win/x64/7za.exe" ]; then
+                echo "Error: Failed to install 7za.exe binary for Windows"
+                ls -la node_modules/7zip-bin/win/x64/ 2>/dev/null || echo "Directory does not exist"
+                exit 1
+              fi
+            fi
+            # Ensure binary is executable
+            chmod +x node_modules/7zip-bin/win/x64/7za.exe
+            echo "✓ 7za.exe binary verified and made executable for Windows"
+          elif [ "${{ matrix.os }}" == "macos-latest" ]; then
+            if [ ! -f "node_modules/7zip-bin/mac/x64/7za" ]; then
+              echo "7za binary missing for macOS, reinstalling 7zip-bin..."
+              npm install 7zip-bin --force
+              npm rebuild 7zip-bin
+              if [ ! -f "node_modules/7zip-bin/mac/x64/7za" ]; then
+                echo "Error: Failed to install 7za binary for macOS"
+                ls -la node_modules/7zip-bin/mac/x64/ 2>/dev/null || echo "Directory does not exist"
+                exit 1
+              fi
+            fi
+            # Ensure binary is executable
+            chmod +x node_modules/7zip-bin/mac/x64/7za
+            echo "✓ 7za binary verified and made executable for macOS"
+          fi
+
+      - name: Package desktop app
+        shell: bash
+        run: |
+          echo "Packaging desktop app for ${{ matrix.os }}..."
+          npm run package -w @crocdesk/desktop
+          if [ $? -ne 0 ]; then
+            echo "Error: Desktop app packaging failed"
+            exit 1
+          fi
+          echo "✓ Desktop app packaged successfully"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
