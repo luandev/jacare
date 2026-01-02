@@ -50,7 +50,7 @@ We provide security updates for the following versions:
 
 You can check for updates:
 - [GitHub Releases](https://github.com/luandev/jacare/releases)
-- [Docker Hub](https://github.com/luandev/jacare/pkgs/container/jacare) for container images
+- [GitHub Container Registry](https://github.com/luandev/jacare/pkgs/container/jacare) for container images
 
 ## Security Best Practices
 
