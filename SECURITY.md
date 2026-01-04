@@ -10,12 +10,12 @@ The security of Jacare is important to us. If you discover a security vulnerabil
 
 **To report a security vulnerability:**
 
-1. **Email:** Send details to the maintainer at **luandev** via GitHub's private vulnerability reporting feature:
+1. **Primary Method:** Send details to the maintainer at **luandev** via GitHub's private vulnerability reporting feature:
    - Go to https://github.com/luandev/jacare/security/advisories/new
    - Click "Report a vulnerability"
    - Fill in the details of the vulnerability
 
-2. **Alternative contact:** If you prefer not to use GitHub's reporting feature, you can create a private security advisory or reach out through GitHub Issues with a generic title (e.g., "Security concern - please contact me") and we'll follow up with a secure communication channel.
+2. **Alternative contact:** If you prefer not to use GitHub's security advisory feature, you can open a generic GitHub issue with a non-sensitive title (e.g., "Security concern - please contact me") and minimal details, and we'll follow up with a secure communication channel to gather full information.
 
 **Please include in your report:**
 - Description of the vulnerability
@@ -70,7 +70,7 @@ When using Jacare, we recommend the following security practices:
 2. **Code Review:** All code changes should be reviewed before merging
 3. **Input Validation:** Always validate and sanitize user inputs
 4. **Secrets:** Never commit API keys, passwords, or other sensitive data
-5. **Testing:** Run security scanning tools (ESLint, CodeQL) before releases
+5. **Testing:** Run security scanning tools (for example, ESLint, and optionally CodeQL or similar SAST tools) before releases
 
 ## Known Security Considerations
 
