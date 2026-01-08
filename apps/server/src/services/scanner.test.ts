@@ -456,7 +456,7 @@ describe("Scanner Service - ROM Detection Heuristics", () => {
       });
 
       const items = await scanForUnorganizedItems(libraryRoot);
-      const result = await reorganizeItems(items, libraryRoot);
+      const result = await reorganizeItems(items, libraryRoot, false);
 
       expect(result.reorganizedFiles).toBe(1);
 
@@ -495,7 +495,7 @@ describe("Scanner Service - ROM Detection Heuristics", () => {
       });
 
       const items = await scanForUnorganizedItems(libraryRoot);
-      const result = await reorganizeItems(items, libraryRoot);
+      const result = await reorganizeItems(items, libraryRoot, false);
 
       expect(result.reorganizedFiles).toBe(1);
 
