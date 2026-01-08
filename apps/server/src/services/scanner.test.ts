@@ -4,9 +4,7 @@ import os from "os";
 import { promises as fs } from "fs";
 import {
   scanForUnorganizedItems,
-  reorganizeItems,
-  type UnorganizedItem,
-  type ReorganizeResult
+  reorganizeItems
 } from "./scanner";
 import * as crocdb from "./crocdb";
 

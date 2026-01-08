@@ -610,7 +610,7 @@ function extractVersionTags(fileName: string): string {
 /**
  * Check if ROM is a hack or modified version based on tags.
  */
-function isRomHack(fileName: string): boolean {
+function _isRomHack(fileName: string): boolean {
   const nameWithoutExt = path.basename(fileName, path.extname(fileName));
   const hackPattern = /\[(?:Hack|Translation|T\+|Trainer|Beta|Proto|Unl)\]/gi;
   return hackPattern.test(nameWithoutExt);
