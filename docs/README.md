@@ -13,6 +13,7 @@ Welcome to the full technical README for **Jacare**, the Brazilian-inspired desk
 - [Development scripts](#development-scripts)
 - [Configuration](#configuration)
 - [Data & storage](#data--storage)
+- [ROM Recognition](#rom-recognition)
 - [API reference](#api-reference)
 - [Production build](#production-build)
 - [Support](#support)
@@ -75,6 +76,25 @@ Settings stored in the database:
   - `job_steps` – Individual step progress for jobs
 - **Manifests:** Each scanned ROM folder receives a `.crocdesk.json` manifest describing the game entry.
 - **Data directory:** Defaults to `./data`; point it to a faster disk or network share as needed.
+
+## ROM Recognition
+
+Jacare includes advanced fuzzy matching capabilities to improve ROM recognition rates. The system uses multiple search strategies and intelligent matching to identify ROMs even with abbreviated, misspelled, or non-standard filenames.
+
+### Quick Examples
+- `SMW.sfc` → Super Mario World ✓
+- `ALTTP.sfc` → The Legend of Zelda: A Link to the Past ✓
+- `super_mario_world.sfc` → Super Mario World ✓
+- `ChronoTrigger.sfc` → Chrono Trigger ✓
+
+### Features
+- **Multi-Strategy Search**: Tries 5 different approaches to find matches
+- **Abbreviation Support**: Recognizes common ROM abbreviations (SMW, ALTTP, CT, FF6, etc.)
+- **Format Flexibility**: Handles underscores, dots, CamelCase, and various separators
+- **Fuzzy Matching**: Tolerates minor typos and variations
+- **Confidence Scoring**: Returns only high-quality matches
+
+For detailed information, see [ROM Recognition Guide](./rom-recognition.md).
 
 ## API reference
 - **Base URL:** `http://localhost:<CROCDESK_PORT>` (3333 by default) or the packaged server inside Electron.
