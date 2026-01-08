@@ -40,7 +40,7 @@ router.post("/entries", async (req, res) => {
       limit: req.body.limit
     };
 
-    if (!request.platform) {
+    if (!request.platform || !request.platform.trim()) {
       res.status(400).json({
         info: { error: "platform is required" },
         data: {}
@@ -125,7 +125,7 @@ router.post("/search-all", async (req, res) => {
 router.post("/entry", async (req, res) => {
   try {
     const id = req.body.id;
-    if (!id) {
+    if (!id || !id.trim()) {
       res.status(400).json({
         info: { error: "id is required" },
         data: {}

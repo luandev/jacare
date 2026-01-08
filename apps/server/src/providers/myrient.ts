@@ -50,6 +50,9 @@ const REGION_PATTERNS = [
   { pattern: /\(China\)/i, code: "cn", name: "China" },
 ];
 
+// Maximum entries to fetch when searching across all platforms
+const MAX_SEARCH_ENTRIES = 10000;
+
 type DirectoryEntry = {
   name: string;
   isDirectory: boolean;
@@ -294,7 +297,7 @@ export class MyrientProvider implements IMetadataProvider {
         try {
           const response = await this.listEntries({
             platform: platform.id,
-            limit: 10000 // Get all for searching
+            limit: MAX_SEARCH_ENTRIES
           });
           allResults = allResults.concat(response.results);
         } catch (error) {
@@ -360,7 +363,7 @@ export class MyrientProvider implements IMetadataProvider {
       // List entries for the platform and find the matching one
       const response = await this.listEntries({
         platform: platformId,
-        limit: 10000
+        limit: MAX_SEARCH_ENTRIES
       });
 
       const entry = response.results.find((e) => e.filename === filename);

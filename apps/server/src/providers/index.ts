@@ -74,8 +74,11 @@ export class MetadataService implements IMetadataProvider {
       }
 
       // All providers failed
+      const primaryErrorMsg = primaryError instanceof Error 
+        ? primaryError.message 
+        : "Unknown error";
       throw new Error(
-        `All providers failed for ${operationName}. Primary error: ${primaryError instanceof Error ? primaryError.message : "Unknown error"}`
+        `All providers failed for ${operationName}. Primary error: ${primaryErrorMsg}`
       );
     }
   }
