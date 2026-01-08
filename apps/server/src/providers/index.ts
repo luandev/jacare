@@ -55,7 +55,7 @@ export class MetadataService implements IMetadataProvider {
     } catch (primaryError) {
       logger.warn(
         `MetadataService: Primary provider failed for ${operationName}`,
-        primaryError
+        { error: primaryError instanceof Error ? primaryError.message : String(primaryError) }
       );
 
       // Try fallback providers
@@ -68,7 +68,7 @@ export class MetadataService implements IMetadataProvider {
         } catch (fallbackError) {
           logger.warn(
             `MetadataService: Fallback provider ${i + 1} failed for ${operationName}`,
-            fallbackError
+            { error: fallbackError instanceof Error ? fallbackError.message : String(fallbackError) }
           );
         }
       }

@@ -298,7 +298,9 @@ export class MyrientProvider implements IMetadataProvider {
           });
           allResults = allResults.concat(response.results);
         } catch (error) {
-          logger.warn(`Myrient: Failed to fetch platform ${platform.id} for search`, error);
+          logger.warn(`Myrient: Failed to fetch platform ${platform.id} for search`, { 
+            error: error instanceof Error ? error.message : String(error) 
+          });
           // Continue with other platforms
         }
       }
