@@ -1,13 +1,20 @@
 import { useEffect, useState, useMemo } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { apiGet, apiPost } from "../lib/api";
-import type { LibraryItem, Manifest, JobEvent } from "@crocdesk/shared";
+import type { LibraryItem, Manifest, JobEvent, CrocdbApiResponse, CrocdbPlatformsResponseData } from "@crocdesk/shared";
 import GameCard from "../components/GameCard";
 import PaginationBar from "../components/PaginationBar";
 import { DownloadingGhostCard } from "../components/DownloadingGhostCard";
 import { ErrorAlert } from "../components/ErrorAlert";
 import { useDownloadProgressStore, useSSEStore } from "../store";
 import { useSSE } from "../store/hooks/useSSE";
+import { Input, Select, Button } from "../components/ui";
+import { spacing } from "../lib/design-tokens";
+import { useQuery } from "@tanstack/react-query";
+
+type SortOption = "name" | "platform" | "date";
+type GroupOption = "none" | "platform" | "status";
+type StatusFilter = "all" | "recognized" | "unknown";
 
 export default function LibraryPage() {
   const [items, setItems] = useState<LibraryItem[]>([]);
@@ -21,8 +28,22 @@ export default function LibraryPage() {
   const [scanMessage, setScanMessage] = useState<string>("");
   const [isScanning, setIsScanning] = useState(false);
   
+  // Search, filter, and sort state from URL params
+  const [searchParams, setSearchParams] = useSearchParams();
+  const searchQuery = searchParams.get("q") || "";
+  const platformFilter = searchParams.get("pf") || "";
+  const statusFilter = (searchParams.get("sf") || "all") as StatusFilter;
+  const sortBy = (searchParams.get("sort") || "name") as SortOption;
+  const groupBy = (searchParams.get("group") || "none") as GroupOption;
+  
   // Ensure SSE connection is active
   useSSE();
+  
+  // Fetch platforms data for display
+  const platformsQuery = useQuery({
+    queryKey: ["platforms"],
+    queryFn: () => apiGet<CrocdbApiResponse<CrocdbPlatformsResponseData>>("/crocdb/platforms")
+  });
   
   // Get downloading slugs from store
   const downloadingSlugs = useDownloadProgressStore((state) => state.downloadingSlugs);
@@ -68,6 +89,91 @@ export default function LibraryPage() {
     }).filter(Boolean));
     return slugs.filter(slug => !ownedSlugs.has(slug));
   }, [downloadingSlugs, items, manifests]);
+  
+  // Filtered and sorted items with enriched data
+  const processedItems = useMemo(() => {
+    // Enrich items with manifest data
+    const enriched = items.map(item => {
+      const manifest = manifests[item.path];
+      return {
+        item,
+        manifest,
+        title: manifest?.crocdb?.title || "",
+        platform: manifest?.crocdb?.platform || "",
+        isRecognized: !!manifest
+      };
+    }).filter(({ manifest }) => manifest !== null);
+    
+    // Apply search filter
+    let filtered = enriched;
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(({ title }) => 
+        title.toLowerCase().includes(query)
+      );
+    }
+    
+    // Apply platform filter
+    if (platformFilter) {
+      filtered = filtered.filter(({ platform }) => platform === platformFilter);
+    }
+    
+    // Apply status filter
+    if (statusFilter === "recognized") {
+      filtered = filtered.filter(({ isRecognized }) => isRecognized);
+    } else if (statusFilter === "unknown") {
+      filtered = filtered.filter(({ isRecognized }) => !isRecognized);
+    }
+    
+    // Apply sorting
+    const sorted = [...filtered].sort((a, b) => {
+      if (sortBy === "name") {
+        return a.title.localeCompare(b.title);
+      } else if (sortBy === "platform") {
+        return a.platform.localeCompare(b.platform) || a.title.localeCompare(b.title);
+      } else if (sortBy === "date") {
+        return (b.item.mtime || 0) - (a.item.mtime || 0);
+      }
+      return 0;
+    });
+    
+    return sorted;
+  }, [items, manifests, searchQuery, platformFilter, statusFilter, sortBy]);
+  
+  // Group items if needed
+  const groupedItems = useMemo(() => {
+    if (groupBy === "none") {
+      return { "": processedItems };
+    }
+    
+    const groups: Record<string, typeof processedItems> = {};
+    for (const item of processedItems) {
+      let key = "";
+      if (groupBy === "platform") {
+        key = item.platform || "Unknown";
+      } else if (groupBy === "status") {
+        key = item.isRecognized ? "Recognized" : "Unknown";
+      }
+      if (!groups[key]) {
+        groups[key] = [];
+      }
+      groups[key].push(item);
+    }
+    
+    return groups;
+  }, [processedItems, groupBy]);
+  
+  // Extract unique platforms from library items
+  const availablePlatforms = useMemo(() => {
+    const platforms = new Set<string>();
+    items.forEach(item => {
+      const manifest = manifests[item.path];
+      if (manifest?.crocdb?.platform) {
+        platforms.add(manifest.crocdb.platform);
+      }
+    });
+    return Array.from(platforms).sort();
+  }, [items, manifests]);
 
   useEffect(() => {
     reloadLibrary();
@@ -132,6 +238,47 @@ export default function LibraryPage() {
     }
   }
   
+  function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const value = e.target.value;
+    updateSearchParams({ q: value || undefined });
+  }
+  
+  function handlePlatformChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const value = e.target.value;
+    updateSearchParams({ pf: value || undefined });
+  }
+  
+  function handleStatusChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const value = e.target.value as StatusFilter;
+    updateSearchParams({ sf: value === "all" ? undefined : value });
+  }
+  
+  function handleSortChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const value = e.target.value as SortOption;
+    updateSearchParams({ sort: value === "name" ? undefined : value });
+  }
+  
+  function handleGroupChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const value = e.target.value as GroupOption;
+    updateSearchParams({ group: value === "none" ? undefined : value });
+  }
+  
+  function updateSearchParams(updates: Record<string, string | undefined>) {
+    const next = new URLSearchParams(searchParams);
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value) {
+        next.set(key, value);
+      } else {
+        next.delete(key);
+      }
+    });
+    setSearchParams(next);
+  }
+  
+  function handleClearFilters() {
+    setSearchParams({});
+  }
+  
   const location = useLocation();
   
   if (loading) {
@@ -151,6 +298,10 @@ export default function LibraryPage() {
   if (items.length === 0 && downloadingSlugsArray.length === 0) {
     return (
       <div className="grid" style={{ gap: 20 }}>
+        <section className="hero">
+          <h1>Local Library</h1>
+          <p>Your game library is empty.</p>
+        </section>
         <section className="card">
           <div className="row">
             <h3>Library</h3>
@@ -177,14 +328,86 @@ export default function LibraryPage() {
     );
   }
 
+  const hasActiveFilters = searchQuery || platformFilter || statusFilter !== "all";
+  const totalItems = items.length;
+  const filteredCount = processedItems.length;
+
   return (
     <div className="grid" style={{ gap: 20 }}>
       <section className="hero">
         <h1>Local Library</h1>
-        <p>Manage your locally downloaded games and their manifests.</p>
+        <p>Manage your locally downloaded games. {totalItems} {totalItems === 1 ? "game" : "games"} in library.</p>
       </section>
+      
+      {/* Search and Filter Controls */}
       <section className="card">
-        <div className="row">
+        <div style={{ display: "flex", gap: spacing.md, flexWrap: "wrap", alignItems: "flex-end", marginBottom: spacing.md }}>
+          <div style={{ flex: 1, minWidth: 200, display: "flex", flexDirection: "column", gap: spacing.xs }}>
+            <label htmlFor="search-input">Search</label>
+            <Input
+              id="search-input"
+              placeholder="Search by title..."
+              value={searchQuery}
+              onChange={handleSearchChange}
+            />
+          </div>
+          
+          <div style={{ display: "flex", flexDirection: "column", gap: spacing.xs, minWidth: 150 }}>
+            <label htmlFor="platform-filter">Platform</label>
+            <Select id="platform-filter" value={platformFilter} onChange={handlePlatformChange}>
+              <option value="">All Platforms</option>
+              {availablePlatforms.map((platform) => {
+                const platformName = platformsQuery.data?.data?.platforms?.[platform]?.name || platform;
+                return (
+                  <option key={platform} value={platform}>
+                    {platformName}
+                  </option>
+                );
+              })}
+            </Select>
+          </div>
+          
+          <div style={{ display: "flex", flexDirection: "column", gap: spacing.xs, minWidth: 150 }}>
+            <label htmlFor="status-filter">Status</label>
+            <Select id="status-filter" value={statusFilter} onChange={handleStatusChange}>
+              <option value="all">All Games</option>
+              <option value="recognized">Recognized</option>
+              <option value="unknown">Unknown</option>
+            </Select>
+          </div>
+          
+          <div style={{ display: "flex", flexDirection: "column", gap: spacing.xs, minWidth: 130 }}>
+            <label htmlFor="sort-select">Sort By</label>
+            <Select id="sort-select" value={sortBy} onChange={handleSortChange}>
+              <option value="name">Name</option>
+              <option value="platform">Platform</option>
+              <option value="date">Date Added</option>
+            </Select>
+          </div>
+          
+          <div style={{ display: "flex", flexDirection: "column", gap: spacing.xs, minWidth: 130 }}>
+            <label htmlFor="group-select">Group By</label>
+            <Select id="group-select" value={groupBy} onChange={handleGroupChange}>
+              <option value="none">None</option>
+              <option value="platform">Platform</option>
+              <option value="status">Status</option>
+            </Select>
+          </div>
+          
+          {hasActiveFilters && (
+            <div style={{ display: "flex", flexDirection: "column", gap: spacing.xs }}>
+              <span style={{ visibility: "hidden", fontSize: "14px" }}>Clear</span>
+              <Button onClick={handleClearFilters} variant="secondary">
+                Clear Filters
+              </Button>
+            </div>
+          )}
+        </div>
+        
+        <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
+          <div className="status">
+            {hasActiveFilters ? `Showing ${filteredCount} of ${totalItems} games` : `${totalItems} games`}
+          </div>
           <div className="row" style={{ gap: 8 }}>
             <button className="secondary" type="button" onClick={handleScan} disabled={isScanning}>
               {isScanning ? "Scanning..." : "Scan Local Library"}
@@ -192,6 +415,7 @@ export default function LibraryPage() {
             {status && <span className="status">{status}</span>}
           </div>
         </div>
+        
         {isScanning && (
           <div style={{ marginTop: 16 }}>
             <div className="progress" style={{ marginBottom: 8 }}>
@@ -203,62 +427,82 @@ export default function LibraryPage() {
           </div>
         )}
       </section>
-      <div className={`grid cols-${gridColumns}`} style={{ gridTemplateColumns: `repeat(auto-fit, minmax(${Math.max(140, 320 - (gridColumns - 3) * 40)}px, 1fr))` }}>
-        {/* Ghost cards for downloading items */}
-        {downloadingSlugsArray.map((slug) => (
-          <DownloadingGhostCard key={`ghost-${slug}`} slug={slug} location={location} />
-        ))}
-        
-        {/* Actual library items */}
-        {items.map((item) => {
-          const manifest = manifests[item.path];
-          if (!manifest) return null;
-          const artifact = manifest.artifacts[0];
-          const artifactPath = artifact ? joinPath(dirname(item.path), artifact.path) : item.path;
-          return (
-            <GameCard
-              key={item.path}
-              manifest={manifest}
-              artifactPath={artifactPath}
-              location={location}
-              onShowInFolder={() => {
-                if (window.crocdesk?.revealInFolder) {
-                  window.crocdesk.revealInFolder(item.path);
-                }
-              }}
-              actions={
-                <div className="row" style={{ gap: 8 }}>
-                  <Link
-                    className="link"
-                    to={`/library/item?dir=${encodeURIComponent(dirname(item.path))}`}
-                    state={{ backgroundLocation: location }}
-                  >
-                    Details
-                  </Link>
-                  <button
-                    className="secondary"
-                    onClick={async () => {
-                      const dir = dirname(item.path);
-                      if (!confirm(`Delete this game folder?\n${dir}`)) return;
-                      try {
-                        const resp = await fetch(`/library/item?dir=${encodeURIComponent(dir)}`, { method: "DELETE" });
-                        if (!resp.ok) throw new Error("Delete failed");
-                        // Refresh list
-                        const data = await apiGet<LibraryItem[]>("/library/downloads/items");
-                        setItems(data);
-                      } catch (e) {
-                        alert(e instanceof Error ? e.message : "Delete failed");
-                      }
-                    }}
-                  >
-                    Delete
-                  </button>
-                </div>
-              }
-            />
-          );
-        })}
-      </div>
+      
+      {/* Game Grid with Groups */}
+      {Object.entries(groupedItems).map(([groupName, groupItems]) => (
+        <div key={groupName}>
+          {groupName && (
+            <section className="card" style={{ marginBottom: spacing.sm }}>
+              <h3 style={{ margin: 0 }}>
+                {groupName} ({groupItems.length})
+              </h3>
+            </section>
+          )}
+          
+          <div className={`grid cols-${gridColumns}`} style={{ gridTemplateColumns: `repeat(auto-fit, minmax(${Math.max(140, 320 - (gridColumns - 3) * 40)}px, 1fr))` }}>
+            {/* Ghost cards for downloading items - only in first group */}
+            {groupName === Object.keys(groupedItems)[0] && downloadingSlugsArray.map((slug) => (
+              <DownloadingGhostCard key={`ghost-${slug}`} slug={slug} location={location} />
+            ))}
+            
+            {/* Library items */}
+            {groupItems.map(({ item, manifest }) => {
+              if (!manifest) return null;
+              const artifact = manifest.artifacts[0];
+              const artifactPath = artifact ? joinPath(dirname(item.path), artifact.path) : item.path;
+              return (
+                <GameCard
+                  key={item.path}
+                  manifest={manifest}
+                  artifactPath={artifactPath}
+                  location={location}
+                  platformsData={platformsQuery.data?.data}
+                  onShowInFolder={() => {
+                    if (window.crocdesk?.revealInFolder) {
+                      window.crocdesk.revealInFolder(item.path);
+                    }
+                  }}
+                  actions={
+                    <div className="row" style={{ gap: 8 }}>
+                      <Link
+                        className="link"
+                        to={`/library/item?dir=${encodeURIComponent(dirname(item.path))}`}
+                        state={{ backgroundLocation: location }}
+                      >
+                        Details
+                      </Link>
+                      <button
+                        className="secondary"
+                        onClick={async () => {
+                          const dir = dirname(item.path);
+                          if (!confirm(`Delete this game folder?\n${dir}`)) return;
+                          try {
+                            const resp = await fetch(`/library/item?dir=${encodeURIComponent(dir)}`, { method: "DELETE" });
+                            if (!resp.ok) throw new Error("Delete failed");
+                            // Refresh list
+                            const data = await apiGet<LibraryItem[]>("/library/downloads/items");
+                            setItems(data);
+                          } catch (e) {
+                            alert(e instanceof Error ? e.message : "Delete failed");
+                          }
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  }
+                />
+              );
+            })}
+          </div>
+        </div>
+      ))}
+      
+      {filteredCount === 0 && hasActiveFilters && (
+        <section className="card">
+          <p>No games match your filters. Try adjusting your search criteria.</p>
+        </section>
+      )}
 
       <PaginationBar
         currentPage={1}
