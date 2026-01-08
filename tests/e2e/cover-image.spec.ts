@@ -1,5 +1,10 @@
 import { test, expect } from '@playwright/test';
 
+// Cover dimensions from theme.ts (--cover-w and --cover-h)
+const COVER_WIDTH = 200;
+const COVER_HEIGHT = 266;
+const DIMENSION_TOLERANCE = 10; // Tolerance for rendering differences
+
 /**
  * Cover Image Rendering E2E Test
  * 
@@ -27,7 +32,7 @@ test.describe('Cover Image Rendering', () => {
     await test.step('Browse page - Verify cover image CSS', async () => {
       // Should be on browse page by default, but navigate to be sure
       await page.click('nav a[href="/browse"]');
-      await expect(page.getByRole('heading', { name: 'Browse Crocdb' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Browse CrocDB' })).toBeVisible();
       
       // Perform a search to get some results
       await page.fill('input[name="search"]', 'Super Mario');
@@ -58,10 +63,10 @@ test.describe('Cover Image Rendering', () => {
         // Verify the image has the expected dimensions
         const dimensions = await firstCover.boundingBox();
         if (dimensions) {
-          // Cover dimensions should be 200x266 (as per theme.ts)
-          // Allow some tolerance for rendering differences
-          expect(dimensions.width).toBeCloseTo(200, 10);
-          expect(dimensions.height).toBeCloseTo(266, 10);
+          // Cover dimensions from theme.ts: --cover-w: 200px, --cover-h: 266px
+          // Allow tolerance for rendering differences
+          expect(dimensions.width).toBeCloseTo(COVER_WIDTH, DIMENSION_TOLERANCE);
+          expect(dimensions.height).toBeCloseTo(COVER_HEIGHT, DIMENSION_TOLERANCE);
         }
       }
     });
@@ -71,7 +76,7 @@ test.describe('Cover Image Rendering', () => {
       await page.click('nav a[href="/library"]');
       
       // Verify we're on the library page
-      const libraryHeading = page.getByRole('heading', { name: /^(Local )?Library$/i });
+      const libraryHeading = page.getByRole('heading', { name: /Library/i });
       await expect(libraryHeading).toBeVisible();
       
       // Wait for library to load
@@ -131,8 +136,8 @@ test.describe('Cover Image Rendering', () => {
       // Verify placeholder has correct dimensions
       const dimensions = await firstPlaceholder.boundingBox();
       if (dimensions) {
-        expect(dimensions.width).toBeCloseTo(200, 10);
-        expect(dimensions.height).toBeCloseTo(266, 10);
+        expect(dimensions.width).toBeCloseTo(COVER_WIDTH, DIMENSION_TOLERANCE);
+        expect(dimensions.height).toBeCloseTo(COVER_HEIGHT, DIMENSION_TOLERANCE);
       }
     }
   });
