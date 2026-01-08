@@ -747,12 +747,12 @@
           <div class="card">
             <h3>Developer guide</h3>
             <p>Technical walkthrough of the architecture, build commands, and code layout.</p>
-            <a class="cta secondary" id="docs-dev" href="docs/README.md">Open developer docs</a>
+            <a class="cta secondary" id="docs-dev" href="docs/">Open developer docs</a>
           </div>
           <div class="card">
             <h3>User guide</h3>
             <p>Friendly guide for configuring Jacare, scanning your library, and launching games.</p>
-            <a class="cta secondary" id="docs-user" href="docs/user/README.md">Open user guide</a>
+            <a class="cta secondary" id="docs-user" href="docs/user/">Open user guide</a>
           </div>
           <div class="card">
             <h3>Report issues</h3>
@@ -783,8 +783,8 @@
         <div>
           <h4>Resources</h4>
           <ul>
-            <li><a href="docs/README.md">Developer Guide</a></li>
-            <li><a href="docs/user/README.md">User Guide</a></li>
+            <li><a href="docs/">Developer Guide</a></li>
+            <li><a href="docs/user/">User Guide</a></li>
             <li><a href="https://github.com/luandev/jacare/issues" target="_blank" rel="noopener">Issues & Roadmap</a></li>
             <li><a href="https://github.com/luandev/jacare/releases" target="_blank" rel="noopener">Releases</a></li>
           </ul>
@@ -1070,13 +1070,13 @@
 
         const docsMatch = md.match(/docs\/README\.md/);
         if (docsMatch) {
-          targets.docsLink.href = "docs/README.md";
-          targets.docsDev.href = "docs/README.md";
+          targets.docsLink.href = "docs/";
+          targets.docsDev.href = "docs/";
         }
         const userMatch = md.match(/docs\/user\/README\.md/);
         if (userMatch) {
-          targets.userLink.href = "docs/user/README.md";
-          targets.docsUser.href = "docs/user/README.md";
+          targets.userLink.href = "docs/user/";
+          targets.docsUser.href = "docs/user/";
         }
         targets.navTitle.textContent = "Jacare";
         targets.navDownload.href = repoUrl + "/releases/latest";
