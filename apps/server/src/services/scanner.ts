@@ -9,9 +9,7 @@ import { ensureDir, moveFile } from "../utils/fs";
 import { logger } from "../utils/logger";
 import { 
   findBestMatches, 
-  extractCoreName, 
-  expandAbbreviations,
-  normalize 
+  expandAbbreviations
 } from "./fuzzy-matcher";
 
 const UNKNOWN_PLATFORM = "Unknown";
@@ -602,8 +600,9 @@ function extractVersionTags(fileName: string): string {
 
 /**
  * Check if ROM is a hack or modified version based on tags.
+ * Currently not used but kept for future functionality.
  */
-function isRomHack(fileName: string): boolean {
+function _isRomHack(fileName: string): boolean {
   const nameWithoutExt = path.basename(fileName, path.extname(fileName));
   const hackPattern = /\[(?:Hack|Translation|T\+|Trainer|Beta|Proto|Unl)\]/gi;
   return hackPattern.test(nameWithoutExt);

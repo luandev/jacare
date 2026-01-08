@@ -192,7 +192,7 @@ export function expandAbbreviations(name: string): string[] {
   
   // Check if name without spaces matches an abbreviation (e.g., "ChronoTrigger")
   const noSpaces = normalized.replace(/\s+/g, "").toLowerCase();
-  for (const [abbr, expansions] of Object.entries(ABBREVIATIONS)) {
+  for (const [_abbr, expansions] of Object.entries(ABBREVIATIONS)) {
     // Check if any expansion without spaces matches
     for (const expansion of expansions) {
       const expNoSpaces = expansion.replace(/\s+/g, "").toLowerCase();
