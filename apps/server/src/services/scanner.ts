@@ -198,6 +198,7 @@ async function scanPlatformFolder(
 export async function reorganizeItems(
   items: UnorganizedItem[],
   libraryRoot: string,
+  autoOrganizeUnrecognized: boolean = false,
   reportProgress?: (progress: number, message: string) => void
 ): Promise<ReorganizeResult> {
   const report = reportProgress || (() => {});
@@ -250,8 +251,20 @@ export async function reorganizeItems(
           : formatGameName(match.title, match.regions[0]);
         targetPlatform = platform;
       } else {
-        // Not found in Crocdb - put in "Not Found" subfolder
-        logger.info("Game not found in Crocdb, using fallback", { folderName, platform });
+        // Not found in Crocdb
+        if (!autoOrganizeUnrecognized) {
+          // Skip organizing unrecognized files when setting is disabled
+          logger.info("Game not found in Crocdb, skipping (autoOrganizeUnrecognized=false)", { 
+            folderName, 
+            platform 
+          });
+          result.skippedFiles += groupItems.length;
+          processed++;
+          continue;
+        }
+        
+        // autoOrganizeUnrecognized is enabled - put in "Not Found" subfolder
+        logger.info("Game not found in Crocdb, moving to Not Found folder", { folderName, platform });
         gameName = sanitizeFolderName(folderName);
         targetPlatform = `${platform}/${NOT_FOUND_FOLDER}`;
       }
