@@ -81,7 +81,7 @@ export class WikidataProvider implements MetadataProvider {
     
     // Try cache first
     const cached = getCachedWikidataSearch(queryHash);
-    if (cached && isFresh(cached.updatedAt)) {
+    if (cached && typeof cached.updatedAt === 'number' && isFresh(cached.updatedAt)) {
       const sparqlResponse = JSON.parse(cached.json);
       const games = aggregateSparqlResults(sparqlResponse.results.bindings);
       const ranked = rankSearchResults(games, query, { platform: options?.platform });
@@ -111,7 +111,7 @@ export class WikidataProvider implements MetadataProvider {
     
     // Try cache first
     const cached = getCachedWikidataGame(qid);
-    if (cached && isFresh(cached.updatedAt)) {
+    if (cached && typeof cached.updatedAt === 'number' && isFresh(cached.updatedAt)) {
       const sparqlResponse = JSON.parse(cached.json);
       const games = aggregateSparqlResults(sparqlResponse.results.bindings);
       

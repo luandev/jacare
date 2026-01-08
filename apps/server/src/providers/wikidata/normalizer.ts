@@ -46,7 +46,7 @@ export function normalizeGameName(name: string): string {
     .replace(/[œ]/g, "oe");
   
   // Remove colons, hyphens, and common punctuation for better matching
-  normalized = normalized.replace(/[:\-\.\,\!\?]/g, " ");
+  normalized = normalized.replace(/[:.\,!?\-]/g, " ");
   
   // Strip extra whitespace and trim
   normalized = normalized.replace(/\s+/g, " ").trim();
