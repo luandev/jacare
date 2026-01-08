@@ -253,10 +253,11 @@ h3 {
 img.thumb.cover-img {
   width: var(--cover-w);
   height: var(--cover-h);
-  object-fit: cover;
+  object-fit: contain;
   border-radius: 8px;
   display: block;
   margin: 0 auto;
+  background: var(--bg);
 }
 
 .grid {
