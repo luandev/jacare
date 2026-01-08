@@ -6,10 +6,19 @@
 
 import type { 
   WikidataGameResult, 
-  RankedGameResult, 
-  MatchRank 
+  RankedGameResult
 } from "@crocdesk/shared";
-import { MatchRank as Rank } from "@crocdesk/shared";
+
+// MatchRank enum - defined locally to avoid import issues
+// This matches the enum in @crocdesk/shared/src/wikidata-types.ts
+enum MatchRank {
+  EXACT = 1,
+  PREFIX = 2,
+  CONTAINS = 3,
+  NO_MATCH = 4
+}
+
+const Rank = MatchRank;
 
 /**
  * Normalizes a game name for matching

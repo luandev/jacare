@@ -38,57 +38,37 @@ export function buildSearchQuery(query: string, options: QueryOptions = {}): str
   const limit = options.limit ?? 25;
   const escapedQuery = escapeSparql(query.toLowerCase());
   
+  // Optimized query: Removed GROUP_CONCAT, using rdfs:label for all labels (simpler and faster)
   return `
-SELECT DISTINCT ?game ?gameLabel ?releaseDate 
-  (GROUP_CONCAT(DISTINCT ?platformLabel; separator="|") AS ?platforms)
-  (GROUP_CONCAT(DISTINCT ?genreLabel; separator="|") AS ?genres)
-  (GROUP_CONCAT(DISTINCT ?publisherLabel; separator="|") AS ?publishers)
-  ?seriesLabel
+SELECT DISTINCT ?game ?gameLabel ?releaseDate ?platform ?platformLabel ?genre ?genreLabel ?publisher ?publisherLabel ?series ?seriesLabel
 WHERE {
-  # Find video games that match the search term
-  ?game wdt:P31/wdt:P279* wd:Q7889 .  # instance of (subclass of) video game
-  
-  # Publication date (optional)
+  ?game wdt:P31/wdt:P279* wd:Q7889 .
+  ?game rdfs:label ?gameLabel .
+  FILTER(LANG(?gameLabel) = "en")
+  FILTER(CONTAINS(LCASE(?gameLabel), "${escapedQuery}"))
   OPTIONAL { ?game wdt:P577 ?releaseDate . }
-  
-  # Platforms (optional)
   OPTIONAL { 
     ?game wdt:P400 ?platform .
     ?platform rdfs:label ?platformLabel .
     FILTER(LANG(?platformLabel) = "en")
   }
-  
-  # Genres (optional)
   OPTIONAL { 
     ?game wdt:P136 ?genre .
     ?genre rdfs:label ?genreLabel .
     FILTER(LANG(?genreLabel) = "en")
   }
-  
-  # Publishers (optional)
   OPTIONAL { 
     ?game wdt:P123 ?publisher .
     ?publisher rdfs:label ?publisherLabel .
     FILTER(LANG(?publisherLabel) = "en")
   }
-  
-  # Series (optional)
   OPTIONAL { 
     ?game wdt:P179 ?series .
     ?series rdfs:label ?seriesLabel .
     FILTER(LANG(?seriesLabel) = "en")
   }
-  
-  # Get labels in English
-  SERVICE wikibase:label { 
-    bd:serviceParam wikibase:language "en" .
-  }
-  
-  # Filter by name (case-insensitive contains)
-  FILTER(CONTAINS(LCASE(?gameLabel), "${escapedQuery}"))
 }
-GROUP BY ?game ?gameLabel ?releaseDate ?seriesLabel
-LIMIT ${limit}
+LIMIT ${limit * 2}
 `.trim();
 }
 
@@ -100,18 +80,21 @@ LIMIT ${limit}
 export function buildGetByQidQuery(qid: string): string {
   const normalizedQid = normalizeQid(qid);
   
+  // Return individual rows (no GROUP_CONCAT) - aggregation happens client-side
+  // This avoids timeout issues with complex GROUP_CONCAT operations
   return `
-SELECT DISTINCT ?game ?gameLabel ?releaseDate 
-  (GROUP_CONCAT(DISTINCT ?platformLabel; separator="|") AS ?platforms)
-  (GROUP_CONCAT(DISTINCT ?genreLabel; separator="|") AS ?genres)
-  (GROUP_CONCAT(DISTINCT ?publisherLabel; separator="|") AS ?publishers)
-  ?seriesLabel
+SELECT DISTINCT ?game ?gameLabel ?releaseDate ?platformLabel ?genreLabel ?publisherLabel ?seriesLabel
 WHERE {
   # Bind the specific game
   BIND(${normalizedQid} AS ?game)
   
   # Validate it's a video game
   ?game wdt:P31/wdt:P279* wd:Q7889 .  # instance of (subclass of) video game
+  
+  # Get labels in English
+  SERVICE wikibase:label { 
+    bd:serviceParam wikibase:language "en" .
+  }
   
   # Publication date (optional)
   OPTIONAL { ?game wdt:P577 ?releaseDate . }
@@ -143,12 +126,6 @@ WHERE {
     ?series rdfs:label ?seriesLabel .
     FILTER(LANG(?seriesLabel) = "en")
   }
-  
-  # Get labels in English
-  SERVICE wikibase:label { 
-    bd:serviceParam wikibase:language "en" .
-  }
 }
-GROUP BY ?game ?gameLabel ?releaseDate ?seriesLabel
 `.trim();
 }

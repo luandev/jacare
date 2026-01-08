@@ -52,15 +52,15 @@ function splitPipeSeparated(value: string): string[] | undefined {
 }
 
 /**
- * Maps a single SPARQL result binding to a WikidataGameResult
+ * Maps a single SPARQL result binding to a partial WikidataGameResult
  * 
  * @param result - Raw SPARQL result row
- * @returns Structured game result
+ * @returns Partial game result (needs aggregation)
  */
-export function mapSparqlResultToGame(
+function mapSparqlResultToPartialGame(
   result: WikidataSparqlResult
-): WikidataGameResult {
-  const game: WikidataGameResult = {
+): Partial<WikidataGameResult> & { qid: string; label: string } {
+  const game: Partial<WikidataGameResult> & { qid: string; label: string } = {
     qid: extractQidFromUri(result.game.value),
     label: result.gameLabel.value
   };
@@ -70,23 +70,23 @@ export function mapSparqlResultToGame(
     game.releaseDate = extractDate(result.releaseDate.value);
   }
   
-  // Map optional platforms (pipe-separated)
-  if (result.platforms) {
-    game.platforms = splitPipeSeparated(result.platforms.value);
+  // Map optional platform (single value, not pipe-separated)
+  if (result.platformLabel && result.platformLabel.value) {
+    game.platforms = [result.platformLabel.value];
   }
   
-  // Map optional genres (pipe-separated)
-  if (result.genres) {
-    game.genres = splitPipeSeparated(result.genres.value);
+  // Map optional genre (single value, not pipe-separated)
+  if (result.genreLabel && result.genreLabel.value) {
+    game.genres = [result.genreLabel.value];
   }
   
-  // Map optional publishers (pipe-separated)
-  if (result.publishers) {
-    game.publishers = splitPipeSeparated(result.publishers.value);
+  // Map optional publisher (single value, not pipe-separated)
+  if (result.publisherLabel && result.publisherLabel.value) {
+    game.publishers = [result.publisherLabel.value];
   }
   
   // Map optional series
-  if (result.seriesLabel) {
+  if (result.seriesLabel && result.seriesLabel.value) {
     game.series = result.seriesLabel.value;
   }
   
@@ -94,26 +94,95 @@ export function mapSparqlResultToGame(
 }
 
 /**
+ * Maps a single SPARQL result binding to a WikidataGameResult
+ * 
+ * @deprecated Use aggregateSparqlResults instead - this is kept for backwards compatibility
+ * @param result - Raw SPARQL result row
+ * @returns Structured game result
+ */
+export function mapSparqlResultToGame(
+  result: WikidataSparqlResult
+): WikidataGameResult {
+  const partial = mapSparqlResultToPartialGame(result);
+  return {
+    qid: partial.qid,
+    label: partial.label,
+    releaseDate: partial.releaseDate,
+    platforms: partial.platforms,
+    genres: partial.genres,
+    publishers: partial.publishers,
+    series: partial.series
+  };
+}
+
+/**
  * Aggregates multiple SPARQL results into unique game results
  * 
- * Deduplicates by QID (takes first occurrence)
+ * Combines multiple rows for the same game, aggregating platforms, genres, publishers
  * 
  * @param results - Array of SPARQL result bindings
- * @returns Array of unique game results
+ * @returns Array of unique game results with aggregated metadata
  */
 export function aggregateSparqlResults(
   results: WikidataSparqlResult[]
 ): WikidataGameResult[] {
-  const gameMap = new Map<string, WikidataGameResult>();
+  const gameMap = new Map<string, {
+    qid: string;
+    label: string;
+    releaseDate?: string;
+    platforms: Set<string>;
+    genres: Set<string>;
+    publishers: Set<string>;
+    series?: string;
+  }>();
   
   for (const result of results) {
-    const game = mapSparqlResultToGame(result);
+    const partial = mapSparqlResultToPartialGame(result);
+    const qid = partial.qid;
     
-    // Keep first occurrence (SPARQL already groups, but this handles edge cases)
-    if (!gameMap.has(game.qid)) {
-      gameMap.set(game.qid, game);
+    if (!gameMap.has(qid)) {
+      gameMap.set(qid, {
+        qid,
+        label: partial.label,
+        releaseDate: partial.releaseDate,
+        platforms: new Set(partial.platforms || []),
+        genres: new Set(partial.genres || []),
+        publishers: new Set(partial.publishers || []),
+        series: partial.series
+      });
+    } else {
+      const game = gameMap.get(qid)!;
+      // Aggregate platforms
+      if (partial.platforms) {
+        partial.platforms.forEach(p => game.platforms.add(p));
+      }
+      // Aggregate genres
+      if (partial.genres) {
+        partial.genres.forEach(g => game.genres.add(g));
+      }
+      // Aggregate publishers
+      if (partial.publishers) {
+        partial.publishers.forEach(p => game.publishers.add(p));
+      }
+      // Keep first series found
+      if (!game.series && partial.series) {
+        game.series = partial.series;
+      }
+      // Keep first release date found
+      if (!game.releaseDate && partial.releaseDate) {
+        game.releaseDate = partial.releaseDate;
+      }
     }
   }
   
-  return Array.from(gameMap.values());
+  // Convert to final format
+  return Array.from(gameMap.values()).map(game => ({
+    qid: game.qid,
+    label: game.label,
+    releaseDate: game.releaseDate,
+    platforms: game.platforms.size > 0 ? Array.from(game.platforms) : undefined,
+    genres: game.genres.size > 0 ? Array.from(game.genres) : undefined,
+    publishers: game.publishers.size > 0 ? Array.from(game.publishers) : undefined,
+    series: game.series
+  }));
 }
