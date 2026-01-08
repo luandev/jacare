@@ -14,6 +14,15 @@ vi.mock("./crocdb", () => ({
   getEntry: vi.fn()
 }));
 
+// Mock fuzzy-matcher to pass through results without filtering
+vi.mock("./fuzzy-matcher", () => ({
+  findBestMatches: vi.fn((searchKey, candidates) => {
+    // Return first candidate with a high score
+    return candidates.length > 0 ? [{ ...candidates[0], score: 0.95 }] : [];
+  }),
+  expandAbbreviations: vi.fn((name) => [name])
+}));
+
 // Mock logger to avoid console output during tests
 vi.mock("../utils/logger", () => ({
   logger: {
