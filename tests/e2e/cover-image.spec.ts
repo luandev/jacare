@@ -65,8 +65,8 @@ test.describe('Cover Image Rendering', () => {
         if (dimensions) {
           // Cover dimensions from theme.ts: --cover-w: 200px, --cover-h: 266px
           // Allow tolerance for rendering differences
-          expect(dimensions.width).toBeCloseTo(COVER_WIDTH, DIMENSION_TOLERANCE);
-          expect(dimensions.height).toBeCloseTo(COVER_HEIGHT, DIMENSION_TOLERANCE);
+          expect(Math.abs(dimensions.width - COVER_WIDTH)).toBeLessThanOrEqual(DIMENSION_TOLERANCE);
+          expect(Math.abs(dimensions.height - COVER_HEIGHT)).toBeLessThanOrEqual(DIMENSION_TOLERANCE);
         }
       }
     });
@@ -136,8 +136,8 @@ test.describe('Cover Image Rendering', () => {
       // Verify placeholder has correct dimensions
       const dimensions = await firstPlaceholder.boundingBox();
       if (dimensions) {
-        expect(dimensions.width).toBeCloseTo(COVER_WIDTH, DIMENSION_TOLERANCE);
-        expect(dimensions.height).toBeCloseTo(COVER_HEIGHT, DIMENSION_TOLERANCE);
+        expect(Math.abs(dimensions.width - COVER_WIDTH)).toBeLessThanOrEqual(DIMENSION_TOLERANCE);
+        expect(Math.abs(dimensions.height - COVER_HEIGHT)).toBeLessThanOrEqual(DIMENSION_TOLERANCE);
       }
     }
   });
