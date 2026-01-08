@@ -70,6 +70,12 @@ export type Settings = {
    * All scanning and library operations work from this root.
    */
   libraryDir: string;
+  /**
+   * When true, automatically moves unrecognized files (not found in Crocdb)
+   * to a "Not Found" subfolder during scans.
+   * When false (default), unrecognized files are left in place.
+   */
+  autoOrganizeUnrecognized?: boolean;
   queue?: {
     concurrency?: number;
   };

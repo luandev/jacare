@@ -301,9 +301,15 @@ async function runScanJob(job: JobRecord): Promise<void> {
       report.step("reorganize", 0.4, `Reorganizing ${unorganizedItems.length} items...`);
       logger.debug("Starting reorganization", { jobId: job.id, itemCount: unorganizedItems.length });
       
-      const reorganizeResult = await reorganizeItems(unorganizedItems, libraryDir, (progress, message) => {
-        report.step("reorganize", 0.4 + (progress * 0.4), message);
-      });
+      const autoOrganizeUnrecognized = settings.autoOrganizeUnrecognized ?? false;
+      const reorganizeResult = await reorganizeItems(
+        unorganizedItems, 
+        libraryDir,
+        autoOrganizeUnrecognized,
+        (progress, message) => {
+          report.step("reorganize", 0.4 + (progress * 0.4), message);
+        }
+      );
       
       logger.info("Reorganization completed", { 
         jobId: job.id, 

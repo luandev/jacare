@@ -4,6 +4,8 @@ import { DEFAULT_SETTINGS } from '../constants';
 describe('shared defaults', () => {
   it('DEFAULT_SETTINGS has expected values', () => {
     expect(DEFAULT_SETTINGS.downloadDir).toBe('./downloads');
+    expect(DEFAULT_SETTINGS.libraryDir).toBe('./library');
+    expect(DEFAULT_SETTINGS.autoOrganizeUnrecognized).toBe(false);
     expect(DEFAULT_SETTINGS.queue).toBeDefined();
     expect(DEFAULT_SETTINGS.queue).toEqual({ concurrency: 2 });
   });

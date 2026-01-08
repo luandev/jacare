@@ -14,6 +14,15 @@ vi.mock("./crocdb", () => ({
   getEntry: vi.fn()
 }));
 
+// Mock fuzzy-matcher to pass through results without filtering
+vi.mock("./fuzzy-matcher", () => ({
+  findBestMatches: vi.fn((searchKey, candidates) => {
+    // Return first candidate with a high score
+    return candidates.length > 0 ? [{ ...candidates[0], score: 0.95 }] : [];
+  }),
+  expandAbbreviations: vi.fn((name) => [name])
+}));
+
 // Mock logger to avoid console output during tests
 vi.mock("../utils/logger", () => ({
   logger: {
@@ -140,6 +149,180 @@ describe("Scanner Service - ROM Detection Heuristics", () => {
     });
   });
 
+  describe("Auto-organize Unrecognized Setting", () => {
+    it("should NOT move unrecognized files when autoOrganizeUnrecognized is false (default)", async () => {
+      const fileName = "Unknown Game (USA).nes";
+      const originalPath = path.join(libraryRoot, fileName);
+      await fs.writeFile(originalPath, "test content");
+
+      // Mock Crocdb to return no results
+      vi.mocked(crocdb.searchEntries).mockResolvedValue({
+        info: {},
+        data: {
+          results: [],
+          current_results: 0,
+          total_results: 0,
+          current_page: 1,
+          total_pages: 0
+        }
+      });
+
+      const items = await scanForUnorganizedItems(libraryRoot);
+      expect(items).toHaveLength(1);
+
+      // Call with autoOrganizeUnrecognized=false (default behavior)
+      const result = await reorganizeItems(items, libraryRoot, false);
+
+      // File should NOT be moved
+      expect(result.reorganizedFiles).toBe(0);
+      expect(result.skippedFiles).toBe(1);
+      expect(result.errors).toHaveLength(0);
+
+      // Verify file is still in original location
+      const stillExists = await fs.access(originalPath).then(() => true).catch(() => false);
+      expect(stillExists).toBe(true);
+
+      // Verify "Not Found" folder was NOT created
+      const notFoundDir = path.join(
+        libraryRoot,
+        "Nintendo - Nintendo Entertainment System",
+        "Not Found"
+      );
+      const notFoundExists = await fs.access(notFoundDir).then(() => true).catch(() => false);
+      expect(notFoundExists).toBe(false);
+    });
+
+    it("should move unrecognized files when autoOrganizeUnrecognized is true", async () => {
+      const fileName = "Unknown Game (USA).nes";
+      await fs.writeFile(path.join(libraryRoot, fileName), "test content");
+
+      // Mock Crocdb to return no results
+      vi.mocked(crocdb.searchEntries).mockResolvedValue({
+        info: {},
+        data: {
+          results: [],
+          current_results: 0,
+          total_results: 0,
+          current_page: 1,
+          total_pages: 0
+        }
+      });
+
+      const items = await scanForUnorganizedItems(libraryRoot);
+      expect(items).toHaveLength(1);
+
+      // Call with autoOrganizeUnrecognized=true
+      const result = await reorganizeItems(items, libraryRoot, true);
+
+      // File should be moved
+      expect(result.reorganizedFiles).toBe(1);
+      expect(result.skippedFiles).toBe(0);
+      expect(result.errors).toHaveLength(0);
+
+      // Verify manifest was created in "Not Found" folder
+      const expectedDir = path.join(
+        libraryRoot,
+        "Nintendo - Nintendo Entertainment System",
+        "Not Found",
+        "Unknown Game (USA)"
+      );
+      const manifestPath = path.join(expectedDir, ".crocdesk.json");
+      const manifestExists = await fs.access(manifestPath).then(() => true).catch(() => false);
+      
+      expect(manifestExists).toBe(true);
+
+      if (manifestExists) {
+        const manifest = JSON.parse(await fs.readFile(manifestPath, "utf-8"));
+        expect(manifest.crocdb.slug).toBe("unknown-game-usa");
+        expect(manifest.crocdb.title).toBe("Unknown Game (USA)");
+      }
+    });
+
+    it("should always organize recognized files regardless of autoOrganizeUnrecognized setting", async () => {
+      const fileName = "smb.nes";
+      await fs.writeFile(path.join(libraryRoot, fileName), "test content");
+
+      // Mock Crocdb to return a match
+      vi.mocked(crocdb.searchEntries).mockResolvedValue({
+        info: {},
+        data: {
+          results: [
+            {
+              slug: "super-mario-bros",
+              title: "Super Mario Bros.",
+              platform: "Nintendo - Nintendo Entertainment System",
+              regions: ["USA"],
+              links: [],
+              rom_id: "12345"
+            }
+          ],
+          current_results: 1,
+          total_results: 1,
+          current_page: 1,
+          total_pages: 1
+        }
+      });
+
+      const items = await scanForUnorganizedItems(libraryRoot);
+      
+      // Test with autoOrganizeUnrecognized=false
+      const result = await reorganizeItems(items, libraryRoot, false);
+
+      // Recognized file should still be organized
+      expect(result.reorganizedFiles).toBe(1);
+      expect(result.skippedFiles).toBe(0);
+
+      // Should use Crocdb title instead of filename
+      const expectedDir = path.join(
+        libraryRoot,
+        "Nintendo - Nintendo Entertainment System",
+        "Super Mario Bros. (USA)"
+      );
+      const exists = await fs.access(expectedDir).then(() => true).catch(() => false);
+      expect(exists).toBe(true);
+    });
+
+    it("should skip multiple unrecognized files when autoOrganizeUnrecognized is false", async () => {
+      const files = [
+        "Unknown Game 1.nes",
+        "Unknown Game 2.nes",
+        "Unknown Game 3.gb"
+      ];
+
+      for (const file of files) {
+        await fs.writeFile(path.join(libraryRoot, file), "test content");
+      }
+
+      // Mock Crocdb to return no results
+      vi.mocked(crocdb.searchEntries).mockResolvedValue({
+        info: {},
+        data: {
+          results: [],
+          current_results: 0,
+          total_results: 0,
+          current_page: 1,
+          total_pages: 0
+        }
+      });
+
+      const items = await scanForUnorganizedItems(libraryRoot);
+      expect(items).toHaveLength(3);
+
+      const result = await reorganizeItems(items, libraryRoot, false);
+
+      // All files should be skipped
+      expect(result.reorganizedFiles).toBe(0);
+      expect(result.skippedFiles).toBe(3);
+      expect(result.errors).toHaveLength(0);
+
+      // Verify files are still in original locations
+      for (const file of files) {
+        const exists = await fs.access(path.join(libraryRoot, file)).then(() => true).catch(() => false);
+        expect(exists).toBe(true);
+      }
+    });
+  });
+
   describe("Game Not Found in Crocdb", () => {
     it("should create manifest for game not found in Crocdb", async () => {
       const fileName = "Unknown Game (USA).nes";
@@ -160,7 +343,8 @@ describe("Scanner Service - ROM Detection Heuristics", () => {
       const items = await scanForUnorganizedItems(libraryRoot);
       expect(items).toHaveLength(1);
 
-      const result = await reorganizeItems(items, libraryRoot);
+      // Pass true to enable moving unrecognized files for this test
+      const result = await reorganizeItems(items, libraryRoot, true);
 
       expect(result.reorganizedFiles).toBe(1);
       expect(result.errors).toHaveLength(0);
@@ -200,7 +384,8 @@ describe("Scanner Service - ROM Detection Heuristics", () => {
       });
 
       const items = await scanForUnorganizedItems(libraryRoot);
-      const result = await reorganizeItems(items, libraryRoot);
+      // Pass true to enable moving unrecognized files for this test
+      const result = await reorganizeItems(items, libraryRoot, true);
 
       expect(result.reorganizedFiles).toBe(1);
       
@@ -234,7 +419,8 @@ describe("Scanner Service - ROM Detection Heuristics", () => {
       const items = await scanForUnorganizedItems(libraryRoot);
       expect(items).toHaveLength(1); // Verify file was detected
       
-      const result = await reorganizeItems(items, libraryRoot);
+      // Pass true to enable moving unrecognized files for this test
+      const result = await reorganizeItems(items, libraryRoot, true);
 
       expect(result.reorganizedFiles).toBe(1);
       
@@ -277,7 +463,7 @@ describe("Scanner Service - ROM Detection Heuristics", () => {
       });
 
       const items = await scanForUnorganizedItems(libraryRoot);
-      const result = await reorganizeItems(items, libraryRoot);
+      const result = await reorganizeItems(items, libraryRoot, false);
 
       expect(result.reorganizedFiles).toBe(1);
 
@@ -316,7 +502,7 @@ describe("Scanner Service - ROM Detection Heuristics", () => {
       });
 
       const items = await scanForUnorganizedItems(libraryRoot);
-      const result = await reorganizeItems(items, libraryRoot);
+      const result = await reorganizeItems(items, libraryRoot, false);
 
       expect(result.reorganizedFiles).toBe(1);
 
@@ -378,7 +564,7 @@ describe("Scanner Service - ROM Detection Heuristics", () => {
       });
 
       const items = await scanForUnorganizedItems(libraryRoot);
-      const result = await reorganizeItems(items, libraryRoot);
+      const result = await reorganizeItems(items, libraryRoot, true);
 
       expect(result.reorganizedFiles).toBe(3);
 
@@ -483,7 +669,7 @@ describe("Scanner Service - ROM Detection Heuristics", () => {
         data: { results: [], current_results: 0, total_results: 0, current_page: 1, total_pages: 0 }
       });
       
-      await reorganizeItems(items, libraryRoot);
+      await reorganizeItems(items, libraryRoot, true);
       
       const platformDir = path.join(libraryRoot, "Nintendo - Game Boy");
       const exists = await fs.access(platformDir).then(() => true).catch(() => false);
@@ -499,7 +685,7 @@ describe("Scanner Service - ROM Detection Heuristics", () => {
         data: { results: [], current_results: 0, total_results: 0, current_page: 1, total_pages: 0 }
       });
       
-      await reorganizeItems(items, libraryRoot);
+      await reorganizeItems(items, libraryRoot, true);
       
       const platformDir = path.join(libraryRoot, "Sega - Mega Drive - Genesis");
       const exists = await fs.access(platformDir).then(() => true).catch(() => false);
@@ -515,7 +701,7 @@ describe("Scanner Service - ROM Detection Heuristics", () => {
         data: { results: [], current_results: 0, total_results: 0, current_page: 1, total_pages: 0 }
       });
       
-      await reorganizeItems(items, libraryRoot);
+      await reorganizeItems(items, libraryRoot, true);
       
       const platformDir = path.join(libraryRoot, "Nintendo - Super Nintendo Entertainment System");
       const exists = await fs.access(platformDir).then(() => true).catch(() => false);
@@ -542,7 +728,7 @@ describe("Scanner Service - ROM Detection Heuristics", () => {
       vi.mocked(crocdb.searchEntries).mockRejectedValue(new Error("API Error"));
 
       const items = await scanForUnorganizedItems(libraryRoot);
-      const result = await reorganizeItems(items, libraryRoot);
+      const result = await reorganizeItems(items, libraryRoot, true);
 
       // Should still reorganize using folder name
       expect(result.reorganizedFiles).toBe(1);
@@ -563,7 +749,7 @@ describe("Scanner Service - ROM Detection Heuristics", () => {
       // Make the target platform directory read-only to prevent file moves into it
       await fs.chmod(targetPlatformDir, READONLY_PERMISSIONS);
 
-      const result = await reorganizeItems(items, libraryRoot);
+      const result = await reorganizeItems(items, libraryRoot, true);
 
       // Restore permissions for cleanup
       await fs.chmod(targetPlatformDir, READWRITE_PERMISSIONS);
@@ -601,7 +787,7 @@ describe("Scanner Service - ROM Detection Heuristics", () => {
       await fs.writeFile(path.join(targetDir, "bad-game.nes"), "existing");
       await fs.chmod(targetDir, READONLY_PERMISSIONS);
 
-      const result = await reorganizeItems(items, libraryRoot);
+      const result = await reorganizeItems(items, libraryRoot, true);
 
       // Should process at least the good one
       expect(result.reorganizedFiles).toBeGreaterThan(0);
