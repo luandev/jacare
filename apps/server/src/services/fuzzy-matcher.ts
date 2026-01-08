@@ -3,6 +3,13 @@
  * Implements multiple strategies to improve ROM recognition rate
  */
 
+// Scoring weights and thresholds
+const SCORE_SUBSTRING_MATCH_EXACT = 0.85;  // Score when candidate contains query
+const SCORE_SUBSTRING_MATCH_PARTIAL = 0.75; // Score when query contains candidate
+const WEIGHT_LEVENSHTEIN = 0.5;  // Weight for character-level similarity
+const WEIGHT_TOKEN = 0.35;        // Weight for word-level similarity
+const WEIGHT_SUBSTRING = 0.15;    // Weight for substring matching
+
 /**
  * Common ROM abbreviations mapping
  * Key: abbreviation (lowercase), Value: possible expansions
@@ -128,15 +135,15 @@ export function calculateSimilarity(a: string, b: string): number {
  * Normalize a string for comparison
  * - Lowercase
  * - Replace separators (underscore, dot) with spaces
- * - Remove non-alphanumeric except spaces
+ * - Remove non-alphanumeric except spaces (preserves word structure but removes ROM metadata)
  * - Normalize whitespace
  * - Convert Roman numerals to Arabic
  */
 export function normalize(str: string): string {
   let normalized = str.toLowerCase();
   
-  // Replace common separators with spaces
-  normalized = normalized.replace(/[_\.]/g, " ");
+  // Replace common separators with spaces (explicitly escape dot for clarity)
+  normalized = normalized.replace(/[_\\.]/g, " ");
   
   // Convert Roman numerals to Arabic (word boundaries only)
   for (const [roman, arabic] of Object.entries(ROMAN_TO_ARABIC)) {
@@ -145,6 +152,8 @@ export function normalize(str: string): string {
   }
   
   // Remove punctuation but keep spaces
+  // This removes ROM metadata like colons, hyphens, parentheses while preserving word boundaries
+  // Example: "Game: Subtitle" → "game subtitle", "Mario Bros." → "mario bros"
   normalized = normalized.replace(/[^\w\s]/g, " ");
   
   // Normalize whitespace
@@ -254,14 +263,14 @@ export function calculateMatchScore(
   const tokenScore = calculateTokenSimilarity(normQuery, normCandidate);
   
   // Check if candidate contains query (substring match)
-  const containsScore = normCandidate.includes(normQuery) ? 0.85 : 
-                       (normQuery.includes(normCandidate) ? 0.75 : 0.0);
+  const containsScore = normCandidate.includes(normQuery) ? SCORE_SUBSTRING_MATCH_EXACT : 
+                       (normQuery.includes(normCandidate) ? SCORE_SUBSTRING_MATCH_PARTIAL : 0.0);
   
-  // Weighted combination with more weight on levenshtein for typo tolerance
+  // Weighted combination - prioritizes character similarity with word-level validation
   let finalScore = (
-    levenshteinScore * 0.5 +
-    tokenScore * 0.35 +
-    containsScore * 0.15
+    levenshteinScore * WEIGHT_LEVENSHTEIN +
+    tokenScore * WEIGHT_TOKEN +
+    containsScore * WEIGHT_SUBSTRING
   );
   
   // Boost for platform match
