@@ -3,6 +3,8 @@
 [![CI](https://github.com/luandev/jacare/actions/workflows/ci.yml/badge.svg)](https://github.com/luandev/jacare/actions/workflows/ci.yml)
 [![Release](https://github.com/luandev/jacare/actions/workflows/release.yml/badge.svg)](https://github.com/luandev/jacare/actions/workflows/release.yml)
 
+> **⚠️ IMPORTANT NOTICE**: The main crocdb source is currently offline, causing data access failures. A root cause has been identified and a fix is in progress. An update will be published shortly with restored availability.
+
 **Jacare** (Portuguese for "caiman") is an open-source, web-based desktop ROM library manager that brings your retro game collection to life with an ultra-responsive UI, customizable themes, and intelligent download management—all in a portable, lightweight package that never loses your progress, even after closing and reopening the app.
 
 ![Demo](docs/demo.gif)

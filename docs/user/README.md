@@ -1,5 +1,7 @@
 # Jacare Friendly Guide 😀🐊
 
+> **⚠️ IMPORTANT NOTICE**: The main crocdb source is currently offline, causing data access failures. A root cause has been identified and a fix is in progress. An update will be published shortly with restored availability.
+
 This guide is for anyone who wants to use Jacare without digging into code. Follow the steps below to organize your ROM collection with minimal setup.
 
 ## What is Jacare?

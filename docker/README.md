@@ -1,5 +1,7 @@
 # Docker Compose template
 
+> **⚠️ IMPORTANT NOTICE**: The main crocdb source is currently offline, causing data access failures. A root cause has been identified and a fix is in progress. An update will be published shortly with restored availability.
+
 This folder contains a starter `docker-compose.yml` for running Jacare with bind-mounted data and library directories. Windows paths are enabled by default; macOS and Linux examples are included as comments so you can switch quickly.
 
 ## Usage
