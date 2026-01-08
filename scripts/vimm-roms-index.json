@@ -1,0 +1,118 @@
+{
+  "version": "1.0",
+  "lastUpdated": "2026-01-08T18:46:53.053Z",
+  "platforms": [
+    {
+      "name": "Atari 5200",
+      "file": "vimm-roms/Atari 5200.json",
+      "romCount": 0,
+      "expectedCount": 183,
+      "hasTop10": false
+    },
+    {
+      "name": "Atari 7800",
+      "file": "vimm-roms/Atari 7800.json",
+      "romCount": 49,
+      "expectedCount": 126,
+      "hasTop10": false
+    },
+    {
+      "name": "CD-i",
+      "file": "vimm-roms/CD-i.json",
+      "romCount": 494,
+      "expectedCount": 2418,
+      "hasTop10": false
+    },
+    {
+      "name": "Dreamcast",
+      "file": "vimm-roms/Dreamcast.json",
+      "romCount": 242,
+      "expectedCount": 1506,
+      "hasTop10": false
+    },
+    {
+      "name": "Game Boy",
+      "file": "vimm-roms/Game Boy.json",
+      "romCount": 501,
+      "expectedCount": 1959,
+      "hasTop10": false
+    },
+    {
+      "name": "Game Boy Adv",
+      "file": "vimm-roms/Game Boy Adv.json",
+      "romCount": 982,
+      "expectedCount": 3479,
+      "hasTop10": false
+    },
+    {
+      "name": "Game Boy Color",
+      "file": "vimm-roms/Game Boy Color.json",
+      "romCount": 467,
+      "expectedCount": 1958,
+      "hasTop10": false
+    },
+    {
+      "name": "Game Gear",
+      "file": "vimm-roms/Game Gear.json",
+      "romCount": 205,
+      "expectedCount": 823,
+      "hasTop10": false
+    },
+    {
+      "name": "GameCube",
+      "file": "vimm-roms/GameCube.json",
+      "romCount": 470,
+      "expectedCount": 2018,
+      "hasTop10": false
+    },
+    {
+      "name": "Genesis",
+      "file": "vimm-roms/Genesis.json",
+      "romCount": 662,
+      "expectedCount": 2841,
+      "hasTop10": false
+    },
+    {
+      "name": "Jaguar",
+      "file": "vimm-roms/Jaguar.json",
+      "romCount": 46,
+      "expectedCount": 99,
+      "hasTop10": false
+    },
+    {
+      "name": "Jaguar CD",
+      "file": "vimm-roms/Jaguar CD.json",
+      "romCount": 0,
+      "expectedCount": 27,
+      "hasTop10": false
+    },
+    {
+      "name": "Lynx",
+      "file": "vimm-roms/Lynx.json",
+      "romCount": 76,
+      "expectedCount": 127,
+      "hasTop10": false
+    },
+    {
+      "name": "Master System",
+      "file": "vimm-roms/Master System.json",
+      "romCount": 279,
+      "expectedCount": 701,
+      "hasTop10": false
+    },
+    {
+      "name": "Advanced Search",
+      "file": "vimm-roms/Advanced Search.json",
+      "romCount": 0,
+      "expectedCount": null,
+      "hasTop10": false
+    },
+    {
+      "name": "Atari 2600",
+      "file": "vimm-roms/Atari 2600.json",
+      "romCount": 221,
+      "expectedCount": 856,
+      "hasTop10": false
+    }
+  ]
+}

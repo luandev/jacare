@@ -12,3 +12,5 @@ apps/server/library
 test-results
 playwright-report
 release/
+.vimm-progress.json
+scripts/vimm-roms/

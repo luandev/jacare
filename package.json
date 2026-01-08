@@ -28,7 +28,8 @@
     "package:server": "npm run build && npm run package -w @crocdesk/server",
     "package:bundle": "npm run build -w @crocdesk/shared && npm run build -w @crocdesk/web && npm run build -w @crocdesk/server && npm run package -w @crocdesk/server",
     "release": "bash scripts/create-release.sh",
-    "docs:seo": "node docs/generate-seo-files.js"
+    "docs:seo": "node docs/generate-seo-files.js",
+    "scrape:vimm": "node scripts/scrape-vimm-vault.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.48.2",
@@ -36,6 +37,7 @@
     "@testing-library/react": "^14.0.0",
     "@typescript-eslint/eslint-plugin": "^8.50.1",
     "@typescript-eslint/parser": "^8.50.1",
+    "cheerio": "^1.0.0-rc.12",
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
     "eslint": "^8.57.0",
@@ -43,6 +45,7 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
     "jsdom": "^24.0.0",
+    "node-fetch": "^3.3.2",
     "typescript": "^5.4.5",
     "vitest": "^4.0.16"
   }

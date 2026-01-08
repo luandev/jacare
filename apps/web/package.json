@@ -6,10 +6,14 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "setup:emulatorjs": "node scripts/setup-emulatorjs.js",
+    "postinstall": "npm run setup:emulatorjs"
   },
   "dependencies": {
     "@crocdesk/shared": "*",
+    "@emulatorjs/cores": "^4.2.3",
+    "@emulatorjs/emulatorjs": "^4.2.3",
     "@tanstack/react-query": "^5.29.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
