@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "crocdb": {
+    "slug": "sonic-the-hedgehog",
+    "title": "Sonic the Hedgehog",
+    "platform": "gen",
+    "regions": ["USA"]
+  },
+  "artifacts": [
+    {
+      "path": "Sonic the Hedgehog (USA).md",
+      "size": 524288,
+      "hash": "jkl012"
+    }
+  ],
+  "createdAt": "2024-04-05T16:45:00.000Z"
+}

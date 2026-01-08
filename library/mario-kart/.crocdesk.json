@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "crocdb": {
+    "slug": "mario-kart-64",
+    "title": "Mario Kart 64",
+    "platform": "n64",
+    "regions": ["USA"]
+  },
+  "artifacts": [
+    {
+      "path": "Mario Kart 64 (USA).z64",
+      "size": 12582912,
+      "hash": "pqr678"
+    }
+  ],
+  "createdAt": "2024-06-18T13:05:00.000Z"
+}

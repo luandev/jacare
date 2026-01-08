@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "crocdb": {
+    "slug": "pokemon-red",
+    "title": "Pokemon Red Version",
+    "platform": "gb",
+    "regions": ["USA"]
+  },
+  "artifacts": [
+    {
+      "path": "Pokemon Red (USA).gb",
+      "size": 1048576,
+      "hash": "mno345"
+    }
+  ],
+  "createdAt": "2024-05-12T11:20:00.000Z"
+}
