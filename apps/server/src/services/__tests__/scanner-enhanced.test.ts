@@ -480,7 +480,7 @@ describe("Scanner Service - Enhanced ROM Recognition", () => {
       });
 
       const items = await scanForUnorganizedItems(libraryRoot);
-      const result = await reorganizeItems(items, libraryRoot);
+      const result = await reorganizeItems(items, libraryRoot, true);
 
       // Should still organize into "Not Found" folder
       expect(result.reorganizedFiles).toBe(1);
