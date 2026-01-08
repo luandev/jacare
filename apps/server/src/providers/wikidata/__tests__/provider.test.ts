@@ -28,18 +28,24 @@ describe("Wikidata Provider", () => {
   });
   
   describe("searchGames", () => {
-    it("should return ranked game metadata", async () => {
+    it("should return ranked game metadata with aggregated results", async () => {
+      // New structure: individual rows per game/metadata combination
       const mockResponse: WikidataSparqlResponse = {
-        head: { vars: ["game", "gameLabel"] },
+        head: { vars: ["game", "gameLabel", "releaseDate", "platformLabel", "genreLabel", "publisherLabel"] },
         results: {
           bindings: [
             {
               game: { type: "uri" as const, value: "http://www.wikidata.org/entity/Q12345" },
-              gameLabel: { type: "literal" as const, value: "Super Mario Bros" },
-              releaseDate: { type: "literal" as const, value: "1985-09-13T00:00:00Z" },
-              platforms: { type: "literal" as const, value: "Nintendo Entertainment System" },
-              genres: { type: "literal" as const, value: "platform game" },
-              publishers: { type: "literal" as const, value: "Nintendo" }
+              gameLabel: { type: "literal" as const, value: "Super Mario Bros", "xml:lang": "en" },
+              releaseDate: { type: "literal" as const, value: "1985-09-13T00:00:00Z", datatype: "http://www.w3.org/2001/XMLSchema#dateTime" },
+              platformLabel: { type: "literal" as const, value: "Nintendo Entertainment System", "xml:lang": "en" },
+              genreLabel: { type: "literal" as const, value: "platform game", "xml:lang": "en" },
+              publisherLabel: { type: "literal" as const, value: "Nintendo", "xml:lang": "en" }
+            },
+            {
+              game: { type: "uri" as const, value: "http://www.wikidata.org/entity/Q12345" },
+              gameLabel: { type: "literal" as const, value: "Super Mario Bros", "xml:lang": "en" },
+              platformLabel: { type: "literal" as const, value: "Famicom", "xml:lang": "en" }
             }
           ]
         }
@@ -56,7 +62,7 @@ describe("Wikidata Provider", () => {
         sourceId: "Q12345",
         name: "Super Mario Bros",
         releaseDate: "1985-09-13",
-        platforms: ["Nintendo Entertainment System"],
+        platforms: expect.arrayContaining(["Nintendo Entertainment System", "Famicom"]),
         genres: ["platform game"],
         publishers: ["Nintendo"]
       });
@@ -69,7 +75,7 @@ describe("Wikidata Provider", () => {
           bindings: [
             {
               game: { type: "uri" as const, value: "http://www.wikidata.org/entity/Q99999" },
-              gameLabel: { type: "literal" as const, value: "Cached Game" }
+              gameLabel: { type: "literal" as const, value: "Cached Game", "xml:lang": "en" }
             }
           ]
         }
@@ -112,18 +118,18 @@ describe("Wikidata Provider", () => {
     
     it("should rank results by platform match", async () => {
       const mockResponse: WikidataSparqlResponse = {
-        head: { vars: ["game", "gameLabel"] },
+        head: { vars: ["game", "gameLabel", "platformLabel"] },
         results: {
           bindings: [
             {
               game: { type: "uri" as const, value: "http://www.wikidata.org/entity/Q1" },
-              gameLabel: { type: "literal" as const, value: "Mario NES" },
-              platforms: { type: "literal" as const, value: "Nintendo Entertainment System" }
+              gameLabel: { type: "literal" as const, value: "Mario NES", "xml:lang": "en" },
+              platformLabel: { type: "literal" as const, value: "Nintendo Entertainment System", "xml:lang": "en" }
             },
             {
               game: { type: "uri" as const, value: "http://www.wikidata.org/entity/Q2" },
-              gameLabel: { type: "literal" as const, value: "Mario SNES" },
-              platforms: { type: "literal" as const, value: "Super Nintendo Entertainment System" }
+              gameLabel: { type: "literal" as const, value: "Mario SNES", "xml:lang": "en" },
+              platformLabel: { type: "literal" as const, value: "Super Nintendo Entertainment System", "xml:lang": "en" }
             }
           ]
         }
@@ -141,15 +147,22 @@ describe("Wikidata Provider", () => {
   });
   
   describe("getGameById", () => {
-    it("should return game metadata by QID", async () => {
+    it("should return game metadata by QID with aggregated metadata", async () => {
       const mockResponse: WikidataSparqlResponse = {
-        head: { vars: ["game", "gameLabel"] },
+        head: { vars: ["game", "gameLabel", "releaseDate", "platformLabel", "genreLabel"] },
         results: {
           bindings: [
             {
               game: { type: "uri" as const, value: "http://www.wikidata.org/entity/Q12345" },
-              gameLabel: { type: "literal" as const, value: "Super Mario Bros" },
-              releaseDate: { type: "literal" as const, value: "1985-09-13T00:00:00Z" }
+              gameLabel: { type: "literal" as const, value: "Super Mario Bros", "xml:lang": "en" },
+              releaseDate: { type: "literal" as const, value: "1985-09-13T00:00:00Z", datatype: "http://www.w3.org/2001/XMLSchema#dateTime" },
+              platformLabel: { type: "literal" as const, value: "Nintendo Entertainment System", "xml:lang": "en" },
+              genreLabel: { type: "literal" as const, value: "platform game", "xml:lang": "en" }
+            },
+            {
+              game: { type: "uri" as const, value: "http://www.wikidata.org/entity/Q12345" },
+              gameLabel: { type: "literal" as const, value: "Super Mario Bros", "xml:lang": "en" },
+              platformLabel: { type: "literal" as const, value: "Famicom", "xml:lang": "en" }
             }
           ]
         }
@@ -164,7 +177,9 @@ describe("Wikidata Provider", () => {
         source: "wikidata",
         sourceId: "Q12345",
         name: "Super Mario Bros",
-        releaseDate: "1985-09-13"
+        releaseDate: "1985-09-13",
+        platforms: expect.arrayContaining(["Nintendo Entertainment System", "Famicom"]),
+        genres: ["platform game"]
       });
     });
     
@@ -175,7 +190,7 @@ describe("Wikidata Provider", () => {
           bindings: [
             {
               game: { type: "uri" as const, value: "http://www.wikidata.org/entity/Q99999" },
-              gameLabel: { type: "literal" as const, value: "Cached Game" }
+              gameLabel: { type: "literal" as const, value: "Cached Game", "xml:lang": "en" }
             }
           ]
         }

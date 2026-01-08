@@ -49,35 +49,35 @@ describe("Wikidata Mapper", () => {
       expect(result.releaseDate).toBe("1985-09-13");
     });
     
-    it("should map platforms if present", () => {
+    it("should map platformLabel if present (single value)", () => {
       const sparqlResult: WikidataSparqlResult = {
         game: { type: "uri", value: "http://www.wikidata.org/entity/Q12345" },
-        gameLabel: { type: "literal", value: "Super Mario Bros" },
-        platforms: { type: "literal", value: "Nintendo Entertainment System|Famicom" }
+        gameLabel: { type: "literal", value: "Super Mario Bros", "xml:lang": "en" },
+        platformLabel: { type: "literal", value: "Nintendo Entertainment System", "xml:lang": "en" }
       };
       
       const result = mapSparqlResultToGame(sparqlResult);
       
-      expect(result.platforms).toEqual(["Nintendo Entertainment System", "Famicom"]);
+      expect(result.platforms).toEqual(["Nintendo Entertainment System"]);
     });
     
-    it("should map genres if present", () => {
+    it("should map genreLabel if present (single value)", () => {
       const sparqlResult: WikidataSparqlResult = {
         game: { type: "uri", value: "http://www.wikidata.org/entity/Q12345" },
-        gameLabel: { type: "literal", value: "Super Mario Bros" },
-        genres: { type: "literal", value: "platform game|action game" }
+        gameLabel: { type: "literal", value: "Super Mario Bros", "xml:lang": "en" },
+        genreLabel: { type: "literal", value: "platform game", "xml:lang": "en" }
       };
       
       const result = mapSparqlResultToGame(sparqlResult);
       
-      expect(result.genres).toEqual(["platform game", "action game"]);
+      expect(result.genres).toEqual(["platform game"]);
     });
     
-    it("should map publishers if present", () => {
+    it("should map publisherLabel if present (single value)", () => {
       const sparqlResult: WikidataSparqlResult = {
         game: { type: "uri", value: "http://www.wikidata.org/entity/Q12345" },
-        gameLabel: { type: "literal", value: "Super Mario Bros" },
-        publishers: { type: "literal", value: "Nintendo" }
+        gameLabel: { type: "literal", value: "Super Mario Bros", "xml:lang": "en" },
+        publisherLabel: { type: "literal", value: "Nintendo", "xml:lang": "en" }
       };
       
       const result = mapSparqlResultToGame(sparqlResult);
@@ -100,12 +100,12 @@ describe("Wikidata Mapper", () => {
     it("should handle all fields together", () => {
       const sparqlResult: WikidataSparqlResult = {
         game: { type: "uri", value: "http://www.wikidata.org/entity/Q12345" },
-        gameLabel: { type: "literal", value: "The Legend of Zelda" },
-        releaseDate: { type: "literal", value: "1986-02-21T00:00:00Z" },
-        platforms: { type: "literal", value: "Famicom Disk System|Nintendo Entertainment System" },
-        genres: { type: "literal", value: "action-adventure game" },
-        publishers: { type: "literal", value: "Nintendo" },
-        seriesLabel: { type: "literal", value: "The Legend of Zelda" }
+        gameLabel: { type: "literal", value: "The Legend of Zelda", "xml:lang": "en" },
+        releaseDate: { type: "literal", value: "1986-02-21T00:00:00Z", datatype: "http://www.w3.org/2001/XMLSchema#dateTime" },
+        platformLabel: { type: "literal", value: "Nintendo Entertainment System", "xml:lang": "en" },
+        genreLabel: { type: "literal", value: "action-adventure game", "xml:lang": "en" },
+        publisherLabel: { type: "literal", value: "Nintendo", "xml:lang": "en" },
+        seriesLabel: { type: "literal", value: "The Legend of Zelda", "xml:lang": "en" }
       };
       
       const result = mapSparqlResultToGame(sparqlResult);
@@ -114,23 +114,24 @@ describe("Wikidata Mapper", () => {
         qid: "Q12345",
         label: "The Legend of Zelda",
         releaseDate: "1986-02-21",
-        platforms: ["Famicom Disk System", "Nintendo Entertainment System"],
+        platforms: ["Nintendo Entertainment System"],
         genres: ["action-adventure game"],
         publishers: ["Nintendo"],
         series: "The Legend of Zelda"
       });
     });
     
-    it("should handle empty pipe-separated values", () => {
+    it("should handle missing optional fields", () => {
       const sparqlResult: WikidataSparqlResult = {
         game: { type: "uri", value: "http://www.wikidata.org/entity/Q12345" },
-        gameLabel: { type: "literal", value: "Game" },
-        platforms: { type: "literal", value: "" }
+        gameLabel: { type: "literal", value: "Game", "xml:lang": "en" }
       };
       
       const result = mapSparqlResultToGame(sparqlResult);
       
       expect(result.platforms).toBeUndefined();
+      expect(result.genres).toBeUndefined();
+      expect(result.publishers).toBeUndefined();
     });
   });
   
@@ -154,17 +155,18 @@ describe("Wikidata Mapper", () => {
       expect(games[1].qid).toBe("Q67890");
     });
     
-    it("should deduplicate games with the same QID", () => {
+    it("should aggregate multiple rows for the same game", () => {
       const results: WikidataSparqlResult[] = [
         {
           game: { type: "uri", value: "http://www.wikidata.org/entity/Q12345" },
-          gameLabel: { type: "literal", value: "Super Mario Bros" },
-          platforms: { type: "literal", value: "NES" }
+          gameLabel: { type: "literal", value: "Super Mario Bros", "xml:lang": "en" },
+          platformLabel: { type: "literal", value: "Nintendo Entertainment System", "xml:lang": "en" }
         },
         {
           game: { type: "uri", value: "http://www.wikidata.org/entity/Q12345" },
-          gameLabel: { type: "literal", value: "Super Mario Bros" },
-          platforms: { type: "literal", value: "NES|Famicom" }
+          gameLabel: { type: "literal", value: "Super Mario Bros", "xml:lang": "en" },
+          platformLabel: { type: "literal", value: "Famicom", "xml:lang": "en" },
+          genreLabel: { type: "literal", value: "platform game", "xml:lang": "en" }
         }
       ];
       
@@ -172,6 +174,8 @@ describe("Wikidata Mapper", () => {
       
       expect(games).toHaveLength(1);
       expect(games[0].qid).toBe("Q12345");
+      expect(games[0].platforms).toEqual(expect.arrayContaining(["Nintendo Entertainment System", "Famicom"]));
+      expect(games[0].genres).toEqual(["platform game"]);
     });
     
     it("should return empty array for empty input", () => {

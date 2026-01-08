@@ -34,6 +34,9 @@ export default defineConfig({
             'apps/server/src/**/*.{test,spec}.{ts,tsx}',
             'apps/desktop/src/**/*.{test,spec}.{ts,tsx}',
             'packages/**/src/**/*.{test,spec}.{ts,tsx}'
+          ],
+          exclude: [
+            '**/*.integration.test.{ts,tsx}'
           ]
         },
         resolve: {

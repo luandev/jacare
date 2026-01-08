@@ -11,7 +11,8 @@ describe("Wikidata Query Builder", () => {
       expect(query).toContain("?gameLabel");
       expect(query).toContain("wdt:P31/wdt:P279* wd:Q7889"); // instance of video game
       expect(query).toContain("CONTAINS(LCASE(?gameLabel), \"super mario\")");
-      expect(query).toContain("LIMIT 25");
+      // Default limit is 25, multiplied by 2 for aggregation
+      expect(query).toContain("LIMIT 50");
     });
     
     it("should escape special characters in search query", () => {
@@ -20,10 +21,11 @@ describe("Wikidata Query Builder", () => {
       expect(query).toContain("mario\\'s adventure");
     });
     
-    it("should handle custom limit", () => {
+    it("should handle custom limit (multiplied for aggregation)", () => {
       const query = buildSearchQuery("zelda", { limit: 10 });
       
-      expect(query).toContain("LIMIT 10");
+      // Limit is multiplied by 2 to get enough rows for aggregation
+      expect(query).toContain("LIMIT 20");
     });
     
     it("should include release date in SELECT", () => {
@@ -57,11 +59,18 @@ describe("Wikidata Query Builder", () => {
       expect(query).toContain("OPTIONAL");
     });
     
-    it("should use English labels", () => {
+    it("should use rdfs:label for filtering", () => {
       const query = buildSearchQuery("kirby");
       
-      expect(query).toContain("SERVICE wikibase:label");
-      expect(query).toContain("bd:serviceParam wikibase:language \"en\"");
+      expect(query).toContain("rdfs:label");
+      expect(query).toContain("FILTER(LANG(?gameLabel) = \"en\")");
+    });
+    
+    it("should not use GROUP_CONCAT (aggregation happens client-side)", () => {
+      const query = buildSearchQuery("kirby");
+      
+      expect(query).not.toContain("GROUP_CONCAT");
+      expect(query).not.toContain("GROUP BY");
     });
   });
   
