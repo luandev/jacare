@@ -1,5 +1,7 @@
 # Jacare Developer Guide 🧑‍💻🐊
 
+> **⚠️ IMPORTANT NOTICE**: The main crocdb source is currently offline, causing data access failures. A root cause has been identified and a fix is in progress. An update will be published shortly with restored availability.
+
 Welcome to the full technical README for **Jacare**, the Brazilian-inspired desktop ROM library manager that wraps the Crocdb API with an Electron + Express + React stack.
 
 ## Table of contents
