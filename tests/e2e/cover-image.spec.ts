@@ -30,9 +30,8 @@ test.describe('Cover Image Rendering', () => {
 
     // Navigate to Browse page to check cover images there
     await test.step('Browse page - Verify cover image CSS', async () => {
-      // Should be on browse page by default, but navigate to be sure
-      await page.click('nav a[href="/browse"]');
-      await expect(page.getByRole('heading', { name: 'Browse CrocDB' })).toBeVisible();
+      // Should be on browse page by default after dismissing welcome
+      await expect(page.getByRole('heading', { name: /Browse CrocDB/i })).toBeVisible();
       
       // Perform a search to get some results
       await page.fill('input[name="search"]', 'Super Mario');
