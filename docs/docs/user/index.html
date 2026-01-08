@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jacare User Guide</title>
+  <meta name="description" content="User guide and friendly documentation for Jacare ROM library manager">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5.5.1/github-markdown.min.css">
+  <style>
+    :root {
+      --bg: #0d1117;
+      --text: #c9d1d9;
+      --link: #58a6ff;
+      --border: #30363d;
+    }
+    
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #ffffff;
+        --text: #24292f;
+        --link: #0969da;
+        --border: #d0d7de;
+      }
+    }
+    
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+    }
+    
+    .header {
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .header-title {
+      font-size: 18px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .header-links {
+      display: flex;
+      gap: 12px;
+    }
+    
+    .header-links a {
+      color: var(--link);
+      text-decoration: none;
+      font-size: 14px;
+    }
+    
+    .header-links a:hover {
+      text-decoration: underline;
+    }
+    
+    .container {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    
+    .markdown-body {
+      box-sizing: border-box;
+      min-width: 200px;
+      max-width: 980px;
+      margin: 0 auto;
+    }
+    
+    @media (max-width: 767px) {
+      .container {
+        padding: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-title">
+      <span>😀🐊</span>
+      <span>Jacare User Guide</span>
+    </div>
+    <div class="header-links">
+      <a href="../../../">Home</a>
+      <a href="../../">Developer Guide</a>
+      <a href="https://github.com/luandev/jacare">GitHub</a>
+    </div>
+  </div>
+  
+  <div class="container">
+    <article class="markdown-body" id="content">
+      <p>Loading documentation...</p>
+    </article>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
+  <script>
+    async function loadMarkdown() {
+      try {
+        const response = await fetch('./README.md');
+        const markdown = await response.text();
+        const html = marked.parse(markdown);
+        document.getElementById('content').innerHTML = html;
+      } catch (error) {
+        document.getElementById('content').innerHTML = '<p>Error loading documentation. Please visit the <a href="https://github.com/luandev/jacare">GitHub repository</a> for the latest documentation.</p>';
+      }
+    }
+    
+    loadMarkdown();
+  </script>
+</body>
+</html>
