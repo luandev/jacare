@@ -1,5 +1,7 @@
 # Jacare Friendly Guide 😀🐊
 
+> **⚠️ IMPORTANT NOTICE**: The main crocdb source is currently offline, causing data access failures. A root cause has been identified and a fix is in progress. An update will be published shortly with restored availability.
+
 This guide is for anyone who wants to use Jacare without digging into code. Follow the steps below to organize your ROM collection with minimal setup.
 
 ## What is Jacare?
@@ -56,7 +58,7 @@ Jacare is a desktop app that helps you keep your game ROMs tidy. It finds detail
 ## Common questions
 - **Do I need an account?** No—Jacare uses Crocdb without sign-in.
 - **Where does it store data?** In a `data` folder next to the app (or in the location specified by `CROCDESK_DATA_DIR`), including SQLite databases and small `.crocdesk.json` manifest files in each ROM folder.
-- **Can I turn off downloads?** Downloads are enabled by default. There is no option to disable downloads.
+- **Can I turn off downloads?** Downloads are disabled by default for safety. Enable them by setting the `CROCDESK_ENABLE_DOWNLOADS=true` environment variable.
 - **Is my collection safe?** Jacare reads your ROMs and metadata but keeps everything on your device unless you choose to share it.
 - **What file formats are supported?** Jacare supports common ROM formats including `.zip`, `.7z`, `.rar`, `.iso`, `.chd`, `.bin`, `.cue`, `.sfc`, `.smc`, `.nes`, `.gba`, `.gb`, `.gbc`, `.n64`, `.z64`, `.v64`, `.nds`, `.md`, `.gen`, `.sms`, `.gg`, `.pce`, `.img`, `.ccd`, `.sub`, `.m3u`, and more.
 
