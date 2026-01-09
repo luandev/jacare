@@ -7,6 +7,10 @@ import { writeManifest } from "./manifest";
 import { getEntry, searchEntries } from "./crocdb";
 import { ensureDir, moveFile } from "../utils/fs";
 import { logger } from "../utils/logger";
+import { 
+  findBestMatches, 
+  expandAbbreviations
+} from "./fuzzy-matcher";
 
 const UNKNOWN_PLATFORM = "Unknown";
 const NOT_FOUND_FOLDER = "Not Found";
@@ -198,6 +202,7 @@ async function scanPlatformFolder(
 export async function reorganizeItems(
   items: UnorganizedItem[],
   libraryRoot: string,
+  autoOrganizeUnrecognized: boolean = false,
   reportProgress?: (progress: number, message: string) => void
 ): Promise<ReorganizeResult> {
   const report = reportProgress || (() => {});
@@ -250,8 +255,20 @@ export async function reorganizeItems(
           : formatGameName(match.title, match.regions[0]);
         targetPlatform = platform;
       } else {
-        // Not found in Crocdb - put in "Not Found" subfolder
-        logger.info("Game not found in Crocdb, using fallback", { folderName, platform });
+        // Not found in Crocdb
+        if (!autoOrganizeUnrecognized) {
+          // Skip organizing unrecognized files when setting is disabled
+          logger.info("Game not found in Crocdb, skipping (autoOrganizeUnrecognized=false)", { 
+            folderName, 
+            platform 
+          });
+          result.skippedFiles += groupItems.length;
+          processed++;
+          continue;
+        }
+        
+        // autoOrganizeUnrecognized is enabled - put in "Not Found" subfolder
+        logger.info("Game not found in Crocdb, moving to Not Found folder", { folderName, platform });
         gameName = sanitizeFolderName(folderName);
         targetPlatform = `${platform}/${NOT_FOUND_FOLDER}`;
       }
@@ -596,62 +613,195 @@ function extractVersionTags(fileName: string): string {
 
 /**
  * Check if ROM is a hack or modified version based on tags.
+ * Currently not used but kept for future functionality.
  */
-function isRomHack(fileName: string): boolean {
+function _isRomHack(fileName: string): boolean {
   const nameWithoutExt = path.basename(fileName, path.extname(fileName));
   const hackPattern = /\[(?:Hack|Translation|T\+|Trainer|Beta|Proto|Unl)\]/gi;
   return hackPattern.test(nameWithoutExt);
 }
 
+/**
+ * Find a match in Crocdb using multiple search strategies and fuzzy matching.
+ * This improved implementation tries multiple approaches to maximize recognition rate:
+ * 1. Original filename search
+ * 2. Normalized filename (stripped version tags)
+ * 3. Abbreviation expansion
+ * 4. Cross-platform fallback (without platform filter)
+ * 
+ * Uses fuzzy matching to score results and returns the best match above threshold.
+ */
 async function findCrocdbMatch(
   folderName: string,
   platform: string | undefined
 ): Promise<{ slug: string; title: string; platform: string; regions: string[] } | null> {
+  const MIN_CONFIDENCE_SCORE = 0.6; // Minimum score to accept a match
+  
   try {
-    // First try with original name
-    let resp = await searchEntries({
-      search_key: folderName,
-      platforms: platform ? [platform] : undefined,
-      max_results: 5,
-      page: 1
-    });
+    // Strategy 1: Try with original name
+    logger.debug("Trying strategy 1: original name", { folderName, platform });
+    let bestMatch = await trySearchStrategy(folderName, platform, MIN_CONFIDENCE_SCORE);
+    if (bestMatch && bestMatch.score >= 0.85) {
+      logger.info("High confidence match found with original name", { 
+        folderName, 
+        match: bestMatch.title,
+        score: bestMatch.score 
+      });
+      return bestMatch;
+    }
     
-    let results = resp.data.results ?? [];
-    
-    // If no results, try with normalized name (stripped of version tags)
-    if (results.length === 0) {
-      const normalizedName = normalizeRomNameForSearch(folderName);
-      if (normalizedName !== folderName) {
-        logger.debug("Retrying Crocdb search with normalized name", { 
-          original: folderName, 
-          normalized: normalizedName 
-        });
-        
-        resp = await searchEntries({
-          search_key: normalizedName,
-          platforms: platform ? [platform] : undefined,
-          max_results: 5,
-          page: 1
-        });
-        
-        results = resp.data.results ?? [];
+    // Strategy 2: Try with normalized name (stripped of version tags)
+    const normalizedName = normalizeRomNameForSearch(folderName);
+    if (normalizedName !== folderName) {
+      logger.debug("Trying strategy 2: normalized name", { 
+        original: folderName, 
+        normalized: normalizedName, 
+        platform 
+      });
+      
+      const normalizedMatch = await trySearchStrategy(normalizedName, platform, MIN_CONFIDENCE_SCORE);
+      if (normalizedMatch && (!bestMatch || normalizedMatch.score > bestMatch.score)) {
+        bestMatch = normalizedMatch;
+        if (bestMatch.score >= 0.85) {
+          logger.info("High confidence match found with normalized name", { 
+            folderName, 
+            match: bestMatch.title,
+            score: bestMatch.score 
+          });
+          return bestMatch;
+        }
       }
     }
     
+    // Strategy 3: Try with abbreviation expansions
+    const expansions = expandAbbreviations(folderName);
+    if (expansions.length > 1) { // More than just the original
+      logger.debug("Trying strategy 3: abbreviation expansion", { 
+        folderName, 
+        expansions, 
+        platform 
+      });
+      
+      for (const expansion of expansions) {
+        if (expansion === folderName) continue; // Already tried
+        
+        const expansionMatch = await trySearchStrategy(expansion, platform, MIN_CONFIDENCE_SCORE);
+        if (expansionMatch && (!bestMatch || expansionMatch.score > bestMatch.score)) {
+          bestMatch = expansionMatch;
+          if (bestMatch.score >= 0.85) {
+            logger.info("High confidence match found with abbreviation expansion", { 
+              folderName,
+              expansion, 
+              match: bestMatch.title,
+              score: bestMatch.score 
+            });
+            return bestMatch;
+          }
+        }
+      }
+    }
+    
+    // Strategy 4: If we have a decent match, return it
+    if (bestMatch && bestMatch.score >= MIN_CONFIDENCE_SCORE) {
+      logger.info("Match found above confidence threshold", { 
+        folderName, 
+        match: bestMatch.title,
+        score: bestMatch.score 
+      });
+      return bestMatch;
+    }
+    
+    // Strategy 5: Try without platform filter as last resort (cross-platform search)
+    if (platform) {
+      logger.debug("Trying strategy 5: cross-platform search", { folderName });
+      const crossPlatformMatch = await trySearchStrategy(folderName, undefined, MIN_CONFIDENCE_SCORE);
+      if (crossPlatformMatch && (!bestMatch || crossPlatformMatch.score > bestMatch.score)) {
+        bestMatch = crossPlatformMatch;
+        // Lower the threshold for cross-platform matches since platform is a weak signal
+        if (bestMatch.score >= MIN_CONFIDENCE_SCORE * 0.9) {
+          logger.info("Cross-platform match found", { 
+            folderName, 
+            match: bestMatch.title,
+            matchPlatform: bestMatch.platform,
+            score: bestMatch.score 
+          });
+          return bestMatch;
+        }
+      }
+    }
+    
+    // Return best match if above threshold, otherwise null
+    if (bestMatch && bestMatch.score >= MIN_CONFIDENCE_SCORE) {
+      logger.info("Returning best match", { 
+        folderName, 
+        match: bestMatch.title,
+        score: bestMatch.score 
+      });
+      return bestMatch;
+    }
+    
+    logger.info("No match found above confidence threshold", { 
+      folderName, 
+      platform,
+      bestScore: bestMatch?.score ?? 0 
+    });
+    return null;
+    
+  } catch (error) {
+    logger.warn("Error during Crocdb match search", { 
+      folderName, 
+      platform,
+      error: error instanceof Error ? error.message : String(error) 
+    });
+    return null;
+  }
+}
+
+/**
+ * Try a search strategy and return the best fuzzy match
+ */
+async function trySearchStrategy(
+  searchKey: string,
+  platform: string | undefined,
+  minScore: number
+): Promise<{ slug: string; title: string; platform: string; regions: string[]; score: number } | null> {
+  try {
+    const resp = await searchEntries({
+      search_key: searchKey,
+      platforms: platform ? [platform] : undefined,
+      max_results: 10, // Get more results for better fuzzy matching
+      page: 1
+    });
+    
+    const results = resp.data.results ?? [];
     if (results.length === 0) return null;
     
-    // Basic fuzzy: choose the first whose normalized title includes normalized folderName
-    const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "");
-    const target = norm(normalizeRomNameForSearch(folderName));
-    const hit =
-      results.find((r) => norm(r.title).includes(target)) || results[0];
-    return {
-      slug: hit.slug,
-      title: hit.title,
-      platform: hit.platform,
-      regions: hit.regions ?? []
-    };
-  } catch {
+    // Use fuzzy matching to score and rank results
+    const matches = findBestMatches(
+      searchKey,
+      results.map(r => ({ 
+        slug: r.slug, 
+        title: r.title, 
+        platform: r.platform,
+        regions: r.regions ?? []
+      })),
+      {
+        minScore,
+        maxResults: 1,
+        platformMatch: (candidate) => !platform || candidate.platform === platform
+      }
+    );
+    
+    if (matches.length === 0) return null;
+    
+    return matches[0];
+    
+  } catch (error) {
+    logger.debug("Search strategy failed", { 
+      searchKey, 
+      platform,
+      error: error instanceof Error ? error.message : String(error) 
+    });
     return null;
   }
 }
