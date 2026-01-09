@@ -68,6 +68,15 @@ function createWindow(): void {
     }
   });
 
+  // IPC handler for toggling fullscreen Big Picture mode
+  ipcMain.handle("toggle-big-picture", (_event, enabled: boolean) => {
+    if (enabled) {
+      window.setFullScreen(true);
+    } else {
+      window.setFullScreen(false);
+    }
+  });
+
   const devUrl = process.env.CROCDESK_DEV_URL || "http://localhost:5173";
   if (process.env.CROCDESK_DEV_URL || process.env.NODE_ENV === "development") {
     window.loadURL(devUrl);

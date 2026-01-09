@@ -1,0 +1,220 @@
+/* EmulatorJS Player Styles - Big Picture Mode Compatible */
+
+.emulator-wrapper {
+  position: fixed;
+  inset: 0;
+  background: #000000;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  z-index: 10000;
+  font-family: "Space Grotesk", sans-serif;
+}
+
+.emulator-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 40px;
+  background: linear-gradient(180deg, rgba(10, 14, 39, 0.95) 0%, rgba(0, 0, 0, 0.8) 100%);
+  border-bottom: 2px solid rgba(61, 184, 117, 0.3);
+}
+
+.emulator-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #3db875;
+  text-shadow: 0 2px 10px rgba(61, 184, 117, 0.5);
+}
+
+.emulator-exit-btn {
+  padding: 12px 24px;
+  background: rgba(220, 53, 69, 0.8);
+  color: #ffffff;
+  border: 2px solid rgba(220, 53, 69, 1);
+  border-radius: 8px;
+  font-size: 20px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.emulator-exit-btn:hover {
+  background: rgba(220, 53, 69, 1);
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(220, 53, 69, 0.6);
+}
+
+.emulator-container {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000000;
+}
+
+/* EmulatorJS will inject its canvas here */
+#emulator-container canvas {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.emulator-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.9);
+  z-index: 10;
+}
+
+.emulator-spinner {
+  width: 80px;
+  height: 80px;
+  border: 8px solid rgba(61, 184, 117, 0.2);
+  border-top-color: #3db875;
+  border-radius: 50%;
+  animation: emulator-spin 1s linear infinite;
+}
+
+@keyframes emulator-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.emulator-loading p {
+  margin-top: 30px;
+  font-size: 24px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.emulator-controls-hint {
+  padding: 15px 40px;
+  background: linear-gradient(0deg, rgba(10, 14, 39, 0.95) 0%, rgba(0, 0, 0, 0.8) 100%);
+  border-top: 2px solid rgba(61, 184, 117, 0.3);
+  text-align: center;
+}
+
+.emulator-controls-hint p {
+  margin: 5px 0;
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Error State */
+.emulator-error {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px;
+  text-align: center;
+  background: linear-gradient(135deg, #0a0e27 0%, #1a1d3a 100%);
+}
+
+.emulator-error h2 {
+  font-size: 48px;
+  color: #dc3545;
+  margin: 0 0 20px 0;
+}
+
+.emulator-error > p {
+  font-size: 24px;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0 0 40px 0;
+  max-width: 800px;
+}
+
+.emulator-error-instructions {
+  max-width: 900px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(61, 184, 117, 0.3);
+  border-radius: 12px;
+  padding: 30px;
+  margin: 0 0 30px 0;
+  text-align: left;
+}
+
+.emulator-error-instructions h3 {
+  font-size: 28px;
+  color: #3db875;
+  margin: 0 0 20px 0;
+}
+
+.emulator-error-instructions ol {
+  font-size: 20px;
+  line-height: 1.8;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0 0 20px 0;
+  padding-left: 30px;
+}
+
+.emulator-error-instructions li {
+  margin: 10px 0;
+}
+
+.emulator-error-instructions p {
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+  padding: 15px;
+  background: rgba(255, 193, 7, 0.1);
+  border-left: 4px solid #ffc107;
+  border-radius: 4px;
+}
+
+.emulator-back-btn {
+  padding: 18px 40px;
+  background: linear-gradient(135deg, rgba(61, 184, 117, 0.8) 0%, rgba(45, 134, 89, 0.8) 100%);
+  color: #ffffff;
+  border: 3px solid #3db875;
+  border-radius: 12px;
+  font-size: 24px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.emulator-back-btn:hover {
+  background: linear-gradient(135deg, rgba(61, 184, 117, 1) 0%, rgba(45, 134, 89, 1) 100%);
+  transform: scale(1.05);
+  box-shadow: 0 0 30px rgba(61, 184, 117, 0.8);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .emulator-title {
+    font-size: 24px;
+  }
+
+  .emulator-exit-btn {
+    font-size: 16px;
+    padding: 10px 20px;
+  }
+
+  .emulator-error h2 {
+    font-size: 36px;
+  }
+
+  .emulator-error > p {
+    font-size: 20px;
+  }
+
+  .emulator-error-instructions {
+    padding: 20px;
+  }
+
+  .emulator-error-instructions h3 {
+    font-size: 24px;
+  }
+
+  .emulator-error-instructions ol {
+    font-size: 18px;
+  }
+}
