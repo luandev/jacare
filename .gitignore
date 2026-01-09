@@ -7,7 +7,9 @@ coverage/
 *.sqlite3
 data/
 apps/server/downloads
+apps/server/donwloads
 apps/server/library
+library/
 .crocdesk/
 test-results
 playwright-report
