@@ -9,6 +9,7 @@ import crocdbRouter from "./routes/crocdb";
 import settingsRouter from "./routes/settings";
 import libraryRouter from "./routes/library";
 import jobsRouter from "./routes/jobs";
+import providersRouter from "./routes/providers";
 import { logger } from "./utils/logger";
 import { resumeAllJobs } from "./services/jobs";
 import type { Server } from "http";
@@ -123,6 +124,7 @@ export async function startServer(): Promise<Server> {
       app.use((req, res, next) => {
         // Skip static file serving for API routes
         if (req.path.startsWith("/crocdb") || 
+            req.path.startsWith("/providers") || 
             req.path.startsWith("/settings") || 
             req.path.startsWith("/library") || 
             req.path.startsWith("/jobs") || 
@@ -138,6 +140,7 @@ export async function startServer(): Promise<Server> {
       app.get("*", (req, res, next) => {
         // Skip API routes
         if (req.path.startsWith("/crocdb") || 
+            req.path.startsWith("/providers") || 
             req.path.startsWith("/settings") || 
             req.path.startsWith("/library") || 
             req.path.startsWith("/jobs") || 
@@ -163,6 +166,7 @@ export async function startServer(): Promise<Server> {
   app.get("/events", sseHandler);
 
   app.use("/crocdb", crocdbRouter);
+  app.use("/providers", providersRouter);
   app.use("/settings", settingsRouter);
   app.use("/library", libraryRouter);
   app.use("/jobs", jobsRouter);

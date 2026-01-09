@@ -59,6 +59,58 @@ export type CrocdbApiResponse<T> = {
   data: T;
 };
 
+// Generic metadata provider interface
+export type SourceProvider = "crocdb" | "myrient";
+
+export type ProviderPlatform = {
+  id: string;
+  name: string;
+  brand?: string;
+  collection?: string; // e.g., "No-Intro", "Redump"
+};
+
+export type ProviderEntry = {
+  id: string; // Unique identifier for this entry (slug, filename, etc.)
+  title: string;
+  platform: string;
+  regions: string[];
+  filename?: string;
+  size?: number;
+  url?: string;
+  metadata?: Record<string, unknown>; // Provider-specific additional data
+};
+
+export type ProviderSearchRequest = {
+  query?: string;
+  platforms?: string[];
+  regions?: string[];
+  collection?: string;
+  maxResults?: number;
+  page?: number;
+};
+
+export type ProviderSearchResponse = {
+  results: ProviderEntry[];
+  total: number;
+  page: number;
+  totalPages: number;
+};
+
+export type ProviderListRequest = {
+  platform: string;
+  collection?: string;
+  page?: number;
+  limit?: number;
+};
+
+// Metadata provider interface that all providers must implement
+export interface IMetadataProvider {
+  listPlatforms(): Promise<ProviderPlatform[]>;
+  listEntries(request: ProviderListRequest): Promise<ProviderSearchResponse>;
+  search(request: ProviderSearchRequest): Promise<ProviderSearchResponse>;
+  getEntry(id: string): Promise<ProviderEntry | null>;
+}
+
 export type Settings = {
   /**
    * Directory where temporary zip files are downloaded.
