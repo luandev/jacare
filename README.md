@@ -11,6 +11,7 @@
 
 **What makes Jacare special:**
 - 🎮 **All-in-one solution** – Browse, search, download ROMs without switching between tools
+- 🎯 **Big Picture Mode** – Controller-friendly full-screen interface for TVs and couch gaming
 - ⏸️ **Persistent download management** – Pause and resume downloads seamlessly, even after closing and reopening the application
 - 🎨 **Customizable themes** – Personalize your experience with a variety of themes to suit your preferences
 - ⚡ **Ultra-responsive web-based UI** – Enjoy a fast, smooth interface accessible through your browser or desktop app
@@ -21,9 +22,11 @@
 > Want details?
 > - 📚 **Developer guide:** Head to [`docs/README.md`](docs/README.md) for the full technical rundown.
 > - 😀 **Friendly guide:** Open [`docs/user/README.md`](docs/user/README.md) for a non-technical walkthrough.
+> - 🎮 **Big Picture Mode:** Check out [`docs/BIG_PICTURE_MODE.md`](docs/BIG_PICTURE_MODE.md) for controller setup and usage.
 
 ## Why Jacare? 🐊
 - **One app for everything:** Browse, enrich, and launch ROMs without juggling separate tools.
+- **Couch gaming ready:** Big Picture Mode transforms your PC into a console-like experience with full controller support.
 - **Local-first with cloud search:** Metadata is pulled from [Crocdb](https://api.crocdb.net) while your collection, cache, and settings remain on disk.
 - **Built for speed:** Background jobs, SSE updates, and caching cut down on repetitive scraping.
 - **Works online or offline:** Cached search and entry data keep your library usable even when you lose connectivity.
