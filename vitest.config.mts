@@ -26,8 +26,8 @@ export default defineConfig({
     // Use projects instead of environmentMatchGlobs (deprecated in v4)
     projects: [
       {
-        name: 'node-tests',
         test: {
+          name: 'node-tests',
           environment: 'node',
           setupFiles: ['tests/vitest.setup.ts'],
           include: [
@@ -46,8 +46,8 @@ export default defineConfig({
         }
       },
       {
-        name: 'web-tests',
         test: {
+          name: 'web-tests',
           environment: 'jsdom',
           setupFiles: ['tests/vitest.setup.ts'],
           include: [
