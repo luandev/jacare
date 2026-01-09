@@ -54,6 +54,18 @@ export async function initDb(): Promise<void> {
       updated_at INTEGER NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS wikidata_cache_search (
+      query_hash TEXT PRIMARY KEY,
+      response_json TEXT NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS wikidata_cache_game (
+      qid TEXT PRIMARY KEY,
+      response_json TEXT NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS library_items (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       path TEXT NOT NULL UNIQUE,
@@ -309,4 +321,38 @@ export function setCachedEntry(slug: string, json: string): void {
         "ON CONFLICT(slug) DO UPDATE SET response_json = excluded.response_json, updated_at = excluded.updated_at"
     )
     .run(slug, json, Date.now());
+}
+
+// Wikidata cache functions
+
+export function getCachedWikidataSearch(queryHash: string): { json: string; updatedAt: number } | null {
+  const row = getDb()
+    .prepare("SELECT response_json as json, updated_at as updatedAt FROM wikidata_cache_search WHERE query_hash = ?")
+    .get(queryHash) as { json: string; updatedAt: number } | undefined;
+  return row ?? null;
+}
+
+export function setCachedWikidataSearch(queryHash: string, json: string): void {
+  getDb()
+    .prepare(
+      "INSERT INTO wikidata_cache_search (query_hash, response_json, updated_at) VALUES (?, ?, ?) " +
+        "ON CONFLICT(query_hash) DO UPDATE SET response_json = excluded.response_json, updated_at = excluded.updated_at"
+    )
+    .run(queryHash, json, Date.now());
+}
+
+export function getCachedWikidataGame(qid: string): { json: string; updatedAt: number } | null {
+  const row = getDb()
+    .prepare("SELECT response_json as json, updated_at as updatedAt FROM wikidata_cache_game WHERE qid = ?")
+    .get(qid) as { json: string; updatedAt: number } | undefined;
+  return row ?? null;
+}
+
+export function setCachedWikidataGame(qid: string, json: string): void {
+  getDb()
+    .prepare(
+      "INSERT INTO wikidata_cache_game (qid, response_json, updated_at) VALUES (?, ?, ?) " +
+        "ON CONFLICT(qid) DO UPDATE SET response_json = excluded.response_json, updated_at = excluded.updated_at"
+    )
+    .run(qid, json, Date.now());
 }

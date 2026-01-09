@@ -26,14 +26,17 @@ export default defineConfig({
     // Use projects instead of environmentMatchGlobs (deprecated in v4)
     projects: [
       {
-        name: 'node-tests',
         test: {
+          name: 'node-tests',
           environment: 'node',
           setupFiles: ['tests/vitest.setup.ts'],
           include: [
             'apps/server/src/**/*.{test,spec}.{ts,tsx}',
             'apps/desktop/src/**/*.{test,spec}.{ts,tsx}',
             'packages/**/src/**/*.{test,spec}.{ts,tsx}'
+          ],
+          exclude: [
+            '**/*.integration.test.{ts,tsx}'
           ]
         },
         resolve: {
@@ -43,8 +46,8 @@ export default defineConfig({
         }
       },
       {
-        name: 'web-tests',
         test: {
+          name: 'web-tests',
           environment: 'jsdom',
           setupFiles: ['tests/vitest.setup.ts'],
           include: [

@@ -21,6 +21,7 @@
     "typecheck": "npm run typecheck -w @crocdesk/shared && npm run typecheck -w @crocdesk/server && npm run typecheck -w @crocdesk/web && npm run typecheck -w @crocdesk/desktop",
     "lint": "eslint . --ext .ts,.tsx",
     "test:unit": "vitest --run",
+    "test:integration": "vitest --run --config vitest.config.mts apps/server/src/providers/wikidata/__tests__/provider.integration.test.ts",
     "test:e2e": "npx playwright test",
     "test:e2e:ui": "npx playwright test --ui",
     "test": "npm run test:unit && npm run test:e2e",
